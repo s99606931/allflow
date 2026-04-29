@@ -46,17 +46,20 @@ paths:
               schema: { $ref: '#/components/schemas/User' }
     patch:
       tags: [identity]
-      summary: 내 프로필 수정
+      summary: 내 프로필 수정 (모든 필드 optional, 빈 객체 = no-op)
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               properties:
-                name: { type: string }
-                role: { type: string }
-                dept: { type: string }
+                name: { type: string, minLength: 1, maxLength: 120 }
+                role: { type: string, minLength: 1, maxLength: 60 }
+                dept: { type: string, minLength: 1, maxLength: 80 }
+                initials: { type: string, minLength: 1, maxLength: 8 }
+                color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
                 email: { type: string, format: email }
       responses:
         '200':
