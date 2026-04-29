@@ -58,7 +58,15 @@ if [[ "${AV_STACK_APPROVAL:-}" == "skip" ]]; then
   exit 0
 fi
 
-# Manifest matched → block with exit 2
+# Manifest matched → log rejection reason + block with exit 2
+TS=$(date -Iseconds)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+MEMORY_FILE="$PROJECT_DIR/.claude/agent-memory/av-base-memory-keeper/MEMORY.md"
+if [ -f "$MEMORY_FILE" ]; then
+  printf -- '- %s | %s | manifest 변경 차단 | 사유: 사용자 승인 대기\n' "$TS" "$FILE_PATH" >> "$MEMORY_FILE"
+fi
+
 echo "⚠️  manifest 변경 감지: $FILE_PATH"
 echo "변경 승인이 필요합니다. Claude Code가 AskUserQuestion을 통해 확인합니다."
 exit 2
