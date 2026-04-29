@@ -16,8 +16,8 @@
 
 다음 중 하나로 보고해 주세요 / Please use one of:
 
-- GitHub Security Advisory: <https://github.com/{org}/{repo}/security/advisories/new>
-- Email: security@{도메인}
+- GitHub Security Advisory: <https://github.com/s99606931/allflow/security/advisories/new>
+- Email: s99606931@gmail.com
 
 ## 응답 정책 / Response Policy
 

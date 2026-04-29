@@ -2,48 +2,48 @@
 # Format: pattern  @owner1 @owner2
 
 # Default — all changes
-*                                    @autovibe-maintainers
+*                                    @s99606931
 
 # Dev track
-/.editorconfig                       @autovibe-dev-leads
-/.devcontainer/                      @autovibe-dev-leads
+/.editorconfig                       @s99606931
+/.devcontainer/                      @s99606931
 
 # Test track
-/.github/workflows/ci.yml            @autovibe-test-leads
-/.github/workflows/security.yml      @autovibe-security-leads
-/tests/                              @autovibe-test-leads
+/.github/workflows/ci.yml            @s99606931
+/.github/workflows/security.yml      @s99606931
+/tests/                              @s99606931
 
 # Docs track
-/README.md                           @autovibe-docs-leads
-/CHANGELOG.md                        @autovibe-docs-leads
-/CONTRIBUTING.md                     @autovibe-docs-leads
-/docs/                               @autovibe-docs-leads
-/.github/ISSUE_TEMPLATE/             @autovibe-docs-leads
-/.github/PULL_REQUEST_TEMPLATE.md    @autovibe-docs-leads
+/README.md                           @s99606931
+/CHANGELOG.md                        @s99606931
+/CONTRIBUTING.md                     @s99606931
+/docs/                               @s99606931
+/.github/ISSUE_TEMPLATE/             @s99606931
+/.github/PULL_REQUEST_TEMPLATE.md    @s99606931
 
 # Security track
-/SECURITY.md                         @autovibe-security-leads
-/.github/dependabot.yml              @autovibe-security-leads
-/.githooks/                          @autovibe-security-leads
-/.claude/hooks/av-oss-*.sh           @autovibe-security-leads
+/SECURITY.md                         @s99606931
+/.github/dependabot.yml              @s99606931
+/.githooks/                          @s99606931
+/.claude/hooks/av-oss-*.sh           @s99606931
 
 # Release track
-/.github/workflows/release.yml       @autovibe-release-leads
-/VERSION                             @autovibe-release-leads
+/.github/workflows/release.yml       @s99606931
+/VERSION                             @s99606931
 
 # AV ecosystem (meta) — all maintainers (default)
-/.claude/                            @autovibe-maintainers
+/.claude/                            @s99606931
 
 # AV OSS meta components — track-specific ownership
-/.claude/agents/av-oss-dev-lead.md          @autovibe-dev-leads
-/.claude/agents/av-oss-test-engineer.md     @autovibe-test-leads
-/.claude/agents/av-oss-docs-curator.md      @autovibe-docs-leads
-/.claude/agents/av-oss-pr-reviewer.md       @autovibe-maintainers
-/.claude/agents/av-oss-security-officer.md  @autovibe-security-leads
-/.claude/agents/av-oss-release-manager.md   @autovibe-release-leads
-/.claude/skills/av-oss-init/                @autovibe-maintainers
-/.claude/skills/av-oss-pr-triage/           @autovibe-maintainers
-/.claude/skills/av-oss-release/             @autovibe-release-leads
-/.claude/skills/av-oss-contrib-onboard/     @autovibe-docs-leads
-/.claude/hooks/av-oss-*.sh                  @autovibe-security-leads
-/.claude/rules/av-oss-collab-protocol.md    @autovibe-maintainers
+/.claude/agents/av-oss-dev-lead.md          @s99606931
+/.claude/agents/av-oss-test-engineer.md     @s99606931
+/.claude/agents/av-oss-docs-curator.md      @s99606931
+/.claude/agents/av-oss-pr-reviewer.md       @s99606931
+/.claude/agents/av-oss-security-officer.md  @s99606931
+/.claude/agents/av-oss-release-manager.md   @s99606931
+/.claude/skills/av-oss-init/                @s99606931
+/.claude/skills/av-oss-pr-triage/           @s99606931
+/.claude/skills/av-oss-release/             @s99606931
+/.claude/skills/av-oss-contrib-onboard/     @s99606931
+/.claude/hooks/av-oss-*.sh                  @s99606931
+/.claude/rules/av-oss-collab-protocol.md    @s99606931
