@@ -2,10 +2,22 @@
 
 | Feature | Match Rate | Period | Status | Path |
 |---------|----------:|--------|:------:|------|
+| `tech-stack-modernization-2026-04-29` (스택 거버넌스 + M3 P0 채택) | 0.97 | 2026-04-29 | ✅ archived | [tech-stack-modernization-2026-04-29/](./tech-stack-modernization-2026-04-29/) |
 | `be-fe-mapping-fix-2026-04-29` (FE↔BE 미연결 44 EP 수렴) | BE 0.98 / FE 0.98 | 2026-04-29 | ✅ archived | [be-fe-mapping-fix-2026-04-29/](./be-fe-mapping-fix-2026-04-29/) |
 | `.claude` (AutoVibe OSS 분업화) | 96.20% → ~99.2% | 2026-04-29 | ✅ archived | [dotclaude/](./dotclaude/) |
 | `all-flow-fullstack-2026-04-29` (BE×FE 풀스택 종결) | 0.984 / code 100 | 2026-04-28~29 | ✅ archived | [all-flow-fullstack-2026-04-29/](./all-flow-fullstack-2026-04-29/) |
 | `all-flow-infra-2026-04-28` (Docker Compose 풀스택 인프라) | 100% (자체 평가) | 2026-04-28 | ✅ archived | [all-flow-infra-2026-04-28/](./all-flow-infra-2026-04-28/) |
+
+## tech-stack-modernization-2026-04-29 요약
+
+- **작업**: manifest 거버넌스 훅(`av-base-stack-approval.sh`) + 69행 stack-matrix + 5개 메모리 Stack Recommendations + CLAUDE.md 정리 + M3 P0 FE 업그레이드
+- **결과**: match_rate 0.97, S1~S7 전부 ✅, vitest 110/110 PASS
+- **stack-matrix v2**: CTO 팀 실사로 8건 오류 수정 (Biome 2.4.13 GA / ESLint 10 / Node 24 LTS / Redis 8.x GA / PG 17.9 / @fastify/jwt 10 / jose 6 / tailwindcss 4.2.4)
+- **M3 P0 채택**: react/react-dom 19.2.5 + next 16.2.4 + playwright 1.59.1 + tailwindcss 4.2.4 적용 완료
+- **종결 패턴**: exit 2 훅 도그푸딩 / stack-matrix 실사 검증 표준화 / AI 조사 결과 실사 검증 필수
+- **후속 P1**: Biome 1.9.4→2.4.13 / Node 22→24 / Redis 7→8.6.2
+- **학습 적재**: `learning_tech_stack_modernization_2026_04_29.md`, `learning_stack_matrix_v2_corrections.md`
+
 
 ## be-fe-mapping-fix-2026-04-29 요약
 

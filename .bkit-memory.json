@@ -1,0 +1,22 @@
+{
+  "feature": "tech-stack-modernization-2026-04-29",
+  "phase": "archived",
+  "matchRate": 0.97,
+  "iterationCount": 0,
+  "startedAt": "2026-04-29T00:00:00+09:00",
+  "prd": "docs/00-pm/tech-stack-modernization-2026-04-29.prd.md",
+  "plan": "docs/01-plan/features/tech-stack-modernization-2026-04-29.plan.md",
+  "design": "docs/02-design/features/tech-stack-modernization-2026-04-29.design.md",
+  "mode": "governance-tailored",
+  "architecture": "C-pragmatic",
+  "scope": "manifest-only",
+  "asBuiltStatus": {
+    "M1_stack_matrix": "PASS",
+    "M2_hook": "PASS (settings.json matcher group needs verification)",
+    "M3_manifest_adoption": "PASS (react 19.2.5 + react-dom 19.2.5 + next 16.2.4 + playwright 1.59.1 + tailwindcss 4.2.4 + @tailwindcss/postcss 4.2.4, 110/110 tests PASS, 2026-04-29)",
+    "M4_5_memories": "PASS",
+    "M5_claude_md_cleanup": "PASS (grep 0)",
+    "M7_dry_mode": "NEW",
+    "M8_quarterly_cron": "NEW (renamed from M6)"
+  }
+}
