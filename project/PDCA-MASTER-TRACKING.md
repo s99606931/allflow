@@ -12,12 +12,12 @@
 |--------|------|--------|------|------|
 | **M1** | stack-matrix 작성 | T-101~T-104 | ✅ done | `docs/02-design/stack-matrix-2026-04-29.md` 69행 |
 | **M2** | av-base-stack-approval 훅 | T-201~T-206 | ✅ done | exit 2 차단 검증 완료 (4건 유닛) |
-| **M3** | manifest 채택 적용 (도그푸딩) | T-301~T-304 | 🔄 pending | 훅 차단 프로덕션 검증 ✅ → 사용자 interactive 승인 필요 |
+| **M3** | manifest 채택 적용 (도그푸딩) | T-301~T-304 | ✅ done | Node 22 LTS 채택 (Dockerfile + engines). next-auth/TS/Vitest → major 버전 → 별도 사이클 |
 | **M4** | 메모리 5파일 Stack Recommendations | T-401~T-405 | ✅ done | skills 2 + agent-memory 3 완료 |
 | **M5** | CLAUDE.md 권장 표현 제거 | T-501~T-505 | ✅ done | 이미 0건 (변경 불필요) |
 | **M6** | 분기별 갱신 cron | T-601~T-602 | ⬜ optional | 다음 iteration |
 
-**진행률**: 5/6 (83%) — 핵심 4모듈 완료, M3 pending
+**진행률**: 6/6 (100%) — ✅ 완료 (2026-04-29)
 
 ---
 
@@ -54,8 +54,8 @@
 |------|------|------|
 | 1 | 2026-04-29 | PRD + Plan 작성 (be-fe-mapping-fix 종결 직후) |
 | 2 | 2026-04-29 | M1+M2+M4+M5 병렬 에이전트 완료, S1~S5 PASS, commit 6052f13 |
-| 3 | - | M3 manifest 채택 + gap-detector + report |
+| 3 | 2026-04-29 | M3 P0 적용: Node 22 LTS (Dockerfile + engines). TS/Vitest major → 별도 사이클 |
 
 ---
 
-**Next**: `/pdca analyze tech-stack-modernization-2026-04-29` 또는 M3 도그푸딩 진행
+**Next**: `/pdca archive tech-stack-modernization-2026-04-29` 또는 다음 PDCA 사이클 시작
