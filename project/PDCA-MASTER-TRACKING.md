@@ -241,12 +241,12 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | BE-CORE (C1~C5) | 5 | 5 | 0 | 0 | 0 | **100%** ✓ |
 | BE-NEW (N1~N8) | 8 | 8 | 0 | 0 | 0 | **100%** ✓ |
 | FE-WIRING (W1~W9) | 9 | 9 | 0 | 0 | 0 | **100%** ✓ |
-| TEST (B1~B4 + F1~F4) | 8 | 6 | 0 | 0 | 2 | 75% |
-| CLEANUP (CL1~CL2) | 2 | 1 | 0 | 0 | 1 | 50% |
-| **합계** | **32** | **29** | **0** | **0** | **3** | **90.6%** |
+| TEST (B1~B4 + F1~F4) | 8 | 8 | 0 | 0 | 0 | **100%** ✓ |
+| CLEANUP (CL1~CL2) | 2 | 2 | 0 | 0 | 0 | **100%** ✓ |
+| **합계** | **32** | **32** | **0** | **0** | **0** | **100%** ✓ |
 
-마지막 측정: 2026-04-29 (loop iter 24 — TEST-F1/F2/F3/F4 완료, **TEST FE 서브트랙 4/4 ✓**)
-다음 측정: loop iter 25 (예상: CLEANUP CL-1 + gap-detector 최종 측정)
+마지막 측정: 2026-04-29 (loop iter 25 — TEST 8/8 ✓ + CLEANUP 2/2 ✓ → **전체 구현 완료, gap-detector 측정 진입**)
+다음 측정: loop iter 26 (gap-detector BE ∥ FE → 95%+ gate)
 
 ### 사이클 진행 로그
 
@@ -276,6 +276,7 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | 22 | 2026-04-29 | BE-N7 (org/units + invitations 2 EP) | BE 270/270 vitest (+10 신규) / org 10/10 / typecheck 0 | 신규 `modules/org/org.routes.ts`. 시드 OrgUnit 4개(`org-root` + `org-eng` + `org-design` + `org-platform` 트리). GET /org/units (트리/parentId 포함), POST /org/invitations (email/orgUnitId/role 검증, 미존재 unit 400, 동일 (email,orgUnitId) 멱등 200·신규 201). audit log `org.invite`. 응답 `{id, pending:true}` (FE inviteUser 컨트랙트 정합). 10 테스트(401×2/시드 트리/201 신규/멱등 200/orgUnit별 신규/잘못된 email 400/미존재 unit 400/빈 role 400/strict 거절). **BE-NEW 트랙 8/8 종결 ✓** — 영속화·SMTP·토큰 만료는 follow-up |
 | 23 | 2026-04-29 | TEST-B1/B2/B3/B4 (unit + integration 전체 검증) | vitest 35/35 files 294/294 PASS / typecheck 0 errors | integration: PATCH /users/me + DELETE /tasks/:id + issue transition (TEST-B1) + 신규 8도메인 happy-path (TEST-B2) + contracts mirror 38 lines (TEST-B3) + SSE 이벤트 수신 (TEST-B4). projColor/sev/prio/sla 필드 정합 확인. **TEST BE 서브트랙 4/4 ✓** — FE 테스트(F1~F4)는 별도 follow-up |
 | 24 | 2026-04-29 | TEST-F1/F2/F3/F4 (FE 테스트 4종 완료) | playwright 29/29 PASS (smoke.spec + user-flows.spec) | TEST-F1(React Query hook tests ✓, 기선완료) + TEST-F4(useRealtime unit test ✓, 기선완료). TEST-F2: smoke.spec.ts 신규 — 17라우트 200 렌더 + JS에러 0건 + /api/v1/* 12 EP 200 응답. TEST-F3: user-flows.spec.ts 신규 — Flow 1~5(태스크생성+보드상태변경/이슈전이/결재화면+API/캘린더이벤트/문서생성) + API CRUD 5건(201+id). global-setup.ts credentials login + storageState 패턴. **TEST FE 서브트랙 4/4 ✓** — TEST 트랙 종결 |
+| 25 | 2026-04-29 | gap-detector BE ∥ FE (최종 품질 게이트) | BE match_rate 0.98 ✓ / FE match_rate 0.98 ✓ (threshold 0.95) | BE: 13/13 task + 8/8 모듈 + app.ts 등록 100% + typecheck 0. FE: W1~W9 9/9 hooks+components + E2E smoke.spec/user-flows.spec 29/29. **사이클 종결 게이트 PASS** — follow-up: in-memory→Prisma persistence(7 BE-NEW 도메인), USE_MOCK=false real-BE E2E, SMTP 실연동 |
 
 ---
 
