@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
+import { IssueCreateDialog } from '@/components/dialogs/issue-create-dialog';
 import { userById } from '@/lib/fixtures';
 import { useIssues, useIssueMutations } from '@/lib/hooks/use-data';
 import type { Issue, IssueSev, IssuePrio, IssueStatus } from '@/lib/schemas';
@@ -42,6 +43,7 @@ const HOTSPOTS = [
 
 export function IssuesPageFull() {
   const [tab, setTab] = useState('list');
+  const [createOpen, setCreateOpen] = useState(false);
   const { data: issues = [] } = useIssues();
   const stats = computeStats(issues);
 
@@ -89,7 +91,7 @@ export function IssuesPageFull() {
 
         {/* LIST */}
         <Tabs.Content value="list" className="pt-4 space-y-4 outline-none">
-          <Toolbar />
+          <Toolbar onCreate={() => setCreateOpen(true)} />
           <IssueList />
           <AISuggestion />
         </Tabs.Content>
@@ -235,11 +237,12 @@ export function IssuesPageFull() {
           </Card>
         </Tabs.Content>
       </Tabs.Root>
+      <IssueCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 }
 
-function Toolbar() {
+function Toolbar({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <div className="flex items-center gap-1 p-0.5 rounded-md bg-bg-2 border border-border">
@@ -254,7 +257,7 @@ function Toolbar() {
         <input placeholder="이슈 검색..." className="h-8 w-56 pl-8 pr-3 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent" />
       </div>
       <Button variant="secondary" size="sm"><Sparkles size={13} /> AI 자동 분류</Button>
-      <Button variant="primary" size="sm"><Plus size={13} /> 새 이슈</Button>
+      <Button variant="primary" size="sm" onClick={onCreate}><Plus size={13} /> 새 이슈</Button>
     </div>
   );
 }
