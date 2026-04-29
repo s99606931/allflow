@@ -31,8 +31,8 @@ pdca: tech-stack-modernization-2026-04-29
 | **ws** | ^8.20.0 | 8.x | 현재 유지 | @fastify/websocket 내부 dep |
 | **zod** | ^4.3.6 | 4.x | 현재 유지 | v4 stable (v3→v4 마이그레이션 완료) |
 | **@biomejs/biome** | 1.9.4 (exact) | 1.9.x | 현재 유지 | Biome v2 RC 출시 전, exact pin 유지 |
-| **typescript** | ^5.7.2 | 5.8.x | 5.8.x | 5.8 — `erasableSyntaxOnly` + perf 개선. 마이너 업 권장 |
-| **vitest** | ^2.1.8 | 2.3.x | 2.3.x | 2.3 — improved browser/worker mode. 마이너 업 권장 |
+| **typescript** | ^5.7.2 | 6.0.3 | 현재 유지 | TS 6 major — 호환성 검토 후 별도 사이클 |
+| **vitest** | ^2.1.8 | 4.1.5 | 현재 유지 | Vitest 4 major — 별도 사이클 |
 | **tsup** | ^8.3.5 | 8.x | 현재 유지 | ESM 번들러, 안정 |
 | **tsx** | ^4.19.2 | 4.x | 현재 유지 | ts 실행기, 최신 마이너 |
 | **testcontainers** | ^11.14.0 | 11.x | 현재 유지 | 통합 테스트 DB 격리, 최신 마이너 |
@@ -48,7 +48,7 @@ pdca: tech-stack-modernization-2026-04-29
 | **react** | 19.2.0 | 19.2.x | 현재 유지 | React 19 stable (2024-12 출시), 최신 유지 |
 | **react-dom** | 19.2.0 | 19.2.x | 현재 유지 | react와 동기 필수 |
 | **next** | 16.2.0 | 16.2.x | 현재 유지 | Next.js 16 (Turbopack GA). 현재 최신 마이너 |
-| **next-auth** | 5.0.0-beta.30 | 5.0.0 stable | 5.0.0 stable | beta.30 → stable 업그레이드 권장. 보안 수정 포함 가능성 |
+| **next-auth** | 5.0.0-beta.30 | 5.0.0-beta.30 | 현재 유지 | v5 stable 없음 (v4 LTS=4.24.14). v5 beta 채택 유지 |
 | **@auth/core** | ^0.40.0 | 0.40.x | 현재 유지 | next-auth v5 피어 dep |
 | **@tanstack/react-query** | ^5.83.0 | 5.x | 현재 유지 | TanStack Query v5 stable, 최신 마이너 |
 | **react-hook-form** | ^7.65.0 | 7.x | 현재 유지 | 안정 버전, 최신 마이너 |
@@ -78,8 +78,8 @@ pdca: tech-stack-modernization-2026-04-29
 | **eslint** | ^9.20.1 | 9.x | 현재 유지 | v9 flat config 사용 중 |
 | **@eslint/js** | ^9.39.4 | 9.x | 현재 유지 | ESLint v9 core rules |
 | **@eslint/eslintrc** | ^3.3.5 | 3.x | 현재 유지 | 레거시 config 호환 브릿지 |
-| **typescript** | ^5.7.3 | 5.8.x | 5.8.x | BE와 동일 — 마이너 업 정렬 권장 |
-| **vitest** | ^2.1.9 | 2.3.x | 2.3.x | BE와 동일 — 마이너 업 정렬 권장 |
+| **typescript** | ^5.7.3 | 6.0.3 | 현재 유지 | TS 6 major — BE와 함께 별도 사이클 |
+| **vitest** | ^2.1.9 | 4.1.5 | 현재 유지 | Vitest 4 major — BE와 함께 별도 사이클 |
 | **@playwright/test** | ^1.50.0 | 1.52.x | 1.52.x | E2E 프레임워크, 마이너 업 권장 |
 | **storybook** | ^10.3.5 | 10.x | 현재 유지 | 컴포넌트 문서화, v10 stable |
 
@@ -113,9 +113,9 @@ pdca: tech-stack-modernization-2026-04-29
 | 우선순위 | 항목 | 이유 |
 |---------|------|------|
 | P0 (즉시) | Node.js 20 → 22 LTS (Dockerfile + engines) | Node 20 LTS Active 종료 임박 |
-| P0 (즉시) | next-auth beta.30 → 5.0.0 stable | beta 버전 보안 리스크 |
-| P1 (단기) | TypeScript 5.7 → 5.8 (BE + FE 정렬) | 성능 개선, erasableSyntaxOnly |
-| P1 (단기) | Vitest 2.1 → 2.3 (BE + FE 정렬) | 워커 모드 안정성 개선 |
+| ~~P0~~ | ~~next-auth beta.30 → 5.0.0 stable~~ | v5 stable 없음 — 현재 유지 (2026-04-29 조사 결과) |
+| P2 (중기) | TypeScript 6.0 업그레이드 | major — 호환성 검토 별도 사이클 |
+| P2 (중기) | Vitest 4.x 업그레이드 | major — 별도 사이클 |
 | P1 (단기) | Playwright 1.50 → 1.52 | trace viewer 개선, 최신 브라우저 대응 |
 | P2 (중기) | zod FE ^4.1.0 → ^4.3.x (BE 정렬) | BE/FE 패치 버전 정렬 |
 | P3 (검토) | Biome 1.9.4 → 2.x (v2 GA 후) | 현재 RC, GA 후 채택 결정 |
