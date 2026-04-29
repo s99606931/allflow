@@ -17,3 +17,15 @@
 ## 관련 컴포넌트
 - 호출 주체: PL/PM/사용자
 - 출력 대상: bkit/gstack/Memory Keeper
+
+## Stack Recommendations
+
+> 2026-04-29 tech-stack-modernization-2026-04-29 기준
+
+| 구분 | 권장 | 비고 |
+|------|------|------|
+| TypeScript | strict mode + no-any | ESLint rule: `@typescript-eslint/no-explicit-any: error` |
+| ESLint | 9.x flat config (`eslint.config.js`) | `@eslint/js` + `typescript-eslint` |
+| 코드 품질 게이트 | bkit:code-analyzer ≥ 90/100 | CI에서 자동 차단 |
+| 파일 길이 | 500줄 이하 | God Object 방지 |
+| 함수 길이 | 50줄 이하 | 단일 책임 원칙 |

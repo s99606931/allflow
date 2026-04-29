@@ -47,7 +47,8 @@
         "matcher": "Write|Edit",
         "hooks": [
           { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/av-content-scanner.sh" },
-          { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/av-oss-secret-scan.sh" }
+          { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/av-oss-secret-scan.sh" },
+          { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/av-base-stack-approval.sh" }
         ]
       },
       {

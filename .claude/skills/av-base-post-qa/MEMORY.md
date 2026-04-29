@@ -17,3 +17,15 @@
 ## 관련 컴포넌트
 - 호출 주체: PL/PM/사용자
 - 출력 대상: bkit/gstack/Memory Keeper
+
+## Stack Recommendations
+
+> 2026-04-29 tech-stack-modernization-2026-04-29 기준
+
+| 구분 | 권장 | 비고 |
+|------|------|------|
+| Playwright | 1.43.x+ | `@playwright/test` |
+| Vitest | 2.x | React Testing Library 호환 |
+| E2E 패턴 | storageState global-setup | `playwright/.auth/user.json` |
+| QA 커버리지 | 80%+ (unit) + smoke E2E | USE_MOCK=false 실연동 권장 |
+| 로그 기반 QA | bkit:qa-monitor Docker logs | Zero Script QA 패턴 |
