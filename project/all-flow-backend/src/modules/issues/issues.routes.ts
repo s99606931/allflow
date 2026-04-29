@@ -1,5 +1,13 @@
 /**
- * issues 모듈 — `GET /issues` (필터: status, prio) + `POST /issues` (백엔드 자체 create).
+ * issues 모듈 — `GET /issues` (필터: status, prio) + `POST /issues` (생성) + `POST /issues/:id/transition` (상태 전이).
+ *
+ * 상태 머신 (`ISSUE_TRANSITIONS`):
+ *  - open         → in-progress, resolved
+ *  - in-progress  → in-review, resolved
+ *  - in-review    → resolved, in-progress (반려)
+ *  - resolved     → in-progress (재오픈)
+ *
+ * 동일 상태로의 전이는 멱등 허용 (no-op 200). 정의되지 않은 전이는 400.
  *
  * 응답은 frontend openapi.yaml `Issue` 스키마와 동일.
  *  - assignee/reporter: User.name 으로 직렬화 (없으면 빈 문자열)
@@ -151,4 +159,93 @@ export async function issuesRoutes(app: FastifyInstance): Promise<void> {
     reply.code(201);
     return toApiIssue(created as unknown as IssueRow);
   });
+
+  app.post('/issues/:id/transition', { preHandler: [app.authenticate] }, async (req) => {
+    const { id } = req.params as { id: string };
+    const parsed = TransitionInput.safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+    const { status: nextWireStatus, comment } = parsed.data;
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const existing = (await app.prisma.issue.findFirst({
+      where: { id, deletedAt: null },
+      select: {
+        id: true,
+        status: true,
+        project: { select: { members: { where: { userId }, select: { userId: true } } } },
+      },
+    })) as
+      | {
+          id: string;
+          status: keyof typeof DB_TO_WIRE_STATUS;
+          project: { members: { userId: string }[] };
+        }
+      | null;
+    if (!existing) throw new NotFoundError('Issue', id);
+    if (existing.project.members.length === 0) {
+      throw new ForbiddenError('프로젝트 멤버가 아닙니다');
+    }
+
+    const currentWireStatus = DB_TO_WIRE_STATUS[existing.status];
+    if (!isAllowedTransition(currentWireStatus, nextWireStatus)) {
+      throw new ValidationError(
+        `허용되지 않는 상태 전이: ${currentWireStatus} → ${nextWireStatus}`,
+        [{ from: currentWireStatus, to: nextWireStatus }],
+      );
+    }
+
+    const updated = await app.prisma.issue.update({
+      where: { id },
+      data: {
+        status: PRISMA_ISSUE_STATUS[nextWireStatus],
+        ...(nextWireStatus === 'resolved' ? { resolved: true } : {}),
+        ...(currentWireStatus === 'resolved' && nextWireStatus !== 'resolved'
+          ? { resolved: false }
+          : {}),
+      },
+      include: ISSUE_INCLUDE,
+    });
+
+    // Optional transition note: persisted as an issue Comment for audit trail.
+    if (comment) {
+      await app.prisma.comment.create({
+        data: {
+          body: comment,
+          targetKind: 'issue',
+          issueId: id,
+          authorId: userId,
+        },
+      });
+    }
+
+    return toApiIssue(updated as unknown as IssueRow);
+  });
+}
+
+const TransitionInput = z
+  .object({
+    status: IssueStatus,
+    comment: z.string().min(1).max(4000).optional(),
+  })
+  .strict();
+
+const DB_TO_WIRE_STATUS = {
+  open: 'open',
+  in_progress: 'in-progress',
+  in_review: 'in-review',
+  resolved: 'resolved',
+} as const;
+
+const ISSUE_TRANSITIONS: Record<string, ReadonlyArray<string>> = {
+  open: ['in-progress', 'resolved'],
+  'in-progress': ['in-review', 'resolved'],
+  'in-review': ['resolved', 'in-progress'],
+  resolved: ['in-progress'],
+};
+
+function isAllowedTransition(from: string, to: string): boolean {
+  if (from === to) return true; // 멱등
+  const allowed = ISSUE_TRANSITIONS[from];
+  return Array.isArray(allowed) && allowed.includes(to);
 }

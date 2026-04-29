@@ -13,9 +13,14 @@ interface PrismaIssueMock {
   issue: {
     findMany: (args: AnyArgs) => Promise<unknown[]>;
     create: (args: AnyArgs) => Promise<unknown>;
+    findFirst?: (args: AnyArgs) => Promise<unknown>;
+    update?: (args: AnyArgs) => Promise<unknown>;
   };
   project: {
     findFirst: (args: AnyArgs) => Promise<unknown>;
+  };
+  comment?: {
+    create: (args: AnyArgs) => Promise<unknown>;
   };
 }
 
@@ -205,6 +210,208 @@ describe('modules/issues', () => {
       url: '/issues',
       headers: { authorization: `Bearer ${await token()}` },
       payload: { title: '제목만' },
+    });
+    expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+});
+
+describe('modules/issues — POST /issues/:id/transition', () => {
+  beforeAll(() => {
+    process.env.AUTH_SECRET = TEST_AUTH;
+  });
+  afterAll(() => {
+    process.env.AUTH_SECRET = undefined;
+    resetEnvForTests();
+  });
+
+  function buildAppForTransition(opts: {
+    currentStatus: 'open' | 'in_progress' | 'in_review' | 'resolved';
+    member: boolean;
+    issueExists?: boolean;
+    captureUpdate?: { args?: AnyArgs };
+    captureComment?: { args?: AnyArgs };
+  }) {
+    return buildTestApp({
+      issue: {
+        findMany: async () => [],
+        create: async () => ({}),
+        findFirst: async () =>
+          opts.issueExists === false
+            ? null
+            : {
+                id: 'i1',
+                status: opts.currentStatus,
+                project: {
+                  members: opts.member ? [{ userId: 'u1' }] : [],
+                },
+              },
+        update: async (args: AnyArgs) => {
+          if (opts.captureUpdate) opts.captureUpdate.args = args;
+          return {
+            ...SAMPLE_ISSUE_ROW,
+            status: args.data.status,
+            resolved: args.data.resolved ?? SAMPLE_ISSUE_ROW.resolved,
+          };
+        },
+      },
+      project: { findFirst: async () => null },
+      comment: {
+        create: async (args: AnyArgs) => {
+          if (opts.captureComment) opts.captureComment.args = args;
+          return { id: 'c1' };
+        },
+      },
+    });
+  }
+
+  it('인증 없으면 401', async () => {
+    const app = await buildAppForTransition({ currentStatus: 'open', member: true });
+    const r = await app.inject({
+      method: 'POST',
+      url: '/issues/i1/transition',
+      payload: { status: 'in-progress' },
+    });
+    expect(r.statusCode).toBe(401);
+    await app.close();
+  });
+
+  it('정상 전이 open → in-progress (200 + 갱신본)', async () => {
+    const captureUpdate: { args?: AnyArgs } = {};
+    const app = await buildAppForTransition({
+      currentStatus: 'open',
+      member: true,
+      captureUpdate,
+    });
+    const r = await app.inject({
+      method: 'POST',
+      url: '/issues/i1/transition',
+      headers: { authorization: `Bearer ${await token('u1')}` },
+      payload: { status: 'in-progress' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(captureUpdate.args?.data.status).toBe('in_progress');
+    await app.close();
+  });
+
+  it('resolved 전이 시 resolved=true 플래그 설정', async () => {
+    const captureUpdate: { args?: AnyArgs } = {};
+    const app = await buildAppForTransition({
+      currentStatus: 'in_progress',
+      member: true,
+      captureUpdate,
+    });
+    const r = await app.inject({
+      method: 'POST',
+      url: '/issues/i1/transition',
+      headers: { authorization: `Bearer ${await token('u1')}` },
+      payload: { status: 'resolved' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(captureUpdate.args?.data.resolved).toBe(true);
+    await app.close();
+  });
+
+  it('resolved → in-progress (재오픈 시 resolved=false)', async () => {
+    const captureUpdate: { args?: AnyArgs } = {};
+    const app = await buildAppForTransition({
+      currentStatus: 'resolved',
+      member: true,
+      captureUpdate,
+    });
+    const r = await app.inject({
+      method: 'POST',
+      url: '/issues/i1/transition',
+      headers: { authorization: `Bearer ${await token('u1')}` },
+      payload: { status: 'in-progress' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(captureUpdate.args?.data.resolved).toBe(false);
+    await app.close();
+  });
+
+  it('잘못된 전이 open → in-review (정의 없음) → 400', async () => {
+    const app = await buildAppForTransition({ currentStatus: 'open', member: true });
+    const r = await app.inject({
+      method: 'POST',
+      url: '/issues/i1/transition',
+      headers: { authorization: `Bearer ${await token('u1')}` },
+      payload: { status: 'in-review' },
+    });
+    expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('동일 상태로의 전이는 멱등 200', async () => {
+    const app = await buildAppForTransition({ currentStatus: 'in_progress', member: true });
+    const r = await app.inject({
+      method: 'POST',
+      url: '/issues/i1/transition',
+      headers: { authorization: `Bearer ${await token('u1')}` },
+      payload: { status: 'in-progress' },
+    });
+    expect(r.statusCode).toBe(200);
+    await app.close();
+  });
+
+  it('comment 제공 시 issue Comment 생성', async () => {
+    const captureComment: { args?: AnyArgs } = {};
+    const app = await buildAppForTransition({
+      currentStatus: 'in_progress',
+      member: true,
+      captureComment,
+    });
+    const r = await app.inject({
+      method: 'POST',
+      url: '/issues/i1/transition',
+      headers: { authorization: `Bearer ${await token('u1')}` },
+      payload: { status: 'in-review', comment: '검수 요청합니다' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(captureComment.args?.data).toMatchObject({
+      body: '검수 요청합니다',
+      targetKind: 'issue',
+      issueId: 'i1',
+      authorId: 'u1',
+    });
+    await app.close();
+  });
+
+  it('멤버 아니면 403', async () => {
+    const app = await buildAppForTransition({ currentStatus: 'open', member: false });
+    const r = await app.inject({
+      method: 'POST',
+      url: '/issues/i1/transition',
+      headers: { authorization: `Bearer ${await token('u-other')}` },
+      payload: { status: 'in-progress' },
+    });
+    expect(r.statusCode).toBe(403);
+    await app.close();
+  });
+
+  it('이슈 없으면 404', async () => {
+    const app = await buildAppForTransition({
+      currentStatus: 'open',
+      member: true,
+      issueExists: false,
+    });
+    const r = await app.inject({
+      method: 'POST',
+      url: '/issues/missing/transition',
+      headers: { authorization: `Bearer ${await token('u1')}` },
+      payload: { status: 'in-progress' },
+    });
+    expect(r.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('알 수 없는 status 값 → 400', async () => {
+    const app = await buildAppForTransition({ currentStatus: 'open', member: true });
+    const r = await app.inject({
+      method: 'POST',
+      url: '/issues/i1/transition',
+      headers: { authorization: `Bearer ${await token('u1')}` },
+      payload: { status: 'bogus' },
     });
     expect(r.statusCode).toBe(400);
     await app.close();
