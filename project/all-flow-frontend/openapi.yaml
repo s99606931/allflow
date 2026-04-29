@@ -350,18 +350,20 @@ paths:
   /notifications/read-all:
     post:
       tags: [notifications]
-      summary: 알림 일괄 읽음 처리
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [ids]
-              properties:
-                ids: { type: array, items: { type: string } }
+      summary: 알림 일괄 읽음 처리 (본인 모든 미읽음을 읽음으로)
+      description: |
+        본인의 모든 미읽음 알림을 일괄 읽음 처리. 멱등(idempotent).
+        요청 본문 없음. 응답에 갱신된 건수를 반환.
       responses:
-        '200': { description: OK }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [updated]
+                properties:
+                  updated: { type: integer, description: 읽음으로 갱신된 알림 수 }
 
   # Note: /tasks/{id} DELETE merged into the existing PATCH path object below.
   # Note: /issues POST merged into the existing GET path object above.
@@ -619,6 +621,87 @@ paths:
         '200': { description: OK }
 
   # /users/me PATCH merged into /users/me path object above (PDCA-01 cleanup).
+
+  /health:
+    get:
+      tags: [ops]
+      summary: 서비스 헬스체크 (Public)
+      description: 인증 불필요. 인프라/모니터링용 liveness 엔드포인트.
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, example: ok }
+                  uptime: { type: number, description: 가동 시간(초) }
+                  version: { type: string }
+
+  /tasks/{id}/comments:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [comments]
+      summary: 태스크 코멘트 목록
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Comment' }
+    post:
+      tags: [comments]
+      summary: 태스크 코멘트 추가
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CommentCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Comment' }
+
+  /issues/{id}/comments:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [comments]
+      summary: 이슈 코멘트 목록
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Comment' }
+    post:
+      tags: [comments]
+      summary: 이슈 코멘트 추가
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CommentCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Comment' }
+
+  # NOTE: /realtime/ws (WebSocket fallback) is intentionally not declared here.
+  # OpenAPI 3.0/3.1 does not standardize WebSocket. Token via query string,
+  # protocol: same Notification/Activity events as /realtime/sse.
 
 components:
   securitySchemes:
@@ -1007,3 +1090,23 @@ components:
         sev: { $ref: '#/components/schemas/IssueSev' }
         prio: { $ref: '#/components/schemas/IssuePrio' }
         tags: { type: array, items: { type: string } }
+
+    Comment:
+      type: object
+      required: [id, body, author, createdAt]
+      properties:
+        id: { type: string }
+        body: { type: string }
+        author:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: string }
+            name: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    CommentCreate:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, minLength: 1, maxLength: 4000 }

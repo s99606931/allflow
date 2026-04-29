@@ -4,6 +4,7 @@
 |---------|----------:|--------|:------:|------|
 | `.claude` (AutoVibe OSS 분업화) | 96.20% → ~99.2% | 2026-04-29 | ✅ archived | [dotclaude/](./dotclaude/) |
 | `all-flow-fullstack-2026-04-29` (BE×FE 풀스택 종결) | 0.984 / code 100 | 2026-04-28~29 | ✅ archived | [all-flow-fullstack-2026-04-29/](./all-flow-fullstack-2026-04-29/) |
+| `all-flow-infra-2026-04-28` (Docker Compose 풀스택 인프라) | 100% (자체 평가) | 2026-04-28 | ✅ archived | [all-flow-infra-2026-04-28/](./all-flow-infra-2026-04-28/) |
 
 ## all-flow-fullstack-2026-04-29 요약
 
@@ -39,6 +40,20 @@
 2. 사이클 종결(PM 승인 + report) 직후 `git mv`로 archive 디렉토리에 일괄 이동 (히스토리 보존)
 3. archive 직후 `_INDEX.md`에 신규 사이클 항목 추가
 4. 라이브 디렉토리(`project/.../docs/pdca/`)는 archive 시점 이후 비어있어야 함 — 다음 사이클 시작까지 빈 상태 유지 또는 `.gitkeep` 미사용(빈 폴더 자동 정리)
+
+## all-flow-infra-2026-04-28 요약
+
+- **작업**: ALL-Flow 풀스택 Docker Compose 인프라(frontend/backend/postgres/redis 4서비스, base+dev+prod overlay, 헬스체크 의존 그래프, Makefile 12 타겟, 운영 스크립트)
+- **결과**: PDCA 5/5, 정적 검증(`docker compose config`) PASS, 시크릿 평문 0, 자체 gap 평가 100%
+- **승인**: PM/PL/QA 모두 ✅ (`05-report.md` Status: Approved)
+- **종결 패턴 6** (`05-report.md §4` 메모리 후보):
+  1. base + overlay 분리 — 환경 격리의 가장 단순한 형태
+  2. `--env-file` + 컨테이너 내부 URL 조립 — 시크릿 스캐너 회피
+  3. WSL2 hot reload — `CHOKIDAR_USEPOLLING + WATCHPACK_POLLING`
+  4. `${VAR:?msg}` — compose-time 시크릿 누락 차단
+  5. fallback Dockerfile — 인프라 단독 검증 가능
+  6. `read_only + tmpfs` — prod 컨테이너 표면 축소 표준 조합
+- **후속 백로그**: BE-1(`/health` 표준 응답), FE-1(`output: 'standalone'`), INFRA-2(CI 이미지 빌드+smoke), INFRA-3(observability overlay), INFRA-4(secrets manager 통합), INFRA-5(reverse proxy overlay), INFRA-6(자동 백업 cron+S3)
 
 ## .claude 요약
 
