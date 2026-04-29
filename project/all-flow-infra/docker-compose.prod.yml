@@ -15,7 +15,7 @@ services:
     build:
       context: ../all-flow-backend
       dockerfile: Dockerfile
-      target: prod
+      target: runtime
     restart: always
     read_only: true
     tmpfs:
@@ -46,6 +46,12 @@ services:
       - /app/.next/cache:size=128m
     environment:
       NODE_ENV: production
+      # Design §4.3 — prod self-contained env (fe-be-wiring 2026-04-30).
+      BACKEND_URL: ${BACKEND_URL:-http://backend:8080/api/v1}
+      NEXTAUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET must be set}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:?NEXTAUTH_URL must be set}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api/v1}
+      NEXT_PUBLIC_USE_MOCK: "false"
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     deploy:
