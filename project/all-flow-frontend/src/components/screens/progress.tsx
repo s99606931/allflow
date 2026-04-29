@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
-import { Card, CardBody, CardHeader, CardTitle, Badge, Progress } from '@/components/ui/primitives';
+import { ProjectCreateDialog } from '@/components/dialogs/project-create-dialog';
+import { Card, CardBody, CardHeader, CardTitle, Badge, Button, Progress } from '@/components/ui/primitives';
 import { useProjects, useProjectMutations } from '@/lib/hooks/use-data';
 import type { StatusKey } from '@/lib/schemas';
-import { LayoutGrid, GanttChart, HeartPulse } from 'lucide-react';
+import { LayoutGrid, GanttChart, HeartPulse, Plus } from 'lucide-react';
 
 const PROJECT_STATUS_OPTIONS: { value: StatusKey; label: string }[] = [
   { value: 'todo', label: '대기' },
@@ -22,6 +23,7 @@ const HEALTH = [
 
 export function ProgressPage() {
   const [tab, setTab] = useState('portfolio');
+  const [createOpen, setCreateOpen] = useState(false);
   const { data: projects = [] } = useProjects();
   const { update: updateProject } = useProjectMutations();
   const PROJECTS = projects;
@@ -29,18 +31,30 @@ export function ProgressPage() {
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <Tabs.Root value={tab} onValueChange={setTab}>
-        <Tabs.List className="flex items-center gap-1 border-b border-border">
-          {[
-            { id: 'portfolio', label: '포트폴리오', icon: LayoutGrid },
-            { id: 'gantt', label: '간트', icon: GanttChart },
-            { id: 'health', label: '헬스체크', icon: HeartPulse },
-          ].map(t => (
-            <Tabs.Trigger key={t.id} value={t.id}
-              className="px-3 h-10 text-[12.5px] font-medium text-fg-2 hover:text-fg-1 inline-flex items-center gap-1.5 border-b-2 border-transparent data-[state=active]:text-fg data-[state=active]:border-accent">
-              <t.icon size={13} /> {t.label}
-            </Tabs.Trigger>
-          ))}
-        </Tabs.List>
+        <div className="flex items-center justify-between border-b border-border">
+          <Tabs.List className="flex items-center gap-1">
+            {[
+              { id: 'portfolio', label: '포트폴리오', icon: LayoutGrid },
+              { id: 'gantt', label: '간트', icon: GanttChart },
+              { id: 'health', label: '헬스체크', icon: HeartPulse },
+            ].map(t => (
+              <Tabs.Trigger key={t.id} value={t.id}
+                className="px-3 h-10 text-[12.5px] font-medium text-fg-2 hover:text-fg-1 inline-flex items-center gap-1.5 border-b-2 border-transparent data-[state=active]:text-fg data-[state=active]:border-accent">
+                <t.icon size={13} /> {t.label}
+              </Tabs.Trigger>
+            ))}
+          </Tabs.List>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={() => setCreateOpen(true)}
+            className="mb-1.5 mr-1"
+          >
+            <Plus size={14} /> 새 프로젝트
+          </Button>
+        </div>
+        <ProjectCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
 
         <Tabs.Content value="portfolio" className="pt-4 outline-none">
           <Card>
@@ -85,6 +99,11 @@ export function ProgressPage() {
                 </div>
               );
             })}
+            {PROJECTS.length === 0 && (
+              <div className="px-4 py-8 text-center text-fg-3 text-[12.5px]">
+                프로젝트가 없습니다. "새 프로젝트" 로 시작하세요.
+              </div>
+            )}
           </Card>
         </Tabs.Content>
 

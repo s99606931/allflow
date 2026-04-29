@@ -136,7 +136,7 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 
 | Task | 작업 | 화면 / 컴포넌트 | 의존 | 추정 |
 |------|------|---------------|-----|----:|
-| FE-W1 | `POST /projects` 와이어링 (1.2.1 New project) | progress.tsx 또는 신규 사이드패널 | — | 0.5d |
+| FE-W1 | `POST /projects` 와이어링 (1.2.1 New project) | progress.tsx 또는 신규 사이드패널 | — | 0.5d | ✓ done |
 | FE-W2 | `GET /projects/:id` 디테일 라우트 + 컴포넌트 | `app/projects/[id]/page.tsx` | — | 1d |
 | FE-W3 | `PATCH /projects/:id` 훅 + 카드 인라인 편집 | progress.tsx | — | 0.5d | ✓ done |
 | FE-W4 | `POST /issues` 와이어링 (1.4.5 New issue) | issues-full.tsx + dialog | — | 0.5d |
@@ -240,13 +240,13 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 |------|---:|-----:|----------:|------------:|-----:|------:|
 | BE-CORE (C1~C5) | 5 | 5 | 0 | 0 | 0 | **100%** ✓ |
 | BE-NEW (N1~N8) | 8 | 1 | 0 | 0 | 7 | 12.5% |
-| FE-WIRING (W1~W9) | 9 | 2 | 0 | 0 | 7 | 22.2% |
+| FE-WIRING (W1~W9) | 9 | 3 | 0 | 0 | 6 | 33.3% |
 | TEST (B1~B4 + F1~F4) | 8 | 0 | 0 | 0 | 8 | 0% |
 | CLEANUP (CL1~CL2) | 2 | 0 | 0 | 0 | 2 | 0% |
-| **합계** | **32** | **8** | **0** | **0** | **24** | **25.0%** |
+| **합계** | **32** | **9** | **0** | **0** | **23** | **28.1%** |
 
-마지막 측정: 2026-04-29 (loop iter 8 — FE-W3 완료, **1/4 마일스톤 도달**)
-다음 측정: loop iter 9 (예상: FE-W1 POST /projects 와이어링 또는 FE-W4 POST /issues)
+마지막 측정: 2026-04-29 (loop iter 9 — FE-W1 완료)
+다음 측정: loop iter 10 (예상: FE-W4 POST /issues 와이어링 또는 FE-W5 reports/monthly)
 
 ### 사이클 진행 로그
 
@@ -260,6 +260,7 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | 6 | 2026-04-29 | BE-N8 (auth/tokens/revoke) | auth 7/7 / 전체 221/221 / typecheck 0 | 새 `auth` 모듈 신설(`modules/auth/auth.routes.ts`), strict zod, audit-log 기반 stub, 멱등 보장. OpenAPI 응답 스키마 정합화. 7 신규 테스트. 영속화 모델(RevokedToken)은 follow-up. BE-NEW 트랙 1/8 진입 |
 | 7 | 2026-04-29 | FE-W7 (avatar dropdown) | FE typecheck 0 / 98/98 vitest | topbar.tsx에 useMe() 통합 (live data + ME fixture fallback). UserMenu 컴포넌트 신설: aria-menu, click-outside, Escape 닫기, 프로필/로그아웃 메뉴. **FE 트랙 1/9 진입** |
 | 8 | 2026-04-29 | FE-W3 (PATCH /projects) | FE typecheck 0 / 98/98 vitest | api.updateProject + useProjectMutations(create+update) 훅 신설, progress portfolio 행에 status select 인라인 편집 와이어링. **진행률 25% 도달 (1/4 마일스톤)** |
+| 9 | 2026-04-29 | FE-W1 (POST /projects) | FE typecheck 0 / 98/98 vitest | 신규 `ProjectCreateDialog` (name/code/color/due 필드, autoFocus, color picker), progress 화면 우상단에 "새 프로젝트" 버튼 추가, 빈 상태 안내. useProjectMutations.create 와이어링 |
 
 ---
 
