@@ -239,14 +239,14 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | 트랙 | 총 | done | in-review | in-progress | todo | 진행률 |
 |------|---:|-----:|----------:|------------:|-----:|------:|
 | BE-CORE (C1~C5) | 5 | 5 | 0 | 0 | 0 | **100%** ✓ |
-| BE-NEW (N1~N8) | 8 | 3 | 0 | 0 | 5 | 37.5% |
+| BE-NEW (N1~N8) | 8 | 4 | 0 | 0 | 4 | 50.0% |
 | FE-WIRING (W1~W9) | 9 | 9 | 0 | 0 | 0 | **100%** ✓ |
 | TEST (B1~B4 + F1~F4) | 8 | 0 | 0 | 0 | 8 | 0% |
 | CLEANUP (CL1~CL2) | 2 | 0 | 0 | 0 | 2 | 0% |
-| **합계** | **32** | **17** | **0** | **0** | **15** | **53.1%** |
+| **합계** | **32** | **18** | **0** | **0** | **14** | **56.3%** |
 
-마지막 측정: 2026-04-29 (loop iter 17 — BE-N2 완료)
-다음 측정: loop iter 18 (예상: BE-N3 events)
+마지막 측정: 2026-04-29 (loop iter 18 — BE-N3 완료)
+다음 측정: loop iter 19 (예상: BE-N4 resources + booking 충돌 검증)
 
 ### 사이클 진행 로그
 
@@ -269,6 +269,7 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | 15 | 2026-04-29 | FE-W2 (project detail route) | FE typecheck 0 / 98/98 vitest | 신규 dynamic route `app/projects/[id]/page.tsx` (Next.js 15 async params), `ProjectDetail` + `ProjectDetailRoute` 컴포넌트. useProject(id) + useTasks({projectId}) 훅 사용. 진행률/태스크/멤버 3-카드 KPI + 태스크 목록 + 새로고침 + not-found 분기. **FE-WIRING 트랙 9/9 종결 ✓** |
 | 16 | 2026-04-29 | BE-N1 (approvals 3 EP) | BE 229/229 vitest (+8 신규) / approvals 8/8 | 신규 `modules/approvals/approvals.routes.ts` (in-memory store + audit log stub 패턴, BE-N8 동일). 3 라우트: GET /approvals (status filter), POST /approvals (201), POST /approvals/:id/decision (RBAC: approver만, 멱등 거절 시 400, 존재없음 404). app.ts 등록. 8 테스트(401/입력검증/생성+조회/필터/RBAC/멱등/404). **반환점 50% 도달 ⭐ — 영속화는 follow-up** |
 | 17 | 2026-04-29 | BE-N2 (clients 2 EP) | BE 235/235 vitest (+6 신규) / clients 6/6 | 신규 `modules/clients/clients.routes.ts` (BE-N1 동일 패턴). 2 라우트: GET /clients (createdAt desc), POST /clients (201, ownerId 자동). audit log `clients.create`. 6 테스트(401×2/생성+ownerId/빈name 400/이메일 검증 400/정렬). 영속화는 follow-up |
+| 18 | 2026-04-29 | BE-N3 (events 2 EP) | BE 240/240 vitest (+5 신규) / events 5/5 | 신규 `modules/events/events.routes.ts`. 2 라우트: GET /events?from&to (start asc + 기간 필터), POST /events (201, end>start 강제, attendees default[]). ISO 8601 검증. audit log `events.create`. 5 테스트(401/생성+조회/end<=start 400/datetime 형식 400/from-to 필터+정렬). RRULE 및 외부 캘린더 연동은 follow-up |
 
 ---
 

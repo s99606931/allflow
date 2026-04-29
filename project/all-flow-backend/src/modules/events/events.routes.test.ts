@@ -1,0 +1,145 @@
+import { SignJWT } from 'jose';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { buildApp } from '../../app.js';
+import { resetEnvForTests } from '../../config/env.js';
+import { authPlugin } from '../../plugins/auth.js';
+import { __resetEventsForTests, eventsRoutes } from './events.routes.js';
+
+const TEST_AUTH = 'a'.repeat(16) + 'b'.repeat(16);
+
+async function buildTestApp() {
+  resetEnvForTests();
+  process.env.AUTH_SECRET = TEST_AUTH;
+  const app = await buildApp({ logger: false });
+  await app.register(authPlugin);
+  await app.register(eventsRoutes);
+  return app;
+}
+
+async function makeJws(sub: string): Promise<string> {
+  return new SignJWT({ sub })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('1h')
+    .sign(new TextEncoder().encode(TEST_AUTH));
+}
+
+describe('modules/events — BE-N3', () => {
+  beforeAll(() => {
+    process.env.AUTH_SECRET = TEST_AUTH;
+  });
+  afterAll(() => {
+    process.env.AUTH_SECRET = undefined;
+    resetEnvForTests();
+  });
+  afterEach(() => {
+    __resetEventsForTests();
+  });
+
+  it('인증 없으면 401 (GET, POST)', async () => {
+    const app = await buildTestApp();
+    expect((await app.inject({ method: 'GET', url: '/events' })).statusCode).toBe(401);
+    expect(
+      (await app.inject({
+        method: 'POST',
+        url: '/events',
+        payload: { title: 'x', start: '2026-05-01T09:00:00Z', end: '2026-05-01T10:00:00Z' },
+      })).statusCode,
+    ).toBe(401);
+    await app.close();
+  });
+
+  it('POST → 201 + Event, 그 다음 GET 에 포함', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/events',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        title: '주간 동기화',
+        start: '2026-05-04T01:00:00Z',
+        end: '2026-05-04T02:00:00Z',
+        location: '본사 5F',
+        attendees: ['u2', 'u3'],
+      },
+    });
+    expect(post.statusCode).toBe(201);
+    const created = post.json();
+    expect(created).toMatchObject({
+      title: '주간 동기화',
+      start: '2026-05-04T01:00:00Z',
+      end: '2026-05-04T02:00:00Z',
+      attendees: ['u2', 'u3'],
+      source: 'internal',
+    });
+    expect(typeof created.id).toBe('string');
+
+    const get = await app.inject({
+      method: 'GET',
+      url: '/events',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(get.statusCode).toBe(200);
+    expect((get.json() as Array<{ id: string }>).length).toBe(1);
+    await app.close();
+  });
+
+  it('POST → end<=start 400', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'POST',
+      url: '/events',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: 'x', start: '2026-05-04T02:00:00Z', end: '2026-05-04T01:00:00Z' },
+    });
+    expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('POST → 잘못된 datetime 형식 400', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'POST',
+      url: '/events',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: 'x', start: 'not-a-date', end: 'not-a-date' },
+    });
+    expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('GET ?from&to 필터 + start asc 정렬', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const mk = (title: string, start: string, end: string) =>
+      app.inject({
+        method: 'POST',
+        url: '/events',
+        headers: { authorization: `Bearer ${token}` },
+        payload: { title, start, end },
+      });
+    await mk('A', '2026-04-30T01:00:00Z', '2026-04-30T02:00:00Z');
+    await mk('B', '2026-05-05T01:00:00Z', '2026-05-05T02:00:00Z');
+    await mk('C', '2026-05-12T01:00:00Z', '2026-05-12T02:00:00Z');
+
+    const all = await app.inject({
+      method: 'GET',
+      url: '/events',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const allList = all.json() as Array<{ title: string }>;
+    expect(allList.map((x) => x.title)).toEqual(['A', 'B', 'C']);
+
+    const filtered = await app.inject({
+      method: 'GET',
+      url: '/events?from=2026-05-01&to=2026-05-10',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect((filtered.json() as Array<{ title: string }>).map((x) => x.title)).toEqual(['B']);
+
+    await app.close();
+  });
+});
