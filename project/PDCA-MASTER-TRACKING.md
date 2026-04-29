@@ -12,7 +12,7 @@
 |--------|------|--------|------|------|
 | **M1** | stack-matrix 작성 | T-101~T-104 | ✅ done | `docs/02-design/stack-matrix-2026-04-29.md` 69행 |
 | **M2** | av-base-stack-approval 훅 | T-201~T-206 | ✅ done | exit 2 차단 검증 완료 (4건 유닛) |
-| **M3** | manifest 채택 적용 (도그푸딩) | T-301~T-304 | 🔄 pending | M2 훅 통해 사용자 승인 필요 |
+| **M3** | manifest 채택 적용 (도그푸딩) | T-301~T-304 | 🔄 pending | 훅 차단 프로덕션 검증 ✅ → 사용자 interactive 승인 필요 |
 | **M4** | 메모리 5파일 Stack Recommendations | T-401~T-405 | ✅ done | skills 2 + agent-memory 3 완료 |
 | **M5** | CLAUDE.md 권장 표현 제거 | T-501~T-505 | ✅ done | 이미 0건 (변경 불필요) |
 | **M6** | 분기별 갱신 cron | T-601~T-602 | ⬜ optional | 다음 iteration |
@@ -27,7 +27,7 @@
 |----|------|------|------|
 | **S1** | stack-matrix ≥ 69행 | ✅ | 86 data rows (121줄) |
 | **S2** | 현재/최신/채택/비고 4컬럼 | ✅ | 모든 행 완비 |
-| **S3** | 훅 작동 (exit 2 차단) | ✅ | unit test 4건 PASS: exit 2 / 0 / 0 / 0 |
+| **S3** | 훅 작동 (exit 2 차단) | ✅ | unit test 4건 PASS + Dockerfile 프로덕션 차단 확인 |
 | **S4** | CLAUDE.md grep 0건 | ✅ | `grep -iE "권장|recommend|prefer|should consider"` → 0건 |
 | **S5** | MEMORY.md 5파일 섹션 확인 | ✅ | `find .claude -name MEMORY.md | xargs grep -l "## Stack Recommendations"` → 5건 |
 | **S6** | gap-detector ≥ 90% | ⏳ | `/pdca analyze` 대기 중 |
