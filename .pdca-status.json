@@ -1,15 +1,28 @@
 {
-  ".claude": {
-    "phase": "archived",
-    "matchRate": 96.20,
-    "matchRateAfterFix": 99.2,
-    "iterationCount": 1,
-    "criticalGaps": 0,
-    "successCriteria": "8/8",
-    "startedAt": "2026-04-29T00:07:00+09:00",
-    "completedAt": "2026-04-29T11:48:00+09:00",
-    "archivedAt": "2026-04-29T11:51:00+09:00",
-    "archivedTo": "docs/archive/2026-04/dotclaude/",
-    "summary": "AutoVibe OSS 6트랙 분업화 (Dev/Test/Docs/Review/Security/Release). 25 신규 산출물 + Minor 6건 개선. 정합성 5계층 일관 달성, 학습 2건 적재."
+  "active_feature": "fe-be-wiring-2026-04-30",
+  "phase": "design-complete-awaiting-approval",
+  "blocked_by": "av-base-stack-approval",
+  "documents": {
+    "prd": "docs/00-pm/fe-be-wiring-2026-04-30.prd.md",
+    "plan": "docs/01-plan/features/fe-be-wiring-2026-04-30.plan.md",
+    "design": "docs/02-design/features/fe-be-wiring-2026-04-30.design.md"
+  },
+  "previous_cycle": {
+    "feature": "tech-stack-modernization-2026-04-29",
+    "match_rate": 0.97,
+    "archived": true
+  },
+  "team": {
+    "lead": "av-do-orchestrator",
+    "members": [
+      "av-base-backend-architect",
+      "av-base-frontend-architect",
+      "av-base-qa-reviewer",
+      "av-base-memory-keeper"
+    ]
+  },
+  "options_decision": {
+    "prefix_strategy": "hybrid (A + C)",
+    "rationale": "BE prefix 일괄 + FE catch-all proxy = stub 충돌 해소 + 외부 직통 호환"
   }
 }
