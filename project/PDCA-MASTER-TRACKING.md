@@ -240,13 +240,13 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 |------|---:|-----:|----------:|------------:|-----:|------:|
 | BE-CORE (C1~C5) | 5 | 5 | 0 | 0 | 0 | **100%** ✓ |
 | BE-NEW (N1~N8) | 8 | 1 | 0 | 0 | 7 | 12.5% |
-| FE-WIRING (W1~W9) | 9 | 7 | 0 | 0 | 2 | 77.8% |
+| FE-WIRING (W1~W9) | 9 | 8 | 0 | 0 | 1 | 88.9% |
 | TEST (B1~B4 + F1~F4) | 8 | 0 | 0 | 0 | 8 | 0% |
 | CLEANUP (CL1~CL2) | 2 | 0 | 0 | 0 | 2 | 0% |
-| **합계** | **32** | **13** | **0** | **0** | **19** | **40.6%** |
+| **합계** | **32** | **14** | **0** | **0** | **18** | **43.8%** |
 
-마지막 측정: 2026-04-29 (loop iter 13 — FE-W6 완료)
-다음 측정: loop iter 14 (예상: FE-W8 comments 훅 + Detail 통합 또는 FE-W2 project detail route)
+마지막 측정: 2026-04-29 (loop iter 14 — FE-W8 완료)
+다음 측정: loop iter 15 (예상: FE-W2 project detail route — FE-WIRING 트랙 종결)
 
 ### 사이클 진행 로그
 
@@ -265,6 +265,7 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | 11 | 2026-04-29 | FE-W5 (POST /reports/monthly) | FE typecheck 0 / 98/98 vitest | api.generateMonthlyReport({year,month}) + useAiMutations.monthlyReport 추가, report-monthly 화면 "AI 다시 생성" 버튼에 onClick 와이어링 (loading 상태 표시, 생성 결과로 화면 swap, periodLabel 동적 계산). USE_MOCK 분기에 임원용 6개 KPI/OKR/리스크 매트릭스 픽스처 |
 | 12 | 2026-04-29 | FE-W9 (reports/send refactor) | FE typecheck 0 / 98/98 vitest | report-recipients-editor의 직접 fetch 호출 제거. extendedApi.sendReport(reportId, {recipients}) + useReportSend() 훅 신설, 중앙 onError/toast 정책 일관화. USE_MOCK 분기 포함, sending 로컬 상태 → mutation.isPending 으로 단순화 |
 | 13 | 2026-04-29 | FE-W6 (POST /ai/complete) | FE typecheck 0 / 98/98 vitest | 신규 `AiChatPanel` 컴포넌트 (`components/ai/ai-chat-panel.tsx`) — 단일 스레드 자유 채팅, useAiMutations.complete 와이어링, user/assistant turns + 로딩 인디케이터 + 초기화 버튼. ai-auto 화면 좌측 컬럼 "최근 자동 등록" 위에 배치 |
+| 14 | 2026-04-29 | FE-W8 (comments 훅 + Detail 통합) | FE typecheck 0 / 98/98 vitest | Comment/CommentCreate Zod 스키마 + extendedApi(listTaskComments/createTaskComment/listIssueComments/createIssueComment) + 4개 hooks(useTaskComments/useTaskCommentCreate/useIssueComments/useIssueCommentCreate). 신규 재사용 컴포넌트 `CommentThread` (kind: 'task'\|'issue', 상대 시간, loading/empty 상태, 인라인 composer). TaskDetailDialog의 unwired footer composer 제거하고 `<CommentThread kind="task" parentId={task.id} />` 통합. IssueDetail 표면은 미존재이므로 hooks + 컴포넌트가 향후 통합 준비 상태 |
 
 ---
 

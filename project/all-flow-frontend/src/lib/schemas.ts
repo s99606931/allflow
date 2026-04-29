@@ -262,6 +262,17 @@ export const ProfilePatchSchema = z.object({
   email: z.string().email().optional(),
 });
 
+/* Comments (tasks · issues) ----------------------------------------------- */
+export const CommentSchema = z.object({
+  id: z.string(),
+  body: z.string(),
+  author: z.object({ id: z.string(), name: z.string() }),
+  createdAt: z.string(),
+});
+export const CommentCreateSchema = z.object({
+  body: z.string().min(1).max(4000),
+});
+
 /* Issue create/transition ------------------------------------------------- */
 export const IssueCreateSchema = z.object({
   title: z.string().min(1),
@@ -346,3 +357,5 @@ export type BulkMarkRead = z.infer<typeof BulkMarkReadSchema>;
 export type ProfilePatch = z.infer<typeof ProfilePatchSchema>;
 export type IssueCreate = z.infer<typeof IssueCreateSchema>;
 export type IssueTransition = z.infer<typeof IssueTransitionSchema>;
+export type Comment = z.infer<typeof CommentSchema>;
+export type CommentCreate = z.infer<typeof CommentCreateSchema>;

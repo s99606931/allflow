@@ -20,6 +20,9 @@ import {
   ClientSchema,
   type Client,
   type ClientCreate,
+  CommentSchema,
+  type Comment,
+  type CommentCreate,
   DocSchema,
   type Doc,
   type DocCreate,
@@ -46,6 +49,28 @@ import {
 
 const nowIso = () => new Date().toISOString();
 const newId = (prefix: string) => `${prefix}-${Date.now().toString(36)}`;
+
+const mockComments = (parentId: string, kind: 't' | 'i'): Comment[] => [
+  {
+    id: `${kind}-${parentId}-c1`,
+    body: kind === 't' ? '진행 상황 공유 부탁드립니다.' : '재현 절차 추가했습니다. 확인 부탁드려요.',
+    author: { id: 'u1', name: '김민수' },
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
+  },
+  {
+    id: `${kind}-${parentId}-c2`,
+    body: kind === 't' ? '오늘 안에 PR 올릴 예정입니다.' : '로그 분석 완료, 백엔드 라우팅 이슈로 보입니다.',
+    author: { id: 'u2', name: '이서연' },
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
+  },
+];
+
+const mockNewComment = (input: CommentCreate): Comment => ({
+  id: newId('cmt'),
+  body: input.body,
+  author: { id: 'me', name: '나' },
+  createdAt: nowIso(),
+});
 
 export const extendedApi = {
   /* Issues mutations ------------------------------------------------------ */
@@ -203,6 +228,27 @@ export const extendedApi = {
     USE_MOCK
       ? (await sleep(), { id: 'me', name: '', role: '', dept: '', initials: '', color: '', ...input } as User)
       : parsed(http.patch('users/me', { json: input }).json(), UserSchema),
+
+  /* Comments (tasks · issues) ------------------------------------------- */
+  listTaskComments: async (taskId: string): Promise<Comment[]> =>
+    USE_MOCK
+      ? (await sleep(), mockComments(taskId, 't'))
+      : parsed(http.get(`tasks/${taskId}/comments`).json(), z.array(CommentSchema)),
+
+  createTaskComment: async (taskId: string, input: CommentCreate): Promise<Comment> =>
+    USE_MOCK
+      ? (await sleep(), mockNewComment(input))
+      : parsed(http.post(`tasks/${taskId}/comments`, { json: input }).json(), CommentSchema),
+
+  listIssueComments: async (issueId: string): Promise<Comment[]> =>
+    USE_MOCK
+      ? (await sleep(), mockComments(issueId, 'i'))
+      : parsed(http.get(`issues/${issueId}/comments`).json(), z.array(CommentSchema)),
+
+  createIssueComment: async (issueId: string, input: CommentCreate): Promise<Comment> =>
+    USE_MOCK
+      ? (await sleep(), mockNewComment(input))
+      : parsed(http.post(`issues/${issueId}/comments`, { json: input }).json(), CommentSchema),
 
   /* Reports send --------------------------------------------------------- */
   sendReport: async (

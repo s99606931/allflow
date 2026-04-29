@@ -2,7 +2,8 @@
 
 import * as Dialog from '@radix-ui/react-dialog';
 import { Avatar, Badge, Button, IconButton, StatusDot } from '@/components/ui/primitives';
-import { PROJECTS, TASKS, userById, ME } from '@/lib/fixtures';
+import { CommentThread } from '@/components/comments/comment-thread';
+import { PROJECTS, TASKS, userById } from '@/lib/fixtures';
 import {
   ArrowUpRight,
   Calendar,
@@ -10,13 +11,10 @@ import {
   Circle,
   Flag,
   Link2,
-  MessageSquare,
-  Paperclip,
   Sparkles,
   Tag,
   X,
 } from 'lucide-react';
-import { useState } from 'react';
 
 interface TaskDetailProps {
   taskId: string | null;
@@ -40,7 +38,6 @@ const ACTIVITY_FEED = [
 
 export function TaskDetailDialog({ taskId, onClose }: TaskDetailProps) {
   const task = TASKS.find(t => t.id === taskId);
-  const [comment, setComment] = useState('');
 
   if (!task) return null;
   const proj = PROJECTS.find(p => p.id === task.proj);
@@ -164,29 +161,10 @@ export function TaskDetailDialog({ taskId, onClose }: TaskDetailProps) {
                 })}
               </div>
             </Section>
-          </div>
 
-          {/* Footer composer */}
-          <div className="border-t border-border p-3 shrink-0">
-            <div className="flex items-start gap-2.5">
-              <Avatar user={ME} size={26} />
-              <div className="flex-1 relative">
-                <textarea
-                  value={comment}
-                  onChange={e => setComment(e.target.value)}
-                  placeholder="댓글 작성... (@ 멘션, / 명령)"
-                  rows={2}
-                  className="w-full resize-none rounded-md border border-border bg-bg-1 px-3 py-2 text-[12.5px] focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
-                />
-                <div className="flex items-center justify-between mt-1.5">
-                  <div className="flex gap-1 text-fg-3">
-                    <IconButton size="sm" aria-label="첨부"><Paperclip size={13} /></IconButton>
-                    <IconButton size="sm" aria-label="멘션"><MessageSquare size={13} /></IconButton>
-                  </div>
-                  <Button variant="primary" size="sm" disabled={!comment.trim()}>댓글 등록</Button>
-                </div>
-              </div>
-            </div>
+            <Section title="댓글">
+              <CommentThread kind="task" parentId={task.id} />
+            </Section>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

@@ -17,7 +17,7 @@ import { api } from '@/lib/api';
 import { keys } from '@/lib/query-keys';
 import { toastMessage } from '@/lib/api-error';
 import type {
-  ApprovalCreate, ApprovalDecision, ClientCreate, EventCreate, IssueCreate,
+  ApprovalCreate, ApprovalDecision, ClientCreate, CommentCreate, EventCreate, IssueCreate,
   IssueTransition, ProfilePatch, ProjectCreate, ProjectPatch, TaskCreate, TaskPatch, BulkMarkRead,
   InviteUser, RevokeToken, MessageSend, DocCreate, ResourceBooking,
 } from '@/lib/schemas';
@@ -279,6 +279,48 @@ export function useProfileMutations() {
     onError,
   });
   return { update };
+}
+
+export function useTaskComments(taskId: string | undefined) {
+  return useQuery({
+    queryKey: keys.tasks.comments(taskId ?? ''),
+    queryFn: () => api.listTaskComments(taskId as string),
+    enabled: Boolean(taskId),
+  });
+}
+
+export function useTaskCommentCreate(taskId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CommentCreate) => api.createTaskComment(taskId, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.tasks.comments(taskId) });
+      qc.invalidateQueries({ queryKey: keys.tasks.detail(taskId) });
+      toast.success('댓글이 등록되었습니다');
+    },
+    onError,
+  });
+}
+
+export function useIssueComments(issueId: string | undefined) {
+  return useQuery({
+    queryKey: keys.issues.comments(issueId ?? ''),
+    queryFn: () => api.listIssueComments(issueId as string),
+    enabled: Boolean(issueId),
+  });
+}
+
+export function useIssueCommentCreate(issueId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CommentCreate) => api.createIssueComment(issueId, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.issues.comments(issueId) });
+      qc.invalidateQueries({ queryKey: keys.issues.detail(issueId) });
+      toast.success('댓글이 등록되었습니다');
+    },
+    onError,
+  });
 }
 
 export function useReportSend() {
