@@ -44,6 +44,8 @@
   "exclude": [
     "node_modules",
     "playwright-report",
-    "test-results"
+    "test-results",
+    "tests/_archived_mock_2026_04_30",
+    "src/app/api/v1/_archived_mock_2026_04_30"
   ]
 }

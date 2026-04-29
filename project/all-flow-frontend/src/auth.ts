@@ -40,31 +40,53 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email) return null;
-        // DEMO ONLY — replace with real backend verification.
-        return {
-          id: 'me',
-          name: '김지우',
+        const backend = process.env.BACKEND_URL ?? 'http://backend:8080/api/v1';
+        const body: { email: string; password?: string } = {
           email: String(credentials.email),
-          image: null,
         };
+        if (credentials.password) body.password = String(credentials.password);
+        const res = await fetch(`${backend}/auth/login`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) return null;
+        const data = (await res.json()) as {
+          user: { id: string; email: string; name?: string };
+          accessToken: string;
+        };
+        return {
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.name ?? data.user.email,
+          accessToken: data.accessToken,
+        } as never;
       },
     }),
   ],
   callbacks: {
     authorized({ auth, request }) {
-      // Bypass auth gate when running E2E tests so route smoke tests can render
-      // without provisioning a real session.
+      // E2E 모드에서만 라우트 게이트 우회.
       if (process.env.NEXT_PUBLIC_E2E === 'true') return true;
       const { pathname } = request.nextUrl;
-      // Public paths: login UI, next-auth handler, demo stub API.
-      // The /api/v1/* surface is mock-only fixture data — replace this gate
-      // with real authorization once a backend is wired up.
+      // 미인증 허용: 로그인 UI, next-auth handler, BE 로그인 엔드포인트만.
+      // /api/v1/* 의 나머지는 catch-all proxy → BE 401로 자연 차단.
       if (
         pathname.startsWith('/login') ||
         pathname.startsWith('/api/auth') ||
-        pathname.startsWith('/api/v1')
+        pathname === '/api/v1/auth/login'
       ) return true;
       return !!auth?.user;
+    },
+    async jwt({ token, user }) {
+      if (user && (user as { accessToken?: string }).accessToken) {
+        token.accessToken = (user as { accessToken: string }).accessToken;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      (session as { accessToken?: string }).accessToken = token.accessToken as string;
+      return session;
     },
   },
   session: { strategy: 'jwt' },

@@ -7,7 +7,7 @@
 import ky from 'ky';
 import type { z } from 'zod';
 
-export const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== 'false';
+export const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api/v1';
 
 export const http = ky.create({
