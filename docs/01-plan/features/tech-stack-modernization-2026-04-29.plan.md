@@ -96,8 +96,8 @@ CLAUDE.md                                 ← 권장 표현 제거 (R-4)
 
 | ID | 기준 | 측정 |
 |----|------|------|
-| **S1** | 스택 인벤토리 100% 작성 | `docs/02-design/stack-matrix-2026-04-29.md` 행 수 ≥ 인벤토리 항목 수 (BE 22 + FE 38 + Infra 4 + Tooling 5 = ~69행) |
-| **S2** | 최신 버전 매핑 + 채택 결정 기록 | 매트릭스 모든 행 `현재 / 최신 / 채택 / 비고` 4컬럼 |
+| **S1** | 스택 인벤토리 100% 작성 | `docs/02-design/stack-matrix-2026-04-29.md` 행 수 ≥ 인벤토리 항목 수 (BE 22 + FE 38 + Infra 4 + Tooling 5 = ~69행) ✅ |
+| **S2** | 최신 버전 매핑 + 채택 결정 기록 | 매트릭스 모든 행 `현재 / 최신 / 채택 / 비고` 4컬럼 ✅ (v2 실사 8건 수정 포함) |
 | **S3** | PreToolUse 훅 작동 | `.claude/hooks/av-base-stack-approval.sh` 실행권한 + `settings.json` 등록 + manifest Edit 시 차단/승인 분기 검증 (수동 + 자동 테스트) |
 | **S4** | CLAUDE.md grep 결과 0건 | `grep -iE "권장|recommend|prefer|should consider" /data/allflow/CLAUDE.md` exit 1 |
 | **S5** | 메모리 5파일에 `## Stack Recommendations` 섹션 + 항목 ≥1 | `grep -l "## Stack Recommendations"` 결과 5개 |
@@ -108,11 +108,22 @@ CLAUDE.md                                 ← 권장 표현 제거 (R-4)
 
 > Design 단계에서 모듈 매핑 후 `/pdca do --scope module-N` 으로 분할 가능.
 
-### Module 1 — stack-matrix 작성
-- T-101: BE/FE/Infra/Tooling 인벤토리 행 수집 (PRD Appendix A 기반)
-- T-102: WebSearch로 각 항목 2026-04-29 기준 최신 stable 버전 조사
-- T-103: LTS 여부 표기 + 채택 결정 컬럼 채움 (사용자 검토)
-- T-104: `docs/02-design/stack-matrix-2026-04-29.md` 작성
+### Module 1 — stack-matrix 작성 ✅ (v2 수정 완료)
+
+> **v2 갱신 (2026-04-29)**: CTO 팀 실사로 8건 오류 수정. 주요 발견:
+> - Biome: "2.0.x RC"(오류) → 실제 **2.4.13 stable**
+> - ESLint: "9.x latest"(오류) → 실제 **10.2.1 GA**
+> - Redis: "7.x Early Access"(오류) → **8.6.2 GA**
+> - Node.js: 22.x Active LTS(오류) → **24.x Active LTS** (22.x는 Maintenance)
+> - PostgreSQL: "16.x latest"(오류) → **17.9 latest stable**
+> - @fastify/jwt: "9.x latest"(오류) → **10.0.0 GA**
+> - jose: "5.x latest"(오류) → **6.2.3 GA**
+> - @auth/core: "0.40.x"(오류 가능) → npm latest **0.34.x** (검증 필요)
+
+- ~~T-101: BE/FE/Infra/Tooling 인벤토리 행 수집~~ **완료**
+- ~~T-102: WebSearch로 각 항목 2026-04-29 기준 최신 stable 버전 조사~~ **완료 (v2 실사 포함)**
+- ~~T-103: LTS 여부 표기 + 채택 결정 컬럼 채움~~ **완료**
+- ~~T-104: `docs/02-design/stack-matrix-2026-04-29.md` 작성~~ **완료 + v2 수정**
 
 ### Module 2 — `av-base-stack-approval.sh` 훅
 - T-201: `.claude/hooks/av-base-stack-approval.sh` 작성 (PreToolUse 입력 JSON 파싱 → file_path 매처 → diff 추출 → AskUserQuestion 트리거)
