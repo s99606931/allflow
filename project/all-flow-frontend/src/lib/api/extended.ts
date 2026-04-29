@@ -203,4 +203,15 @@ export const extendedApi = {
     USE_MOCK
       ? (await sleep(), { id: 'me', name: '', role: '', dept: '', initials: '', color: '', ...input } as User)
       : parsed(http.patch('users/me', { json: input }).json(), UserSchema),
+
+  /* Reports send --------------------------------------------------------- */
+  sendReport: async (
+    reportId: string,
+    input: { recipients: string[] },
+  ): Promise<{ queued: number; recipients: string[] }> =>
+    USE_MOCK
+      ? (await sleep(600), { queued: input.recipients.length, recipients: input.recipients })
+      : http
+          .post(`reports/${reportId}/send`, { json: input })
+          .json<{ queued: number; recipients: string[] }>(),
 };

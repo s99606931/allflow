@@ -1,18 +1,17 @@
 /**
  * ReportRecipientsEditor — pick the email list before firing a send.
  *
- * Calls the new `/api/v1/reports/{id}/send` endpoint via fetch (kept off
- * `extendedApi` to avoid touching the contract surface for this small action).
+ * Goes through `useReportSend()` → `api.sendReport()` so cache + toast policy
+ * stays on the central data layer (FE-W9).
  */
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { toast } from 'sonner';
 import { Plus, X } from 'lucide-react';
 import { Button, IconButton } from '@/components/ui/primitives';
 import { Dialog, DialogField, DialogFooter, TextInput } from '@/components/ui/dialog';
 import { useTranslation } from '@/lib/i18n';
-import { USE_MOCK } from '@/lib/api/http';
+import { useReportSend } from '@/lib/hooks/use-data';
 
 interface Props {
   open: boolean;
@@ -25,9 +24,9 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function ReportRecipientsEditor({ open, onOpenChange, reportId, defaultRecipients = [] }: Props) {
   const { t } = useTranslation();
+  const send = useReportSend();
   const [recipients, setRecipients] = useState<string[]>(defaultRecipients);
   const [draft, setDraft] = useState('');
-  const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
   const add = () => {
@@ -54,24 +53,11 @@ export function ReportRecipientsEditor({ open, onOpenChange, reportId, defaultRe
       setError('수신자를 한 명 이상 추가하세요');
       return;
     }
-    setSending(true);
     try {
-      if (USE_MOCK) {
-        await new Promise(resolve => setTimeout(resolve, 600));
-      } else {
-        const res = await fetch(`/api/v1/reports/${reportId}/send`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ recipients }),
-        });
-        if (!res.ok) throw new Error(await res.text());
-      }
-      toast.success(`${recipients.length}명에게 발송 큐에 적재되었습니다`);
+      await send.mutateAsync({ id: reportId, recipients });
       onOpenChange(false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : '발송 실패');
-    } finally {
-      setSending(false);
+    } catch {
+      // central onError already toasts via useReportSend
     }
   };
 
@@ -115,8 +101,8 @@ export function ReportRecipientsEditor({ open, onOpenChange, reportId, defaultRe
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             {t('common.cancel')}
           </Button>
-          <Button type="submit" variant="primary" disabled={sending}>
-            {sending ? t('common.loading') : t('reports.send.confirm')}
+          <Button type="submit" variant="primary" disabled={send.isPending}>
+            {send.isPending ? t('common.loading') : t('reports.send.confirm')}
           </Button>
         </DialogFooter>
       </form>

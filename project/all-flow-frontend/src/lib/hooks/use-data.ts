@@ -281,6 +281,16 @@ export function useProfileMutations() {
   return { update };
 }
 
+export function useReportSend() {
+  return useMutation({
+    mutationFn: (vars: { id: string; recipients: string[] }) =>
+      api.sendReport(vars.id, { recipients: vars.recipients }),
+    onSuccess: (data) =>
+      toast.success(`${data.queued}명에게 발송 큐에 적재되었습니다`),
+    onError,
+  });
+}
+
 export function useAiMutations() {
   const complete = useMutation({
     mutationFn: (prompt: string) => api.aiComplete(prompt),
