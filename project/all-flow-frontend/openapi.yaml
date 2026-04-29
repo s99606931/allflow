@@ -253,6 +253,40 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Report' }
 
+  /reports/{id}/send:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [reports]
+      summary: 리포트 이메일 발송 큐 적재
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [recipients]
+              properties:
+                recipients:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  items: { type: string, format: email }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [queued, recipients]
+                properties:
+                  queued: { type: integer }
+                  recipients:
+                    type: array
+                    items: { type: string, format: email }
+
   /ai/complete:
     post:
       tags: [ai]

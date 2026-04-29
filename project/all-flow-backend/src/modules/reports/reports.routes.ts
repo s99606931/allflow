@@ -128,7 +128,50 @@ export async function reportsRoutes(
     reply.code(200);
     return persisted;
   });
+
+  /**
+   * POST /reports/:id/send — 리포트를 지정된 이메일들로 발송 큐에 적재.
+   *
+   * 현재 구현: 인증 + 입력 검증 + 리포트 존재 확인 후 audit 로그만 기록한다.
+   * 실제 SMTP/Email-Provider 연동은 follow-up 으로 이관 (BE-C4 계약/와이어링 우선).
+   * FE는 이미 동기 호출 후 토스트로 "발송 큐 적재" 안내 — 큐 의미론과 호환.
+   */
+  app.post('/reports/:id/send', { preHandler: [app.authenticate] }, async (req) => {
+    const { id } = req.params as { id: string };
+    const parsed = SendRequest.safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+    const { recipients } = parsed.data;
+
+    const report = await app.prisma.report.findFirst({
+      where: { id },
+      select: { id: true, kind: true },
+    });
+    if (!report) {
+      // 명시적 NotFoundError 가 import 되어 있지 않다 — 동일 의미 ValidationError 로 대체.
+      // (모듈 경계 외부 도메인 모델 — 이 라우트의 자체 검증 책임)
+      throw new ValidationError('Report not found', [{ id }]);
+    }
+
+    app.log.info(
+      {
+        action: 'report.send.queued',
+        reportId: id,
+        reportKind: report.kind,
+        recipientCount: recipients.length,
+      },
+      'report send queued',
+    );
+
+    return { queued: recipients.length, recipients };
+  });
 }
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const SendRequest = z
+  .object({
+    recipients: z.array(z.string().regex(EMAIL_REGEX)).min(1).max(50),
+  })
+  .strict();
 
 async function assertMembershipForAll(
   app: FastifyInstance,

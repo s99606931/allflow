@@ -18,7 +18,10 @@ interface PrismaMock {
   };
   task: { findMany(args: unknown): Promise<unknown[]> };
   issue: { findMany(args: unknown): Promise<unknown[]> };
-  report: { create(args: unknown): Promise<ReportRow> };
+  report: {
+    create(args: unknown): Promise<ReportRow>;
+    findFirst?(args: unknown): Promise<unknown>;
+  };
 }
 
 interface ReportRow {
@@ -36,6 +39,7 @@ function makePrisma(opts: {
   members?: string[];
   tasks?: ReportTaskFixture[];
   issues?: ReportIssueFixture[];
+  reportFindFirst?: (args: unknown) => Promise<unknown>;
 }): PrismaMock {
   const reports: ReportRow[] = [];
   return {
@@ -70,6 +74,7 @@ function makePrisma(opts: {
         reports.push(row);
         return row;
       },
+      findFirst: opts.reportFindFirst,
     },
   };
 }
@@ -120,6 +125,7 @@ async function buildTestApp(opts: {
   tasks?: ReportTaskFixture[];
   issues?: ReportIssueFixture[];
   cannedAI?: Record<string, string>;
+  reportFindFirst?: (args: unknown) => Promise<unknown>;
 }) {
   resetEnvForTests();
   process.env.AUTH_SECRET = TEST_AUTH;
@@ -322,5 +328,89 @@ describe('modules/reports/reports.routes', () => {
     });
     expect(r.statusCode).toBe(401);
     await app.close();
+  });
+
+  describe('POST /reports/:id/send', () => {
+    function buildSendApp(opts: { reportExists: boolean }) {
+      return buildTestApp({
+        members: ['p1'],
+        reportFindFirst: async () =>
+          opts.reportExists ? { id: 'r1', kind: 'weekly' } : null,
+      });
+    }
+
+    it('인증 없으면 401', async () => {
+      const app = await buildSendApp({ reportExists: true });
+      const r = await app.inject({
+        method: 'POST',
+        url: '/reports/r1/send',
+        payload: { recipients: ['a@b.co'] },
+      });
+      expect(r.statusCode).toBe(401);
+      await app.close();
+    });
+
+    it('정상: queued + recipients 응답', async () => {
+      const app = await buildSendApp({ reportExists: true });
+      const r = await app.inject({
+        method: 'POST',
+        url: '/reports/r1/send',
+        headers: { authorization: `Bearer ${await token()}` },
+        payload: { recipients: ['a@b.co', 'c@d.co'] },
+      });
+      expect(r.statusCode).toBe(200);
+      const body = r.json() as { queued: number; recipients: string[] };
+      expect(body.queued).toBe(2);
+      expect(body.recipients).toEqual(['a@b.co', 'c@d.co']);
+      await app.close();
+    });
+
+    it('빈 recipients → 400', async () => {
+      const app = await buildSendApp({ reportExists: true });
+      const r = await app.inject({
+        method: 'POST',
+        url: '/reports/r1/send',
+        headers: { authorization: `Bearer ${await token()}` },
+        payload: { recipients: [] },
+      });
+      expect(r.statusCode).toBe(400);
+      await app.close();
+    });
+
+    it('잘못된 이메일 형식 → 400', async () => {
+      const app = await buildSendApp({ reportExists: true });
+      const r = await app.inject({
+        method: 'POST',
+        url: '/reports/r1/send',
+        headers: { authorization: `Bearer ${await token()}` },
+        payload: { recipients: ['not-an-email'] },
+      });
+      expect(r.statusCode).toBe(400);
+      await app.close();
+    });
+
+    it('알 수 없는 필드 (strict) → 400', async () => {
+      const app = await buildSendApp({ reportExists: true });
+      const r = await app.inject({
+        method: 'POST',
+        url: '/reports/r1/send',
+        headers: { authorization: `Bearer ${await token()}` },
+        payload: { recipients: ['a@b.co'], extra: 'nope' },
+      });
+      expect(r.statusCode).toBe(400);
+      await app.close();
+    });
+
+    it('리포트 없으면 400 (Report not found)', async () => {
+      const app = await buildSendApp({ reportExists: false });
+      const r = await app.inject({
+        method: 'POST',
+        url: '/reports/missing/send',
+        headers: { authorization: `Bearer ${await token()}` },
+        payload: { recipients: ['a@b.co'] },
+      });
+      expect(r.statusCode).toBe(400);
+      await app.close();
+    });
   });
 });
