@@ -43,6 +43,9 @@ ENV NODE_ENV=production
 ENV PORT=8080
 WORKDIR /app
 
+# wget — healthcheck 견고성 (alpine 기본 미포함 가능).
+RUN apk add --no-cache wget
+
 # 비루트 유저로 실행 (보안 게이트).
 RUN addgroup -S app && adduser -S -G app app
 
@@ -59,3 +62,23 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget -qO- http://127.0.0.1:8080/health >/dev/null || exit 1
 
 CMD ["node", "dist/server.js"]
+
+# ---------- 4) dev (hot-reload) ----------
+FROM node:${NODE_VERSION}-alpine AS dev
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+ENV NODE_ENV=development
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+RUN apk add --no-cache wget tini
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma
+RUN pnpm prisma:generate
+EXPOSE 8080
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=6 \
+  CMD wget -qO- http://127.0.0.1:8080/health >/dev/null || exit 1
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["pnpm", "dev"]

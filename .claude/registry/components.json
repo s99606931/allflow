@@ -5,7 +5,7 @@
     "updated": "2026-04-29",
     "description": "AutoVibe ecosystem registry",
     "total": {
-      "agents": 19,
+      "agents": 20,
       "skills": 22,
       "hooks": 13,
       "rules": 7
@@ -211,6 +211,21 @@
       "domain": "base",
       "portable": true,
       "description": "QA 검수 — gstack E2E + bkit:qa-monitor"
+    },
+    "av-base-browser-tester": {
+      "group": "base",
+      "version": "1.0",
+      "file": ".claude/agents/av-base-browser-tester.md",
+      "model": "sonnet",
+      "memory": "project",
+      "maxTurns": 40,
+      "permissionMode": "default",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "base",
+      "portable": true,
+      "description": "브라우저 테스트 전담 — gstack + Playwright (FE 전 화면 회귀)"
     },
     "av-base-sync-auditor": {
       "group": "base",

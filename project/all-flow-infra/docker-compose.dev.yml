@@ -23,6 +23,10 @@ services:
       LOG_LEVEL: debug
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
+      # next-auth v5 호환 (JWT_SECRET을 AUTH_SECRET으로 매핑, 32+ chars).
+      AUTH_SECRET: ${AUTH_SECRET:-${JWT_SECRET:-dev-auth-secret-32chars-minimum-padding-xx}}
+      # Prisma DATABASE_URL (compose-internal).
+      DATABASE_URL: postgresql://${POSTGRES_USER:-allflow}:${POSTGRES_PASSWORD:-allflow_dev_pw}@postgres:5432/${POSTGRES_DB:-allflow}?schema=public
     volumes:
       - ../all-flow-backend:/app
       - backend-node-modules:/app/node_modules
@@ -40,6 +44,12 @@ services:
       NODE_ENV: development
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
+      # Design §4 명시 4 env — self-contained dev 보강 (gap-detector Act 권장 1번).
+      NEXTAUTH_SECRET: ${AUTH_SECRET:-${JWT_SECRET:-dev-auth-secret-32chars-minimum-padding-xx}}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      BACKEND_URL: ${BACKEND_URL:-http://backend:8080/api/v1}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080/api/v1}
+      NEXT_PUBLIC_USE_MOCK: ${NEXT_PUBLIC_USE_MOCK:-false}
     volumes:
       - ../all-flow-frontend:/app
       - frontend-node-modules:/app/node_modules
