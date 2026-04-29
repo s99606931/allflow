@@ -4,6 +4,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { type Env, getEnv } from './config/env.js';
 import { buildDefaultAIRegistry } from './modules/ai/ai-adapter.js';
 import { aiRoutes } from './modules/ai/ai.routes.js';
+import { approvalsRoutes } from './modules/approvals/approvals.routes.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { commentsRoutes } from './modules/comments/comments.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
@@ -82,6 +83,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     await app.register(aiRoutes, { registry: aiRegistry });
     await app.register(reportsRoutes, { registry: aiRegistry });
     await app.register(authRoutes);
+    await app.register(approvalsRoutes);
 
     if (env.REDIS_URL) {
       const handle: RedisFanoutHandle = await attachRedisFanout(realtimeBus, env.REDIS_URL);
