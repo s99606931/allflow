@@ -8,6 +8,7 @@ import { approvalsRoutes } from './modules/approvals/approvals.routes.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { clientsRoutes } from './modules/clients/clients.routes.js';
 import { commentsRoutes } from './modules/comments/comments.routes.js';
+import { docsRoutes } from './modules/docs/docs.routes.js';
 import { eventsRoutes } from './modules/events/events.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { identityRoutes } from './modules/identity/identity.routes.js';
@@ -90,6 +91,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     await app.register(clientsRoutes);
     await app.register(eventsRoutes);
     await app.register(resourcesRoutes);
+    await app.register(docsRoutes);
 
     if (env.REDIS_URL) {
       const handle: RedisFanoutHandle = await attachRedisFanout(realtimeBus, env.REDIS_URL);
