@@ -2,9 +2,20 @@
 
 | Feature | Match Rate | Period | Status | Path |
 |---------|----------:|--------|:------:|------|
+| `be-fe-mapping-fix-2026-04-29` (FE↔BE 미연결 44 EP 수렴) | BE 0.98 / FE 0.98 | 2026-04-29 | ✅ archived | [be-fe-mapping-fix-2026-04-29/](./be-fe-mapping-fix-2026-04-29/) |
 | `.claude` (AutoVibe OSS 분업화) | 96.20% → ~99.2% | 2026-04-29 | ✅ archived | [dotclaude/](./dotclaude/) |
 | `all-flow-fullstack-2026-04-29` (BE×FE 풀스택 종결) | 0.984 / code 100 | 2026-04-28~29 | ✅ archived | [all-flow-fullstack-2026-04-29/](./all-flow-fullstack-2026-04-29/) |
 | `all-flow-infra-2026-04-28` (Docker Compose 풀스택 인프라) | 100% (자체 평가) | 2026-04-28 | ✅ archived | [all-flow-infra-2026-04-28/](./all-flow-infra-2026-04-28/) |
+
+## be-fe-mapping-fix-2026-04-29 요약
+
+- **작업**: 직전 사이클 FE↔BE 미연결 감사(P0 15건)에서 발견된 44 EP × 5축 매트릭스 수렴
+- **트랙**: BE-CORE(5) + BE-NEW(8 도메인, 18 EP) + FE-WIRING(9) + TEST(8) + CLEANUP(2) = 32 Task
+- **결과**: 32/32 (100%), gap BE 0.98 / FE 0.98, 5축 매트릭스 43/44 (97.7%), BE vitest 294/294 + FE playwright 29/29 PASS
+- **단일 날짜**: 2026-04-29, AI 병렬 에이전트 25 iter
+- **종결 패턴**: Prisma seed 필드 정합 / 병렬 에이전트 분할(BE/FE) / gap-detector 병렬 실행 / /loop 자율 진행
+- **후속 백로그**: in-memory→Prisma 영속화(7 도메인), USE_MOCK=false real-BE E2E, SMTP 실연동
+- **학습 적재**: `learning_be_fe_mapping_fix_test_complete.md`
 
 ## all-flow-fullstack-2026-04-29 요약
 
