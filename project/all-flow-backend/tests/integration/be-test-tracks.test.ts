@@ -147,7 +147,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
       const t = await issueToken(userId);
       const r = await app.inject({
         method: 'PATCH',
-        url: '/users/me',
+        url: '/api/v1/users/me',
         headers: { authorization: `Bearer ${t}` },
         payload: { name: '바뀐이름', initials: 'BB' },
       });
@@ -164,7 +164,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
 
       const created = await app.inject({
         method: 'POST',
-        url: '/tasks',
+        url: '/api/v1/tasks',
         headers: { authorization: `Bearer ${t}` },
         payload: { title: '삭제 대상', projectId },
       });
@@ -173,7 +173,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
 
       const cmt = await app.inject({
         method: 'POST',
-        url: `/tasks/${taskId}/comments`,
+        url: `/api/v1/tasks/${taskId}/comments`,
         headers: { authorization: `Bearer ${t}` },
         payload: { body: 'cascade target' },
       });
@@ -181,14 +181,14 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
 
       const del = await app.inject({
         method: 'DELETE',
-        url: `/tasks/${taskId}`,
+        url: `/api/v1/tasks/${taskId}`,
         headers: { authorization: `Bearer ${t}` },
       });
       expect(del.statusCode).toBe(204);
 
       const after = await app.inject({
         method: 'GET',
-        url: `/tasks/${taskId}/comments`,
+        url: `/api/v1/tasks/${taskId}/comments`,
         headers: { authorization: `Bearer ${t}` },
       });
       // task 가 soft-delete 된 후에도 GET 은 404 또는 빈 목록.
@@ -201,7 +201,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
 
       const ok = await app.inject({
         method: 'POST',
-        url: `/issues/${issueId}/transition`,
+        url: `/api/v1/issues/${issueId}/transition`,
         headers: { authorization: `Bearer ${t}` },
         payload: { status: 'in-progress' },
       });
@@ -212,7 +212,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
 
       const bad = await app.inject({
         method: 'POST',
-        url: `/issues/${issueId}/transition`,
+        url: `/api/v1/issues/${issueId}/transition`,
         headers: { authorization: `Bearer ${t}` },
         // in-progress 에서 in-review/resolved/in-progress 만 허용 — open 으로의
         // 회귀 전이는 차단 대상.
@@ -232,14 +232,14 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
 
       const list0 = await app.inject({
         method: 'GET',
-        url: '/approvals',
+        url: '/api/v1/approvals',
         headers: { authorization: `Bearer ${t}` },
       });
       expect(list0.statusCode).toBe(200);
 
       const create = await app.inject({
         method: 'POST',
-        url: '/approvals',
+        url: '/api/v1/approvals',
         headers: { authorization: `Bearer ${t}` },
         payload: { title: '구매 승인', approver: approverId },
       });
@@ -248,7 +248,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
 
       const decide = await app.inject({
         method: 'POST',
-        url: `/approvals/${id}/decision`,
+        url: `/api/v1/approvals/${id}/decision`,
         headers: { authorization: `Bearer ${tApp}` },
         payload: { decision: 'approved' },
       });
@@ -262,14 +262,14 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
       const t = await issueToken(userId);
       const post = await app.inject({
         method: 'POST',
-        url: '/clients',
+        url: '/api/v1/clients',
         headers: { authorization: `Bearer ${t}` },
         payload: { name: '신규 클라이언트', email: 'new@cl.example' },
       });
       expect(post.statusCode).toBe(201);
       const list = await app.inject({
         method: 'GET',
-        url: '/clients',
+        url: '/api/v1/clients',
         headers: { authorization: `Bearer ${t}` },
       });
       expect(list.statusCode).toBe(200);
@@ -281,7 +281,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
       const t = await issueToken(userId);
       const post = await app.inject({
         method: 'POST',
-        url: '/events',
+        url: '/api/v1/events',
         headers: { authorization: `Bearer ${t}` },
         payload: {
           title: '주간 회의',
@@ -292,7 +292,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
       expect(post.statusCode).toBe(201);
       const list = await app.inject({
         method: 'GET',
-        url: '/events',
+        url: '/api/v1/events',
         headers: { authorization: `Bearer ${t}` },
       });
       expect(list.statusCode).toBe(200);
@@ -303,7 +303,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
       const t = await issueToken(userId);
       const cat = await app.inject({
         method: 'GET',
-        url: '/resources',
+        url: '/api/v1/resources',
         headers: { authorization: `Bearer ${t}` },
       });
       expect(cat.statusCode).toBe(200);
@@ -311,7 +311,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
       expect(items.length).toBeGreaterThan(0);
       const book = await app.inject({
         method: 'POST',
-        url: '/resources/book',
+        url: '/api/v1/resources/book',
         headers: { authorization: `Bearer ${t}` },
         payload: {
           resourceId: items[0].id,
@@ -327,14 +327,14 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
       const t = await issueToken(userId);
       const post = await app.inject({
         method: 'POST',
-        url: '/docs',
+        url: '/api/v1/docs',
         headers: { authorization: `Bearer ${t}` },
         payload: { title: '문서 1', content: '본문' },
       });
       expect(post.statusCode).toBe(201);
       const list = await app.inject({
         method: 'GET',
-        url: '/docs',
+        url: '/api/v1/docs',
         headers: { authorization: `Bearer ${t}` },
       });
       expect(list.statusCode).toBe(200);
@@ -345,7 +345,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
       const t = await issueToken(userId);
       const list = await app.inject({
         method: 'GET',
-        url: '/channels',
+        url: '/api/v1/channels',
         headers: { authorization: `Bearer ${t}` },
       });
       expect(list.statusCode).toBe(200);
@@ -354,7 +354,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
       expect(publicChannel).toBeDefined();
       const send = await app.inject({
         method: 'POST',
-        url: `/channels/${publicChannel.id}/messages`,
+        url: `/api/v1/channels/${publicChannel.id}/messages`,
         headers: { authorization: `Bearer ${t}` },
         payload: { text: '안녕하세요' },
       });
@@ -367,7 +367,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
       const t = await issueToken(userId);
       const list = await app.inject({
         method: 'GET',
-        url: '/org/units',
+        url: '/api/v1/org/units',
         headers: { authorization: `Bearer ${t}` },
       });
       expect(list.statusCode).toBe(200);
@@ -375,7 +375,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
       expect(units.length).toBeGreaterThan(0);
       const invite = await app.inject({
         method: 'POST',
-        url: '/org/invitations',
+        url: '/api/v1/org/invitations',
         headers: { authorization: `Bearer ${t}` },
         payload: {
           email: 'newhire@example.com',
@@ -393,7 +393,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
       const t = await issueToken(userId);
       const r = await app.inject({
         method: 'POST',
-        url: '/auth/tokens/revoke',
+        url: '/api/v1/auth/tokens/revoke',
         headers: { authorization: `Bearer ${t}` },
         payload: { tokenId: 'tok-int-1' },
       });
@@ -414,7 +414,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
       const address = await app.listen({ host: '127.0.0.1', port: 0 });
       try {
         const controller = new AbortController();
-        const fetchPromise = fetch(`${address}/realtime/sse`, {
+        const fetchPromise = fetch(`${address}/api/v1/realtime/sse`, {
           headers: { authorization: `Bearer ${t}` },
           signal: controller.signal,
         });

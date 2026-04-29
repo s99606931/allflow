@@ -75,29 +75,36 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     await app.register(rbacPlugin);
   }
 
+  // health는 prefix 없이(외부 healthcheck용) + /api/v1 prefix(FE catch-all 통과용) 이중 등록.
   await app.register(healthRoutes);
+  await app.register(healthRoutes, { prefix: '/api/v1' });
 
   if (registerDb && registerRoutes) {
-    await app.register(identityRoutes);
-    await app.register(projectsRoutes);
-    await app.register(tasksRoutes);
-    await app.register(issuesRoutes);
-    await app.register(commentsRoutes);
-    await app.register(notificationsRoutes);
-    await app.register(realtimeRoutes);
-    await app.register(realtimeWsRoutes);
     const aiRegistry = buildDefaultAIRegistry({ OPENAI_API_KEY: env.OPENAI_API_KEY });
-    await app.register(aiRoutes, { registry: aiRegistry });
-    await app.register(reportsRoutes, { registry: aiRegistry });
-    await app.register(authRoutes);
-    await app.register(approvalsRoutes);
-    await app.register(clientsRoutes);
-    await app.register(eventsRoutes);
-    await app.register(resourcesRoutes);
-    await app.register(docsRoutes);
-    await app.register(channelsRoutes);
-    await app.register(orgRoutes);
-    await app.register(searchRoutes);
+    await app.register(
+      async (api) => {
+        await api.register(identityRoutes);
+        await api.register(projectsRoutes);
+        await api.register(tasksRoutes);
+        await api.register(issuesRoutes);
+        await api.register(commentsRoutes);
+        await api.register(notificationsRoutes);
+        await api.register(realtimeRoutes);
+        await api.register(realtimeWsRoutes);
+        await api.register(aiRoutes, { registry: aiRegistry });
+        await api.register(reportsRoutes, { registry: aiRegistry });
+        await api.register(authRoutes);
+        await api.register(approvalsRoutes);
+        await api.register(clientsRoutes);
+        await api.register(eventsRoutes);
+        await api.register(resourcesRoutes);
+        await api.register(docsRoutes);
+        await api.register(channelsRoutes);
+        await api.register(orgRoutes);
+        await api.register(searchRoutes);
+      },
+      { prefix: '/api/v1' },
+    );
 
     if (env.REDIS_URL) {
       const handle: RedisFanoutHandle = await attachRedisFanout(realtimeBus, env.REDIS_URL);

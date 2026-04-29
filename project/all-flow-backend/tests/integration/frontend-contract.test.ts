@@ -130,7 +130,7 @@ describe.skipIf(SKIP)('integration: frontend ↔ backend contract (USE_MOCK=fals
     const t = await issueToken(userId);
     const r = await app.inject({
       method: 'GET',
-      url: '/users/me',
+      url: '/api/v1/users/me',
       headers: { authorization: `Bearer ${t}` },
     });
     expect(r.statusCode).toBe(200);
@@ -146,7 +146,7 @@ describe.skipIf(SKIP)('integration: frontend ↔ backend contract (USE_MOCK=fals
     const t = await issueToken(userId);
     const r = await app.inject({
       method: 'GET',
-      url: '/projects',
+      url: '/api/v1/projects',
       headers: { authorization: `Bearer ${t}` },
     });
     expect(r.statusCode, r.body).toBe(200);
@@ -160,7 +160,7 @@ describe.skipIf(SKIP)('integration: frontend ↔ backend contract (USE_MOCK=fals
     const t = await issueToken(userId);
     const r = await app.inject({
       method: 'GET',
-      url: `/projects/${projectId}`,
+      url: `/api/v1/projects/${projectId}`,
       headers: { authorization: `Bearer ${t}` },
     });
     expect(r.statusCode).toBe(200);
@@ -174,7 +174,7 @@ describe.skipIf(SKIP)('integration: frontend ↔ backend contract (USE_MOCK=fals
     const t = await issueToken(userId);
     const r = await app.inject({
       method: 'POST',
-      url: '/projects',
+      url: '/api/v1/projects',
       headers: { authorization: `Bearer ${t}` },
       payload: {
         name: '신규 프로젝트',
@@ -197,14 +197,14 @@ describe.skipIf(SKIP)('integration: frontend ↔ backend contract (USE_MOCK=fals
     // 사전 태스크 1개 생성 (assignee 도 본인으로 지정)
     await app.inject({
       method: 'POST',
-      url: '/tasks',
+      url: '/api/v1/tasks',
       headers: { authorization: `Bearer ${t}` },
       payload: { title: '필터용 태스크', projectId, assigneeId: userId },
     });
 
     const both = await app.inject({
       method: 'GET',
-      url: `/tasks?projectId=${projectId}&assigneeId=${userId}`,
+      url: `/api/v1/tasks?projectId=${projectId}&assigneeId=${userId}`,
       headers: { authorization: `Bearer ${t}` },
     });
     expect(both.statusCode).toBe(200);
@@ -222,7 +222,7 @@ describe.skipIf(SKIP)('integration: frontend ↔ backend contract (USE_MOCK=fals
     const t = await issueToken(userId);
     const created = await app.inject({
       method: 'POST',
-      url: '/tasks',
+      url: '/api/v1/tasks',
       headers: { authorization: `Bearer ${t}` },
       payload: { title: '패치 대상', projectId, priority: 'med' },
     });
@@ -232,7 +232,7 @@ describe.skipIf(SKIP)('integration: frontend ↔ backend contract (USE_MOCK=fals
 
     const patched = await app.inject({
       method: 'PATCH',
-      url: `/tasks/${taskId}`,
+      url: `/api/v1/tasks/${taskId}`,
       headers: { authorization: `Bearer ${t}` },
       payload: { status: 'doing' },
     });
@@ -246,7 +246,7 @@ describe.skipIf(SKIP)('integration: frontend ↔ backend contract (USE_MOCK=fals
     const t = await issueToken(userId);
     const r = await app.inject({
       method: 'GET',
-      url: '/issues',
+      url: '/api/v1/issues',
       headers: { authorization: `Bearer ${t}` },
     });
     expect(r.statusCode).toBe(200);
@@ -258,7 +258,7 @@ describe.skipIf(SKIP)('integration: frontend ↔ backend contract (USE_MOCK=fals
     const t = await issueToken(userId);
     const r = await app.inject({
       method: 'GET',
-      url: '/notifications',
+      url: '/api/v1/notifications',
       headers: { authorization: `Bearer ${t}` },
     });
     expect(r.statusCode).toBe(200);
@@ -270,7 +270,7 @@ describe.skipIf(SKIP)('integration: frontend ↔ backend contract (USE_MOCK=fals
     const t = await issueToken(userId);
     const r = await app.inject({
       method: 'POST',
-      url: '/reports/weekly',
+      url: '/api/v1/reports/weekly',
       headers: { authorization: `Bearer ${t}` },
       payload: {
         periodStart: '2026-04-20',
@@ -289,7 +289,7 @@ describe.skipIf(SKIP)('integration: frontend ↔ backend contract (USE_MOCK=fals
     const t = await issueToken(userId);
     const r = await app.inject({
       method: 'POST',
-      url: '/ai/extract-actions',
+      url: '/api/v1/ai/extract-actions',
       headers: { authorization: `Bearer ${t}` },
       payload: {
         source: 'meeting',

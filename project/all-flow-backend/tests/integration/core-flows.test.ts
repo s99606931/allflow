@@ -106,9 +106,16 @@ describe.skipIf(SKIP)('integration: core flows (postgres + redis)', () => {
     await pg?.stop();
   });
 
-  it('F1. GET /health → 200 + status:ok', async () => {
+  it('F1. GET /health → 200 + status:ok (이중 등록: 외부 healthcheck용)', async () => {
     if (!app) throw new Error('app not initialized');
     const r = await app.inject({ method: 'GET', url: '/health' });
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toMatchObject({ status: 'ok' });
+  });
+
+  it('F1b. GET /api/v1/health → 200 + status:ok (이중 등록: FE catch-all 통과용)', async () => {
+    if (!app) throw new Error('app not initialized');
+    const r = await app.inject({ method: 'GET', url: '/api/v1/health' });
     expect(r.statusCode).toBe(200);
     expect(r.json()).toMatchObject({ status: 'ok' });
   });
@@ -118,7 +125,7 @@ describe.skipIf(SKIP)('integration: core flows (postgres + redis)', () => {
     const t = await issueToken(userId);
     const r = await app.inject({
       method: 'GET',
-      url: '/users/me',
+      url: '/api/v1/users/me',
       headers: { authorization: `Bearer ${t}` },
     });
     expect(r.statusCode).toBe(200);
@@ -130,14 +137,14 @@ describe.skipIf(SKIP)('integration: core flows (postgres + redis)', () => {
     const t = await issueToken(userId);
     const create = await app.inject({
       method: 'POST',
-      url: '/tasks',
+      url: '/api/v1/tasks',
       headers: { authorization: `Bearer ${t}` },
       payload: { title: '통합 태스크', projectId, priority: 'high' },
     });
     expect(create.statusCode).toBe(201);
     const list = await app.inject({
       method: 'GET',
-      url: `/tasks?projectId=${projectId}`,
+      url: `/api/v1/tasks?projectId=${projectId}`,
       headers: { authorization: `Bearer ${t}` },
     });
     expect(list.statusCode).toBe(200);
@@ -151,7 +158,7 @@ describe.skipIf(SKIP)('integration: core flows (postgres + redis)', () => {
     const result = await Promise.race([
       app.inject({
         method: 'GET',
-        url: '/realtime/sse',
+        url: '/api/v1/realtime/sse',
         headers: { authorization: `Bearer ${t}` },
       }),
       new Promise<{ statusCode: number; headers: Record<string, string | string[]> }>((resolve) =>
@@ -171,7 +178,7 @@ describe.skipIf(SKIP)('integration: core flows (postgres + redis)', () => {
     const t = await issueToken(userId);
     const r = await app.inject({
       method: 'POST',
-      url: '/ai/complete',
+      url: '/api/v1/ai/complete',
       headers: { authorization: `Bearer ${t}` },
       payload: { prompt: '안녕 [task:integration]' },
     });
