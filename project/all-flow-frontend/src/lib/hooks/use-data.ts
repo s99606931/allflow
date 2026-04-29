@@ -18,7 +18,7 @@ import { keys } from '@/lib/query-keys';
 import { toastMessage } from '@/lib/api-error';
 import type {
   ApprovalCreate, ApprovalDecision, ClientCreate, EventCreate, IssueCreate,
-  IssueTransition, ProfilePatch, TaskCreate, TaskPatch, BulkMarkRead,
+  IssueTransition, ProfilePatch, ProjectCreate, ProjectPatch, TaskCreate, TaskPatch, BulkMarkRead,
   InviteUser, RevokeToken, MessageSend, DocCreate, ResourceBooking,
 } from '@/lib/schemas';
 
@@ -42,6 +42,28 @@ export function useProject(id: string | undefined) {
     queryFn: () => api.getProject(id as string),
     enabled: Boolean(id),
   });
+}
+
+export function useProjectMutations() {
+  const qc = useQueryClient();
+  const create = useMutation({
+    mutationFn: (input: ProjectCreate) => api.createProject(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.projects.all() });
+      toast.success('프로젝트가 생성되었습니다');
+    },
+    onError,
+  });
+  const update = useMutation({
+    mutationFn: (vars: { id: string; patch: ProjectPatch }) =>
+      api.updateProject(vars.id, vars.patch),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: keys.projects.all() });
+      qc.invalidateQueries({ queryKey: keys.projects.detail(vars.id) });
+    },
+    onError,
+  });
+  return { create, update };
 }
 
 export function useTasks(filter?: { projectId?: string; assigneeId?: string }) {

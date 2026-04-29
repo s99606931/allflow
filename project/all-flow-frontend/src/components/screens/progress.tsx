@@ -3,8 +3,17 @@
 import { useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Card, CardBody, CardHeader, CardTitle, Badge, Progress } from '@/components/ui/primitives';
-import { useProjects } from '@/lib/hooks/use-data';
+import { useProjects, useProjectMutations } from '@/lib/hooks/use-data';
+import type { StatusKey } from '@/lib/schemas';
 import { LayoutGrid, GanttChart, HeartPulse } from 'lucide-react';
+
+const PROJECT_STATUS_OPTIONS: { value: StatusKey; label: string }[] = [
+  { value: 'todo', label: '대기' },
+  { value: 'doing', label: '진행' },
+  { value: 'review', label: '검토' },
+  { value: 'done', label: '완료' },
+  { value: 'blocked', label: '차단' },
+];
 
 const HEALTH = [
   { metric: '일정', score: 78 }, { metric: '예산', score: 85 }, { metric: '범위', score: 72 },
@@ -14,6 +23,7 @@ const HEALTH = [
 export function ProgressPage() {
   const [tab, setTab] = useState('portfolio');
   const { data: projects = [] } = useProjects();
+  const { update: updateProject } = useProjectMutations();
   const PROJECTS = projects;
 
   return (
@@ -51,7 +61,27 @@ export function ProgressPage() {
                   <div><Progress value={p.progress} tone={p.status === 'done' ? 'success' : 'accent'} /><div className="text-[10.5px] mono text-fg-1 mt-0.5 font-semibold">{p.progress}%</div></div>
                   <div className={`mono text-[12px] font-semibold ${diff < -5 ? 'text-danger' : diff < 0 ? 'text-warning' : 'text-success'}`}>{diff > 0 ? '+' : ''}{diff}%p</div>
                   <div><Progress value={62 + (p.code.charCodeAt(p.code.length - 1) % 20)} tone="warning" /></div>
-                  <div>{p.progress < 30 ? <Badge tone="danger">높음</Badge> : p.progress < 60 ? <Badge tone="warning">중간</Badge> : <Badge tone="success">낮음</Badge>}</div>
+                  <div className="flex items-center gap-1">
+                    <select
+                      aria-label={`${p.name} 상태`}
+                      value={p.status}
+                      disabled={updateProject.isPending}
+                      onChange={e =>
+                        updateProject.mutate({
+                          id: p.id,
+                          patch: { status: e.target.value as StatusKey },
+                        })
+                      }
+                      className="text-[10.5px] rounded border border-border bg-bg-1 px-1 py-0.5 mono"
+                    >
+                      {PROJECT_STATUS_OPTIONS.map(o => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                    {p.progress < 30 ? <Badge tone="danger">높음</Badge> : p.progress < 60 ? <Badge tone="warning">중간</Badge> : <Badge tone="success">낮음</Badge>}
+                  </div>
                 </div>
               );
             })}

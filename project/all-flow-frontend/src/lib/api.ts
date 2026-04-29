@@ -4,7 +4,7 @@ import {
   ReportSchema, ExtractedActionSchema, UserSchema,
   type Issue, type Project, type Task, type Notification,
   type Report, type ExtractedAction, type User,
-  type ProjectCreate, type TaskCreate, type TaskPatch,
+  type ProjectCreate, type ProjectPatch, type TaskCreate, type TaskPatch,
 } from './schemas';
 import { z } from 'zod';
 import { http, parsed, sleep, USE_MOCK } from './api/http';
@@ -42,6 +42,14 @@ const baseApi = {
     USE_MOCK
       ? (await sleep(), { ...input, id: 'PRJ-NEW', color: input.color ?? '#3B82F6', progress: 0, status: 'todo', due: input.due ?? '', members: [], tasks: { total: 0, done: 0 } } as Project)
       : parsed(http.post('projects', { json: input }).json(), ProjectSchema),
+
+  updateProject: async (id: string, patch: ProjectPatch): Promise<Project> =>
+    USE_MOCK
+      ? (await sleep(), {
+          ...PROJECTS.find(p => p.id === id),
+          ...patch,
+        } as Project)
+      : parsed(http.patch(`projects/${id}`, { json: patch }).json(), ProjectSchema),
 
   /* Tasks ------------------------------------------------------------------ */
   listTasks: async (params?: { projectId?: string; assigneeId?: string }): Promise<Task[]> => {
