@@ -1,7 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
+import { STORAGE_STATE_PATH } from './tests/e2e/global-setup';
 
 export default defineConfig({
   testDir: './tests/e2e',
+  globalSetup: './tests/e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -15,6 +17,8 @@ export default defineConfig({
     video: 'retain-on-failure',
     locale: 'ko-KR',
     timezoneId: 'Asia/Seoul',
+    // 글로벌 setup 에서 저장한 인증 상태 재사용 (auth bypass 또는 credentials 로그인)
+    storageState: STORAGE_STATE_PATH,
   },
 
   projects: [
