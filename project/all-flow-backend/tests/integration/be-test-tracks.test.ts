@@ -41,7 +41,7 @@ async function issueToken(sub: string): Promise<string> {
 
 describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
   beforeAll(async () => {
-    pg = await new GenericContainer('postgres:16-alpine')
+    pg = await new GenericContainer('pgvector/pgvector:pg16')
       .withEnvironment({
         POSTGRES_USER: 'allflow',
         POSTGRES_PASSWORD: 'allflow',

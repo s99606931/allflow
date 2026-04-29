@@ -49,7 +49,7 @@ async function issueToken(sub: string): Promise<string> {
 
 describe.skipIf(SKIP)('integration: frontend ↔ backend contract (USE_MOCK=false 대체)', () => {
   beforeAll(async () => {
-    pg = await new GenericContainer('postgres:16-alpine')
+    pg = await new GenericContainer('pgvector/pgvector:pg16')
       .withEnvironment({
         POSTGRES_USER: 'allflow',
         POSTGRES_PASSWORD: 'allflow',

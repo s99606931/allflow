@@ -8,13 +8,14 @@
 //  - Status enums are mirrored from openapi.yaml (StatusKey/IssueStatus/IssueSev/IssuePrio).
 
 generator client {
-  provider = "prisma-client-js"
-  // Generated to default location (node_modules/.prisma/client) for ESM/CJS interop simplicity.
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 // =====================================================================
@@ -151,12 +152,13 @@ model ProjectMember {
 // =====================================================================
 
 model Task {
-  id          String    @id @default(cuid())
+  id          String                  @id @default(cuid())
   title       String
-  status      StatusKey @default(todo)
-  due         String?   // OpenAPI Task.due is free-form string ("오늘", "내일", "5/2")
-  priority    Priority  @default(med)
-  tags        String[]  @default([])
+  status      StatusKey               @default(todo)
+  due         String?                 // OpenAPI Task.due is free-form string ("오늘", "내일", "5/2")
+  priority    Priority                @default(med)
+  tags        String[]                @default([])
+  embedding   Unsupported("vector(1536)")?  @map("embedding") // OpenAI text-embedding-3-small
 
   projectId   String    @map("project_id")
   assigneeId  String?   @map("assignee_id")
@@ -181,6 +183,7 @@ model Issue {
   id          String      @id @default(cuid())
   title       String
   projColor   String      @map("proj_color")
+  embedding   Unsupported("vector(1536)")?  @map("embedding") // OpenAI text-embedding-3-small
   sev         IssueSev
   prio        IssuePrio
   status      IssueStatus @default(open)

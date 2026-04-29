@@ -33,7 +33,7 @@ function buildPgUrl(host: string, port: number, user: string, pw: string, db: st
 
 describe.skipIf(SKIP)('integration: core flows (postgres + redis)', () => {
   beforeAll(async () => {
-    pg = await new GenericContainer('postgres:16-alpine')
+    pg = await new GenericContainer('pgvector/pgvector:pg16')
       .withEnvironment({
         POSTGRES_USER: 'allflow',
         POSTGRES_PASSWORD: 'allflow',

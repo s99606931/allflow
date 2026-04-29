@@ -22,6 +22,7 @@ import { realtimeRoutes } from './modules/realtime/realtime.routes.js';
 import { realtimeWsRoutes } from './modules/realtime/realtime.ws.js';
 import { type RedisFanoutHandle, attachRedisFanout } from './modules/realtime/redis-fanout.js';
 import { reportsRoutes } from './modules/reports/reports.routes.js';
+import { searchRoutes } from './modules/search/search.routes.js';
 import { resourcesRoutes } from './modules/resources/resources.routes.js';
 import { tasksRoutes } from './modules/tasks/tasks.routes.js';
 import { authPlugin } from './plugins/auth.js';
@@ -96,6 +97,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     await app.register(docsRoutes);
     await app.register(channelsRoutes);
     await app.register(orgRoutes);
+    await app.register(searchRoutes);
 
     if (env.REDIS_URL) {
       const handle: RedisFanoutHandle = await attachRedisFanout(realtimeBus, env.REDIS_URL);

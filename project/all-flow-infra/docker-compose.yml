@@ -7,7 +7,7 @@ name: ${COMPOSE_PROJECT_NAME:-allflow}
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: allflow-postgres
     restart: unless-stopped
     environment:
