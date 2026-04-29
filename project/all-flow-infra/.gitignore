@@ -1,0 +1,24 @@
+# Environment files - never commit real secrets.
+.env
+.env.dev
+.env.prod
+.env.*.local
+
+# Backups & dumps
+backups/
+*.sql
+*.sql.gz
+*.tar.gz
+
+# Logs
+*.log
+logs/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local overrides
+docker-compose.override.yml

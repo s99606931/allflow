@@ -1,0 +1,103 @@
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.DS_Store
+desktop.ini
+ehthumbs.db
+
+# ─── Editor ───────────────────────────────────────────────────────────────────
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+
+# ─── Claude Code — 런타임/세션 파일 (커밋 불필요) ────────────────────────────
+.claude/logs/
+.claude/agent-memory/
+# 세션 트랜스크립트 및 임시 분석 파일
+.claude/**/*.transcript.json
+.claude/**/*.session.json
+
+# ─── bkit — 런타임 상태 (커밋 불필요) ───────────────────────────────────────
+# pdca-status.json, memory.json 등 로컬 세션 상태
+.bkit/
+
+# ─── 환경 변수 및 시크릿 ────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.local
+.envrc
+!.env.example
+!.env.template
+
+# ─── 의존성 ────────────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+vendor/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+*.egg
+
+# ─── 빌드 산출물 ──────────────────────────────────────────────────────────
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+target/
+*.class
+*.jar
+
+# ─── 테스트 커버리지 ────────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+*.lcov
+htmlcov/
+.pytest_cache/
+.coverage
+
+# ─── 로그 파일 ─────────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── 캐시 ───────────────────────────────────────────────────────────────────
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.turbo/
+.vercel/
+*.tgz
+
+# ─── 임시 파일 ─────────────────────────────────────────────────────────────
+temp/
+tmp/
+*.tmp
+*.bak
+*.orig
+
+# ─── 데이터베이스 로컬 파일 ─────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ─── Harness 결과 (로컬 전용) ───────────────────────────────────────────────
+.githooks-report/

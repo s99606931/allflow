@@ -1,0 +1,279 @@
+// ALL-Flow backend Prisma schema
+// T-101: Phase 1 Foundation — User/Project/Task/Issue/Report/Notification/Comment 7 entities.
+// Mirrors all-flow-frontend openapi.yaml schemas.
+//
+// Conventions:
+//  - Identifiers are string CUIDs (frontend uses opaque string IDs).
+//  - Soft delete via deletedAt (nullable). Cascade rules defined per relation.
+//  - Status enums are mirrored from openapi.yaml (StatusKey/IssueStatus/IssueSev/IssuePrio).
+
+generator client {
+  provider = "prisma-client-js"
+  // Generated to default location (node_modules/.prisma/client) for ESM/CJS interop simplicity.
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================================
+// Enums (mirror openapi.yaml)
+// =====================================================================
+
+enum StatusKey {
+  todo
+  doing
+  review
+  done
+  blocked
+}
+
+enum Priority {
+  high
+  med
+  low
+}
+
+enum IssueSev {
+  critical
+  high
+  med
+  low
+}
+
+enum IssuePrio {
+  P0
+  P1
+  P2
+  P3
+}
+
+enum IssueStatus {
+  open
+  in_progress  @map("in-progress")
+  in_review    @map("in-review")
+  resolved
+}
+
+enum ReportKind {
+  weekly
+  monthly
+}
+
+enum NotificationKind {
+  mention
+  sla
+  ai
+  system
+  comment
+}
+
+enum MemberRole {
+  owner
+  admin
+  member
+}
+
+enum CommentTargetKind {
+  task
+  issue
+}
+
+// =====================================================================
+// User / Project / Membership
+// =====================================================================
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  dept      String
+  initials  String
+  color     String
+  email     String?  @unique
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  memberships     ProjectMember[]
+  authoredTasks   Task[]          @relation("TaskCreatedBy")
+  assignedTasks   Task[]          @relation("TaskAssignee")
+  reportedIssues  Issue[]         @relation("IssueReporter")
+  assignedIssues  Issue[]         @relation("IssueAssignee")
+  comments        Comment[]
+  notifications   Notification[]
+  reports         Report[]        @relation("ReportAuthor")
+
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Project {
+  id        String    @id @default(cuid())
+  name      String
+  code      String    @unique
+  color     String
+  progress  Int       @default(0)
+  status    StatusKey @default(doing)
+  due       DateTime? @db.Date
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  members ProjectMember[]
+  tasks   Task[]
+  issues  Issue[]
+
+  @@index([status])
+  @@index([deletedAt])
+  @@map("projects")
+}
+
+model ProjectMember {
+  projectId String     @map("project_id")
+  userId    String     @map("user_id")
+  role      MemberRole @default(member)
+  joinedAt  DateTime   @default(now()) @map("joined_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+// =====================================================================
+// Task / Issue / Comment
+// =====================================================================
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  status      StatusKey @default(todo)
+  due         String?   // OpenAPI Task.due is free-form string ("오늘", "내일", "5/2")
+  priority    Priority  @default(med)
+  tags        String[]  @default([])
+
+  projectId   String    @map("project_id")
+  assigneeId  String?   @map("assignee_id")
+  createdById String?   @map("created_by_id")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee   User?     @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdBy  User?     @relation("TaskCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  comments   Comment[] @relation("TaskComments")
+
+  @@index([projectId, status])
+  @@index([assigneeId])
+  @@index([deletedAt])
+  @@map("tasks")
+}
+
+model Issue {
+  id          String      @id @default(cuid())
+  title       String
+  projColor   String      @map("proj_color")
+  sev         IssueSev
+  prio        IssuePrio
+  status      IssueStatus @default(open)
+  tags        String[]    @default([])
+  sla         String      // human-readable SLA window e.g. "12h", "3d"
+  slaPct      Int         @default(0) @map("sla_pct")
+  linked      Int         @default(0)
+  resolved    Boolean     @default(false)
+
+  projectId   String      @map("project_id")
+  assigneeId  String?     @map("assignee_id")
+  reporterId  String?     @map("reporter_id")
+
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  deletedAt   DateTime?   @map("deleted_at")
+
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee  User?     @relation("IssueAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  reporter  User?     @relation("IssueReporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  comments  Comment[] @relation("IssueComments")
+
+  @@index([projectId, status])
+  @@index([prio])
+  @@index([assigneeId])
+  @@index([deletedAt])
+  @@map("issues")
+}
+
+model Comment {
+  id          String            @id @default(cuid())
+  body        String
+  targetKind  CommentTargetKind @map("target_kind")
+  taskId      String?           @map("task_id")
+  issueId     String?           @map("issue_id")
+  authorId    String            @map("author_id")
+
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  deletedAt   DateTime?         @map("deleted_at")
+
+  task    Task?  @relation("TaskComments", fields: [taskId], references: [id], onDelete: Cascade)
+  issue   Issue? @relation("IssueComments", fields: [issueId], references: [id], onDelete: Cascade)
+  author  User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([issueId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+// =====================================================================
+// Report / Notification
+// =====================================================================
+
+model Report {
+  id           String     @id @default(cuid())
+  kind         ReportKind
+  periodStart  DateTime   @db.Date @map("period_start")
+  periodEnd    DateTime   @db.Date @map("period_end")
+  generatedAt  DateTime   @default(now()) @map("generated_at")
+  tldr         String?
+  authorId     String?    @map("author_id")
+
+  // Structured payload (kpis / sections / citations) as JSONB; mirrors openapi.yaml Report.
+  kpis         Json       @default("[]")
+  sections     Json       @default("[]")
+
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  author User? @relation("ReportAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([kind, periodStart])
+  @@map("reports")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String           @map("user_id")
+  kind      NotificationKind
+  title     String
+  body      String?
+  actor     String?
+  href      String?
+  read      Boolean          @default(false)
+
+  createdAt DateTime         @default(now()) @map("created_at")
+  readAt    DateTime?        @map("read_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}

@@ -1,0 +1,92 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+@import "tailwindcss";
+
+@theme {
+  /* Colors — Light (default) */
+  --color-bg: oklch(0.99 0.003 250);
+  --color-bg-1: oklch(0.975 0.004 250);
+  --color-bg-2: oklch(0.96 0.005 250);
+  --color-bg-elev: oklch(1 0 0);
+  --color-fg: oklch(0.18 0.01 250);
+  --color-fg-1: oklch(0.32 0.012 250);
+  --color-fg-2: oklch(0.5 0.012 250);
+  --color-fg-3: oklch(0.65 0.01 250);
+  --color-border: oklch(0.92 0.005 250);
+  --color-border-strong: oklch(0.85 0.007 250);
+  --color-hover: oklch(0.95 0.005 250);
+
+  --color-accent: oklch(0.62 0.18 255);
+  --color-accent-soft: oklch(0.94 0.04 255);
+  --color-accent-fg: oklch(0.98 0 0);
+  --color-accent-strong: oklch(0.55 0.2 255);
+
+  --color-success: oklch(0.65 0.16 155);
+  --color-success-soft: oklch(0.94 0.05 155);
+  --color-warning: oklch(0.74 0.15 70);
+  --color-warning-soft: oklch(0.95 0.06 70);
+  --color-danger: oklch(0.62 0.2 25);
+  --color-danger-soft: oklch(0.94 0.05 25);
+  --color-info: oklch(0.65 0.13 230);
+
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --shadow-sm: 0 1px 2px rgba(15, 20, 35, 0.04);
+  --shadow-md: 0 1px 3px rgba(15, 20, 35, 0.06), 0 1px 2px rgba(15, 20, 35, 0.04);
+  --shadow-lg: 0 12px 32px -8px rgba(15, 20, 35, 0.12), 0 4px 8px rgba(15, 20, 35, 0.06);
+  --shadow-pop: 0 24px 60px -12px rgba(15, 20, 35, 0.18);
+}
+
+/* Dark mode tokens */
+[data-theme="dark"] {
+  --color-bg: oklch(0.16 0.01 250);
+  --color-bg-1: oklch(0.19 0.012 250);
+  --color-bg-2: oklch(0.22 0.013 250);
+  --color-bg-elev: oklch(0.21 0.012 250);
+  --color-fg: oklch(0.96 0.005 250);
+  --color-fg-1: oklch(0.85 0.008 250);
+  --color-fg-2: oklch(0.65 0.01 250);
+  --color-fg-3: oklch(0.5 0.01 250);
+  --color-border: oklch(0.27 0.012 250);
+  --color-border-strong: oklch(0.34 0.014 250);
+  --color-hover: oklch(0.24 0.013 250);
+  --color-accent-soft: oklch(0.3 0.07 255);
+}
+
+/* Accent variants */
+[data-accent="indigo"] { --color-accent: oklch(0.62 0.18 280); --color-accent-soft: oklch(0.94 0.04 280); --color-accent-strong: oklch(0.55 0.2 280); }
+[data-accent="violet"] { --color-accent: oklch(0.62 0.18 305); --color-accent-soft: oklch(0.94 0.04 305); --color-accent-strong: oklch(0.55 0.2 305); }
+[data-accent="teal"]   { --color-accent: oklch(0.62 0.18 195); --color-accent-soft: oklch(0.94 0.04 195); --color-accent-strong: oklch(0.55 0.2 195); }
+[data-accent="amber"]  { --color-accent: oklch(0.72 0.16 70);  --color-accent-soft: oklch(0.94 0.06 70);  --color-accent-strong: oklch(0.65 0.18 70); --color-accent-fg: oklch(0.2 0.02 70); }
+[data-accent="rose"]   { --color-accent: oklch(0.62 0.18 15);  --color-accent-soft: oklch(0.94 0.04 15);  --color-accent-strong: oklch(0.55 0.2 15); }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-fg);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.005em;
+  line-height: 1.5;
+}
+
+.scroll { scrollbar-width: thin; scrollbar-color: var(--color-border-strong) transparent; }
+.scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong); border-radius: 99px;
+  border: 2px solid transparent; background-clip: content-box;
+}
+
+.mono { font-family: var(--font-mono); font-feature-settings: 'tnum'; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fadeIn .2s ease-out; }

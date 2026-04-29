@@ -1,0 +1,57 @@
+# ALL-Flow - prod override
+# Activates: pre-built images (multi-stage), no source mount, restart=always, ports closed for DB/Redis.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+
+services:
+  postgres:
+    restart: always
+    # No host port mapping - DB stays internal.
+
+  redis:
+    restart: always
+
+  backend:
+    image: ${BACKEND_IMAGE:-allflow-backend:latest}
+    build:
+      context: ../all-flow-backend
+      dockerfile: Dockerfile
+      target: prod
+    restart: always
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+        reservations:
+          memory: 256M
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-allflow-frontend:latest}
+    build:
+      context: ../all-flow-frontend
+      dockerfile: Dockerfile
+      target: prod
+    restart: always
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+      - /app/.next/cache:size=128m
+    environment:
+      NODE_ENV: production
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+        reservations:
+          memory: 256M

@@ -1,0 +1,48 @@
+# ALL-Flow Backend — 로컬 개발용 인프라 (T-004)
+# Postgres 16 + Redis 7. healthcheck로 5432 / 6379 healthy 보장.
+# 사용:
+#   docker compose up -d
+#   docker compose ps          # 두 서비스 모두 healthy 인지 확인
+#   docker compose down -v     # 데이터까지 삭제하고 정리
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: allflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-allflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-allflow}
+      POSTGRES_DB: ${POSTGRES_DB:-allflow}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-allflow} -d ${POSTGRES_DB:-allflow}
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  redis:
+    image: redis:7-alpine
+    container_name: allflow-redis
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+
+volumes:
+  postgres-data:
+  redis-data:
