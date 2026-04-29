@@ -240,13 +240,13 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 |------|---:|-----:|----------:|------------:|-----:|------:|
 | BE-CORE (C1~C5) | 5 | 5 | 0 | 0 | 0 | **100%** ✓ |
 | BE-NEW (N1~N8) | 8 | 1 | 0 | 0 | 7 | 12.5% |
-| FE-WIRING (W1~W9) | 9 | 6 | 0 | 0 | 3 | 66.7% |
+| FE-WIRING (W1~W9) | 9 | 7 | 0 | 0 | 2 | 77.8% |
 | TEST (B1~B4 + F1~F4) | 8 | 0 | 0 | 0 | 8 | 0% |
 | CLEANUP (CL1~CL2) | 2 | 0 | 0 | 0 | 2 | 0% |
-| **합계** | **32** | **12** | **0** | **0** | **20** | **37.5%** |
+| **합계** | **32** | **13** | **0** | **0** | **19** | **40.6%** |
 
-마지막 측정: 2026-04-29 (loop iter 12 — FE-W9 완료)
-다음 측정: loop iter 13 (예상: FE-W6 ai/complete chat panel 또는 FE-W8 comments)
+마지막 측정: 2026-04-29 (loop iter 13 — FE-W6 완료)
+다음 측정: loop iter 14 (예상: FE-W8 comments 훅 + Detail 통합 또는 FE-W2 project detail route)
 
 ### 사이클 진행 로그
 
@@ -264,6 +264,7 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | 10 | 2026-04-29 | FE-W4 (POST /issues) | FE typecheck 0 / 98/98 vitest | 신규 `IssueCreateDialog` (title/proj/assignee/reporter/sev/prio 필드, 기본값 PROJECTS[0]/TEAM[0]/med/P2), issues-full 툴바 "새 이슈" 버튼에 onClick 와이어링, Toolbar prop drilling. useIssueMutations.create 사용 (FE 스키마 names 형태 준수, BE id 형태와의 contract drift는 별도 follow-up) |
 | 11 | 2026-04-29 | FE-W5 (POST /reports/monthly) | FE typecheck 0 / 98/98 vitest | api.generateMonthlyReport({year,month}) + useAiMutations.monthlyReport 추가, report-monthly 화면 "AI 다시 생성" 버튼에 onClick 와이어링 (loading 상태 표시, 생성 결과로 화면 swap, periodLabel 동적 계산). USE_MOCK 분기에 임원용 6개 KPI/OKR/리스크 매트릭스 픽스처 |
 | 12 | 2026-04-29 | FE-W9 (reports/send refactor) | FE typecheck 0 / 98/98 vitest | report-recipients-editor의 직접 fetch 호출 제거. extendedApi.sendReport(reportId, {recipients}) + useReportSend() 훅 신설, 중앙 onError/toast 정책 일관화. USE_MOCK 분기 포함, sending 로컬 상태 → mutation.isPending 으로 단순화 |
+| 13 | 2026-04-29 | FE-W6 (POST /ai/complete) | FE typecheck 0 / 98/98 vitest | 신규 `AiChatPanel` 컴포넌트 (`components/ai/ai-chat-panel.tsx`) — 단일 스레드 자유 채팅, useAiMutations.complete 와이어링, user/assistant turns + 로딩 인디케이터 + 초기화 버튼. ai-auto 화면 좌측 컬럼 "최근 자동 등록" 위에 배치 |
 
 ---
 

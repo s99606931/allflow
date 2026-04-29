@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress } from '@/components/ui/primitives';
+import { AiChatPanel } from '@/components/ai/ai-chat-panel';
 import { PROJECTS, userById } from '@/lib/fixtures';
 import { useAiMutations, useTaskMutations } from '@/lib/hooks/use-data';
 import type { ExtractedAction } from '@/lib/schemas';
@@ -177,6 +178,8 @@ export function AIAutoPage() {
             </div>
           </CardBody>
         </Card>
+
+        <AiChatPanel />
 
         <Card>
           <CardHeader><CardTitle>최근 자동 등록</CardTitle></CardHeader>
