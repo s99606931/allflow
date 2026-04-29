@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button } from '@/components/ui/primitives';
-import { TEAM, userById } from '@/lib/fixtures';
-import { ChevronDown, Mail, Plus, Search } from 'lucide-react';
+import { userById } from '@/lib/fixtures';
+import { useOrgMutations } from '@/lib/hooks/use-data';
+import { Plus, Search, UserPlus } from 'lucide-react';
 
 const ORG = [
   { id: 'ceo', name: '윤재석', role: 'CTO / 대표', dept: '경영진', userId: 'u6', children: ['eng', 'product', 'marketing'] },
@@ -17,6 +19,14 @@ const DEPTS = [
 
 export function OrgPage() {
   const ceo = userById('u6')!;
+  const { invite } = useOrgMutations();
+  const [email, setEmail] = useState('');
+
+  const onInvite = (orgUnitId: string) => {
+    if (!email) return;
+    invite.mutate({ email, orgUnitId, role: 'member' });
+    setEmail('');
+  };
 
   return (
     <div className="p-6 space-y-5 max-w-[1280px] mx-auto">
@@ -25,9 +35,22 @@ export function OrgPage() {
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
           <input placeholder="사람/팀 검색..." className="w-full h-8 pl-8 pr-3 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent" />
         </div>
-        <Button variant="secondary" size="sm">트리 보기</Button>
-        <Button variant="secondary" size="sm">리스트 보기</Button>
-        <Button variant="primary" size="sm"><Plus size={13} /> 부서 추가</Button>
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="user@example.com"
+          className="h-8 w-56 px-2 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent"
+        />
+        <Button
+          variant="primary"
+          size="sm"
+          disabled={invite.isPending || !email}
+          onClick={() => onInvite('eng')}
+        >
+          <UserPlus size={13} /> {invite.isPending ? '전송 중...' : '초대'}
+        </Button>
+        <Button variant="secondary" size="sm"><Plus size={13} /> 부서 추가</Button>
       </div>
 
       {/* CEO node */}

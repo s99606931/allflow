@@ -1,10 +1,18 @@
 name: CI
 
+# 빠른 PR 피드백을 위한 메인 CI.
+# E2E (Playwright)는 .github/workflows/e2e.yml 로 분리되어
+# 동시 실행되며, 본 워크플로우는 그 결과를 기다리지 않는다.
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint-and-test:
@@ -29,39 +37,6 @@ jobs:
       - run: pnpm lint
       - run: pnpm test --reporter=verbose
       - run: pnpm openapi:check
-
-  e2e:
-    name: E2E (Playwright)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    needs: lint-and-test
-    defaults:
-      run:
-        working-directory: all-flow-frontend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-          cache-dependency-path: all-flow-frontend/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm build
-      - name: Run E2E
-        run: pnpm exec playwright test
-        env:
-          CI: 'true'
-      - name: Upload Playwright report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: all-flow-frontend/playwright-report
-          retention-days: 14
 
   build:
     name: 프로덕션 빌드 검증

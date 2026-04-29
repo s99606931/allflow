@@ -1,0 +1,68 @@
+name: E2E (isolated)
+
+# 분리 목적:
+#   - 메인 CI(typecheck/lint/test)는 가볍게 유지하여 PR 피드백을 빠르게 받는다.
+#   - Playwright는 브라우저 설치/빌드/리포트 업로드 비용이 크므로
+#     별도 워크플로우로 분리해서 동시 실행 + 독립 재시도가 가능하게 한다.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'all-flow-frontend/**'
+      - '.github/workflows/e2e.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'all-flow-frontend/**'
+      - '.github/workflows/e2e.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '15 3 * * *'  # 매일 03:15 UTC 야간 회귀
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  playwright:
+    name: Playwright (chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: all-flow-frontend
+    env:
+      CI: 'true'
+      NEXT_PUBLIC_USE_MOCK: 'true'  # FE 단독 E2E 시 픽스처 모드
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: all-flow-frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers (chromium)
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Build Next.js
+        run: pnpm build
+      - name: Run Playwright tests
+        run: pnpm exec playwright test
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_number }}
+          path: all-flow-frontend/playwright-report
+          retention-days: 14
+      - name: Upload trace + screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-${{ github.run_number }}
+          path: all-flow-frontend/test-results
+          retention-days: 14

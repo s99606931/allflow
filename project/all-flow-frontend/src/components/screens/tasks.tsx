@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
-import { Card, CardBody, Avatar, Badge, Button, IconButton, StatusDot } from '@/components/ui/primitives';
-import { TASKS, PROJECTS, userById } from '@/lib/fixtures';
-import type { StatusKey } from '@/lib/types';
+import { Card, Avatar, Badge, Button, StatusDot } from '@/components/ui/primitives';
+import { PROJECTS, TASKS, userById } from '@/lib/fixtures';
+import { useTasks, useTaskMutations } from '@/lib/hooks/use-data';
+import type { StatusKey } from '@/lib/schemas';
 import { TaskDetailDialog } from './task-detail';
-import { CheckCircle2, Circle, Filter, KanbanSquare, LayoutList, Plus, Search, CalendarDays, Sparkles } from 'lucide-react';
+import { CheckCircle2, Circle, Filter, KanbanSquare, LayoutList, Plus, Search, CalendarDays } from 'lucide-react';
 
 const COLS: { id: StatusKey; label: string; color: string }[] = [
   { id: 'todo', label: '대기', color: 'oklch(0.7 0.01 250)' },
@@ -21,13 +22,23 @@ export function TasksPage() {
   const [openTask, setOpenTask] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'mine' | 'today' | 'overdue'>('all');
   const [search, setSearch] = useState('');
+  const { data: tasks = [], isLoading } = useTasks();
+  const { update, create } = useTaskMutations();
 
-  const filtered = TASKS.filter(t => {
+  const filtered = tasks.filter(t => {
     if (filter === 'mine' && t.assignee !== 'me') return false;
     if (filter === 'today' && t.due !== '오늘') return false;
     if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  const onCreate = () =>
+    create.mutate({
+      title: '새 태스크',
+      proj: PROJECTS[0]?.id ?? 'p1',
+      assignee: 'me',
+      priority: 'med',
+    });
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
@@ -53,7 +64,9 @@ export function TasksPage() {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="태스크 검색..."
             className="h-8 w-56 pl-8 pr-3 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent" />
         </div>
-        <Button variant="primary" size="sm"><Plus size={13} /> 새 태스크</Button>
+        <Button variant="primary" size="sm" disabled={create.isPending} onClick={onCreate}>
+          <Plus size={13} /> {create.isPending ? '생성 중...' : '새 태스크'}
+        </Button>
       </div>
 
       <Tabs.Root value={tab} onValueChange={setTab}>
@@ -107,19 +120,33 @@ export function TasksPage() {
                       const u = userById(t.assignee);
                       const proj = PROJECTS.find(p => p.id === t.proj);
                       return (
-                        <button key={t.id} onClick={() => setOpenTask(t.id)}
-                          className="w-full text-left rounded-md border border-border bg-bg-elev p-2.5 hover:shadow-md hover:border-border-strong transition-all">
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <span className="px-1.5 h-4 rounded text-[10px] mono font-semibold text-white" style={{ background: proj?.color }}>{proj?.code}</span>
-                            <span className="mono text-[10.5px] text-fg-3 ml-auto">{t.id}</span>
-                          </div>
-                          <div className="text-[12px] font-medium text-fg leading-snug mb-2">{t.title}</div>
-                          <div className="flex items-center gap-1.5">
-                            {t.priority === 'high' && <Badge tone="danger">높음</Badge>}
-                            <span className="mono text-[10.5px] text-fg-2">{t.due}</span>
-                            {u && <span className="ml-auto"><Avatar user={u} size={18} /></span>}
-                          </div>
-                        </button>
+                        <div key={t.id} className="rounded-md border border-border bg-bg-elev p-2.5 hover:shadow-md hover:border-border-strong transition-all space-y-2">
+                          <button onClick={() => setOpenTask(t.id)} className="w-full text-left">
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <span className="px-1.5 h-4 rounded text-[10px] mono font-semibold text-white" style={{ background: proj?.color }}>{proj?.code}</span>
+                              <span className="mono text-[10.5px] text-fg-3 ml-auto">{t.id}</span>
+                            </div>
+                            <div className="text-[12px] font-medium text-fg leading-snug mb-2">{t.title}</div>
+                            <div className="flex items-center gap-1.5">
+                              {t.priority === 'high' && <Badge tone="danger">높음</Badge>}
+                              <span className="mono text-[10.5px] text-fg-2">{t.due}</span>
+                              {u && <span className="ml-auto"><Avatar user={u} size={18} /></span>}
+                            </div>
+                          </button>
+                          <select
+                            aria-label={`${t.id} 상태 변경`}
+                            value={t.status}
+                            disabled={update.isPending}
+                            onChange={(e) => update.mutate({ id: t.id, patch: { status: e.target.value as StatusKey } })}
+                            className="w-full h-6 text-[11px] rounded bg-bg-1 border border-border px-1.5 focus:outline-none focus:border-accent"
+                          >
+                            <option value="todo">대기</option>
+                            <option value="doing">진행중</option>
+                            <option value="review">리뷰</option>
+                            <option value="done">완료</option>
+                            <option value="blocked">블록</option>
+                          </select>
+                        </div>
                       );
                     })}
                   </div>

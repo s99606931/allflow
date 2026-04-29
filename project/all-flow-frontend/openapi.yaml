@@ -24,12 +24,40 @@ tags:
   - name: ai
   - name: realtime
   - name: notifications
+  - name: approvals
+  - name: clients
+  - name: events
+  - name: resources
+  - name: docs
+  - name: chat
+  - name: org
+  - name: auth
 
 paths:
   /users/me:
     get:
       tags: [identity]
       summary: 현재 로그인 사용자
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+    patch:
+      tags: [identity]
+      summary: 내 프로필 수정
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                role: { type: string }
+                dept: { type: string }
+                email: { type: string, format: email }
       responses:
         '200':
           description: OK
@@ -54,6 +82,7 @@ paths:
                 items: { $ref: '#/components/schemas/Project' }
     post:
       tags: [projects]
+      summary: 프로젝트 생성
       requestBody:
         required: true
         content:
@@ -71,6 +100,7 @@ paths:
       - { name: id, in: path, required: true, schema: { type: string } }
     get:
       tags: [projects]
+      summary: 프로젝트 단건 조회
       responses:
         '200':
           description: OK
@@ -79,6 +109,7 @@ paths:
               schema: { $ref: '#/components/schemas/Project' }
     patch:
       tags: [projects]
+      summary: 프로젝트 수정
       requestBody:
         required: true
         content:
@@ -94,6 +125,7 @@ paths:
   /tasks:
     get:
       tags: [tasks]
+      summary: 태스크 목록
       parameters:
         - { name: projectId, in: query, schema: { type: string } }
         - { name: assigneeId, in: query, schema: { type: string } }
@@ -108,6 +140,7 @@ paths:
                 items: { $ref: '#/components/schemas/Task' }
     post:
       tags: [tasks]
+      summary: 태스크 생성
       requestBody:
         required: true
         content:
@@ -125,6 +158,7 @@ paths:
       - { name: id, in: path, required: true, schema: { type: string } }
     patch:
       tags: [tasks]
+      summary: 태스크 부분 수정
       requestBody:
         required: true
         content:
@@ -136,10 +170,16 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Task' }
+    delete:
+      tags: [tasks]
+      summary: 태스크 삭제
+      responses:
+        '204': { description: Deleted }
 
   /issues:
     get:
       tags: [issues]
+      summary: 이슈 목록
       parameters:
         - { name: status, in: query, schema: { $ref: '#/components/schemas/IssueStatus' } }
         - { name: prio, in: query, schema: { $ref: '#/components/schemas/IssuePrio' } }
@@ -151,6 +191,20 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Issue' }
+    post:
+      tags: [issues]
+      summary: 이슈 생성
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IssueCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
 
   /reports/weekly:
     post:
@@ -178,6 +232,7 @@ paths:
   /reports/monthly:
     post:
       tags: [reports]
+      summary: AI 월간 보고 자동 생성
       requestBody:
         required: true
         content:
@@ -198,6 +253,7 @@ paths:
   /ai/complete:
     post:
       tags: [ai]
+      summary: AI 자유 응답 생성 (스트리밍 가능)
       requestBody:
         required: true
         content:
@@ -270,6 +326,7 @@ paths:
   /notifications:
     get:
       tags: [notifications]
+      summary: 알림 목록
       parameters:
         - { name: unread, in: query, schema: { type: boolean } }
       responses:
@@ -280,6 +337,288 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Notification' }
+
+  /notifications/{id}/read:
+    post:
+      tags: [notifications]
+      summary: 알림 단건 읽음 처리
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+
+  /notifications/read-all:
+    post:
+      tags: [notifications]
+      summary: 알림 일괄 읽음 처리
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids: { type: array, items: { type: string } }
+      responses:
+        '200': { description: OK }
+
+  # Note: /tasks/{id} DELETE merged into the existing PATCH path object below.
+  # Note: /issues POST merged into the existing GET path object above.
+
+  /issues/{id}/transition:
+    post:
+      tags: [issues]
+      summary: 이슈 상태 전이
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { $ref: '#/components/schemas/IssueStatus' }
+                comment: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
+
+  /approvals:
+    get:
+      tags: [approvals]
+      summary: 결재 목록
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Approval' } }
+    post:
+      tags: [approvals]
+      summary: 결재 요청 생성
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApprovalCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Approval' }
+
+  /approvals/{id}/decision:
+    post:
+      tags: [approvals]
+      summary: 결재 의사 결정
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [approved, rejected] }
+                comment: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Approval' }
+
+  /clients:
+    get:
+      tags: [clients]
+      summary: CRM 고객 목록
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Client' } }
+    post:
+      tags: [clients]
+      summary: CRM 고객 생성
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClientCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Client' }
+
+  /events:
+    get:
+      tags: [events]
+      summary: 일정 목록
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Event' } }
+    post:
+      tags: [events]
+      summary: 일정 생성
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Event' }
+
+  /resources:
+    get:
+      tags: [resources]
+      summary: 리소스 목록
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Resource' } }
+
+  /resources/book:
+    post:
+      tags: [resources]
+      summary: 리소스 예약
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResourceBooking' }
+      responses:
+        '200': { description: OK }
+
+  /docs:
+    get:
+      tags: [docs]
+      summary: 문서 목록
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Doc' } }
+    post:
+      tags: [docs]
+      summary: 문서 생성
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                content: { type: string }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Doc' }
+
+  /channels:
+    get:
+      tags: [chat]
+      summary: 채팅 채널 목록
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Channel' } }
+
+  /channels/{channelId}/messages:
+    post:
+      tags: [chat]
+      summary: 채팅 메시지 전송
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string }
+      responses:
+        '201': { description: Created }
+
+  /org/units:
+    get:
+      tags: [org]
+      summary: 조직 단위 목록
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/OrgUnit' } }
+
+  /org/invitations:
+    post:
+      tags: [org]
+      summary: 구성원 초대
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, orgUnitId, role]
+              properties:
+                email: { type: string, format: email }
+                orgUnitId: { type: string }
+                role: { type: string }
+      responses:
+        '201': { description: Created }
+
+  /auth/tokens/revoke:
+    post:
+      tags: [auth]
+      summary: 토큰 폐기
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tokenId]
+              properties:
+                tokenId: { type: string }
+                reason: { type: string }
+      responses:
+        '200': { description: OK }
+
+  # /users/me PATCH merged into /users/me path object above (PDCA-01 cleanup).
 
 components:
   securitySchemes:
@@ -536,3 +875,135 @@ components:
             authorId: { type: string }
             text: { type: string }
             time: { type: string, format: date-time }
+
+    Approval:
+      type: object
+      required: [id, title, requester, approver, status, createdAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        requester: { type: string }
+        approver: { type: string }
+        status: { type: string, enum: [pending, approved, rejected, cancelled] }
+        amount: { type: number }
+        reason: { type: string }
+        decidedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+
+    ApprovalCreate:
+      type: object
+      required: [title, approver]
+      properties:
+        title: { type: string }
+        approver: { type: string }
+        amount: { type: number }
+        reason: { type: string }
+
+    Client:
+      type: object
+      required: [id, name, createdAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        contact: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        industry: { type: string }
+        ownerId: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    ClientCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        contact: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        industry: { type: string }
+
+    Event:
+      type: object
+      required: [id, title, start, end, attendees, source]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        start: { type: string, format: date-time }
+        end: { type: string, format: date-time }
+        location: { type: string }
+        attendees: { type: array, items: { type: string } }
+        resourceId: { type: string }
+        source: { type: string, enum: [internal, google, outlook] }
+
+    EventCreate:
+      type: object
+      required: [title, start, end]
+      properties:
+        title: { type: string }
+        start: { type: string, format: date-time }
+        end: { type: string, format: date-time }
+        location: { type: string }
+        attendees: { type: array, items: { type: string } }
+        resourceId: { type: string }
+
+    Resource:
+      type: object
+      required: [id, name, kind]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        kind: { type: string, enum: [room, equipment] }
+        capacity: { type: integer }
+        location: { type: string }
+
+    ResourceBooking:
+      type: object
+      required: [resourceId, start, end, bookedBy]
+      properties:
+        resourceId: { type: string }
+        start: { type: string, format: date-time }
+        end: { type: string, format: date-time }
+        bookedBy: { type: string }
+
+    Doc:
+      type: object
+      required: [id, title, ownerId, updatedAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        ownerId: { type: string }
+        updatedAt: { type: string, format: date-time }
+        preview: { type: string }
+
+    Channel:
+      type: object
+      required: [id, name, kind, members]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        kind: { type: string, enum: [public, private, dm] }
+        members: { type: array, items: { type: string } }
+
+    OrgUnit:
+      type: object
+      required: [id, name, parentId, members]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        parentId:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        members: { type: array, items: { type: string } }
+
+    IssueCreate:
+      type: object
+      required: [title, proj, assignee, reporter, sev, prio]
+      properties:
+        title: { type: string }
+        proj: { type: string }
+        assignee: { type: string }
+        reporter: { type: string }
+        sev: { $ref: '#/components/schemas/IssueSev' }
+        prio: { $ref: '#/components/schemas/IssuePrio' }
+        tags: { type: array, items: { type: string } }

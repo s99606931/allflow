@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, IconButton, Progress } from '@/components/ui/primitives';
-import { TEAM, PROJECTS, userById } from '@/lib/fixtures';
-import { Calendar, FileText, Mail, Mic, Sparkles, Upload, Database, Wand2, X, Check, ChevronRight, FileAudio } from 'lucide-react';
+import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress } from '@/components/ui/primitives';
+import { PROJECTS, userById } from '@/lib/fixtures';
+import { useAiMutations, useTaskMutations } from '@/lib/hooks/use-data';
+import type { ExtractedAction } from '@/lib/schemas';
+import { FileText, Mail, Mic, Sparkles, Upload, Database, Wand2, X, Check, ChevronRight, FileAudio } from 'lucide-react';
 
 type Source = 'meeting' | 'email' | 'voice' | 'notion' | 'csv';
 
@@ -34,18 +36,27 @@ const EXTRACTED = [
   { id: 4, title: '회원가입 단계 카피 검토', assignee: 'u5', proj: 'p1', due: '5/3', priority: 'med', confidence: 0.83, source: '7-8번째 발화' },
 ];
 
+type AiItem = ExtractedAction & { id: number; proj: string; source?: string };
+
 export function AIAutoPage() {
   const [source, setSource] = useState<Source>('meeting');
   const [text, setText] = useState(SAMPLE_TRANSCRIPT);
-  const [extracting, setExtracting] = useState(false);
-  const [extracted, setExtracted] = useState(false);
-  const [items, setItems] = useState(EXTRACTED);
-  const [selected, setSelected] = useState<number[]>(EXTRACTED.map(i => i.id));
+  const [items, setItems] = useState<AiItem[]>([]);
+  const [selected, setSelected] = useState<number[]>([]);
+  const [defaultProj, setDefaultProj] = useState(PROJECTS[0]?.id ?? 'p1');
 
-  function runExtract() {
-    setExtracting(true);
-    setExtracted(false);
-    setTimeout(() => { setExtracting(false); setExtracted(true); }, 1400);
+  const ai = useAiMutations();
+  const tasks = useTaskMutations();
+  const extracting = ai.extractActions.isPending;
+  const extracted = items.length > 0;
+
+  async function runExtract() {
+    const result = await ai.extractActions.mutateAsync({ source, content: text, threshold: 0.7 });
+    const next: AiItem[] = result.map((r, idx) => ({
+      ...r, id: idx + 1, proj: defaultProj, source: r.sourceQuote ? r.sourceQuote.slice(0, 16) : undefined,
+    }));
+    setItems(next);
+    setSelected(next.map(i => i.id));
   }
 
   function toggleSel(id: number) {
@@ -55,6 +66,21 @@ export function AIAutoPage() {
   function removeItem(id: number) {
     setItems(items.filter(i => i.id !== id));
     setSelected(selected.filter(x => x !== id));
+  }
+
+  async function registerSelected() {
+    const picks = items.filter(i => selected.includes(i.id));
+    for (const p of picks) {
+      await tasks.create.mutateAsync({
+        title: p.title,
+        proj: p.proj,
+        assignee: p.assignee || 'me',
+        due: p.due,
+        priority: p.priority ?? 'med',
+      });
+    }
+    setItems([]);
+    setSelected([]);
   }
 
   return (
@@ -129,7 +155,11 @@ export function AIAutoPage() {
             <div className="flex items-center gap-2 pt-1">
               <div className="flex-1">
                 <div className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold mb-1">기본 프로젝트</div>
-                <select className="w-full h-8 px-2 rounded-md bg-bg-1 border border-border text-[12.5px] focus:outline-none focus:border-accent">
+                <select
+                  value={defaultProj}
+                  onChange={e => setDefaultProj(e.target.value)}
+                  className="w-full h-8 px-2 rounded-md bg-bg-1 border border-border text-[12.5px] focus:outline-none focus:border-accent"
+                >
                   {PROJECTS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
@@ -235,8 +265,15 @@ export function AIAutoPage() {
 
                 <div className="pt-3 border-t border-border flex items-center gap-2 mt-4">
                   <span className="text-[12px] text-fg-2 flex-1">{selected.length}개 선택됨</span>
-                  <Button variant="secondary" size="sm">검토 후 등록</Button>
-                  <Button variant="primary" size="sm">{selected.length}개 모두 등록</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setItems([])}>초기화</Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled={tasks.create.isPending || selected.length === 0}
+                    onClick={registerSelected}
+                  >
+                    {tasks.create.isPending ? '등록 중...' : `${selected.length}개 모두 등록`}
+                  </Button>
                 </div>
               </div>
             )}

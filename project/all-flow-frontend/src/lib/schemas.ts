@@ -127,6 +127,156 @@ export const NotificationSchema = z.object({
   href: z.string().optional(),
 });
 
+/* Approvals --------------------------------------------------------------- */
+export const ApprovalStatusSchema = z.enum(['pending', 'approved', 'rejected', 'cancelled']);
+export const ApprovalSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  requester: z.string(),
+  approver: z.string(),
+  status: ApprovalStatusSchema,
+  amount: z.number().optional(),
+  reason: z.string().optional(),
+  decidedAt: z.string().optional(),
+  createdAt: z.string(),
+});
+export const ApprovalCreateSchema = z.object({
+  title: z.string().min(1),
+  approver: z.string(),
+  amount: z.number().optional(),
+  reason: z.string().optional(),
+});
+export const ApprovalDecisionSchema = z.object({
+  decision: z.enum(['approved', 'rejected']),
+  comment: z.string().optional(),
+});
+
+/* CRM Clients ------------------------------------------------------------- */
+export const ClientSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  contact: z.string().optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  industry: z.string().optional(),
+  ownerId: z.string().optional(),
+  createdAt: z.string(),
+});
+export const ClientCreateSchema = z.object({
+  name: z.string().min(1),
+  contact: z.string().optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  industry: z.string().optional(),
+});
+
+/* Schedule Events --------------------------------------------------------- */
+export const EventSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  start: z.string(),
+  end: z.string(),
+  location: z.string().optional(),
+  attendees: z.array(z.string()),
+  resourceId: z.string().optional(),
+  source: z.enum(['internal', 'google', 'outlook']).default('internal'),
+});
+export const EventCreateSchema = z.object({
+  title: z.string().min(1),
+  start: z.string(),
+  end: z.string(),
+  location: z.string().optional(),
+  attendees: z.array(z.string()).default([]),
+  resourceId: z.string().optional(),
+});
+
+/* Resources --------------------------------------------------------------- */
+export const ResourceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  kind: z.enum(['room', 'equipment']),
+  capacity: z.number().int().optional(),
+  location: z.string().optional(),
+});
+export const ResourceBookingSchema = z.object({
+  resourceId: z.string(),
+  start: z.string(),
+  end: z.string(),
+  bookedBy: z.string(),
+});
+
+/* Documents (TipTap) ------------------------------------------------------ */
+export const DocSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  ownerId: z.string(),
+  updatedAt: z.string(),
+  preview: z.string().optional(),
+});
+export const DocCreateSchema = z.object({
+  title: z.string().min(1),
+  content: z.string().optional(),
+});
+
+/* Chat -------------------------------------------------------------------- */
+export const ChannelSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  kind: z.enum(['public', 'private', 'dm']),
+  members: z.array(z.string()),
+});
+export const MessageSendSchema = z.object({
+  channelId: z.string(),
+  text: z.string().min(1),
+});
+
+/* Org / RBAC -------------------------------------------------------------- */
+export const OrgUnitSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  parentId: z.string().nullable(),
+  members: z.array(z.string()),
+});
+export const InviteUserSchema = z.object({
+  email: z.string().email(),
+  orgUnitId: z.string(),
+  role: z.string(),
+});
+export const RevokeTokenSchema = z.object({
+  tokenId: z.string(),
+  reason: z.string().optional(),
+});
+
+/* Notifications mutations ------------------------------------------------- */
+export const BulkMarkReadSchema = z.object({
+  ids: z.array(z.string()).min(1),
+});
+
+/* Profile ----------------------------------------------------------------- */
+export const ProfilePatchSchema = z.object({
+  name: z.string().min(1).optional(),
+  role: z.string().optional(),
+  dept: z.string().optional(),
+  initials: z.string().optional(),
+  color: z.string().optional(),
+  email: z.string().email().optional(),
+});
+
+/* Issue create/transition ------------------------------------------------- */
+export const IssueCreateSchema = z.object({
+  title: z.string().min(1),
+  proj: z.string(),
+  assignee: z.string(),
+  reporter: z.string(),
+  sev: IssueSevSchema,
+  prio: IssuePrioSchema,
+  tags: z.array(z.string()).default([]),
+});
+export const IssueTransitionSchema = z.object({
+  status: IssueStatusSchema,
+  comment: z.string().optional(),
+});
+
 /* Realtime events (discriminated union) ------------------------------------ */
 export const RealtimeEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('notification'), payload: NotificationSchema }),
@@ -175,3 +325,24 @@ export type Report = z.infer<typeof ReportSchema>;
 export type ExtractedAction = z.infer<typeof ExtractedActionSchema>;
 export type Notification = z.infer<typeof NotificationSchema>;
 export type RealtimeEvent = z.infer<typeof RealtimeEventSchema>;
+export type Approval = z.infer<typeof ApprovalSchema>;
+export type ApprovalStatus = z.infer<typeof ApprovalStatusSchema>;
+export type ApprovalCreate = z.infer<typeof ApprovalCreateSchema>;
+export type ApprovalDecision = z.infer<typeof ApprovalDecisionSchema>;
+export type Client = z.infer<typeof ClientSchema>;
+export type ClientCreate = z.infer<typeof ClientCreateSchema>;
+export type Event = z.infer<typeof EventSchema>;
+export type EventCreate = z.infer<typeof EventCreateSchema>;
+export type Resource = z.infer<typeof ResourceSchema>;
+export type ResourceBooking = z.infer<typeof ResourceBookingSchema>;
+export type Doc = z.infer<typeof DocSchema>;
+export type DocCreate = z.infer<typeof DocCreateSchema>;
+export type Channel = z.infer<typeof ChannelSchema>;
+export type MessageSend = z.infer<typeof MessageSendSchema>;
+export type OrgUnit = z.infer<typeof OrgUnitSchema>;
+export type InviteUser = z.infer<typeof InviteUserSchema>;
+export type RevokeToken = z.infer<typeof RevokeTokenSchema>;
+export type BulkMarkRead = z.infer<typeof BulkMarkReadSchema>;
+export type ProfilePatch = z.infer<typeof ProfilePatchSchema>;
+export type IssueCreate = z.infer<typeof IssueCreateSchema>;
+export type IssueTransition = z.infer<typeof IssueTransitionSchema>;

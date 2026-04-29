@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
-import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, IconButton, Progress, StatusDot } from '@/components/ui/primitives';
-import { ISSUES, userById } from '@/lib/fixtures';
-import type { Issue, IssueSev, IssuePrio } from '@/lib/types';
-import { AlertCircle, Filter, Plus, Search, Sparkles, LayoutList, KanbanSquare, Clock, BarChart3 } from 'lucide-react';
+import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
+import { userById } from '@/lib/fixtures';
+import { useIssues, useIssueMutations } from '@/lib/hooks/use-data';
+import type { Issue, IssueSev, IssuePrio, IssueStatus } from '@/lib/schemas';
+import { Filter, Plus, Search, Sparkles, LayoutList, KanbanSquare, Clock, BarChart3 } from 'lucide-react';
 
 const SEV_TONE: Record<IssueSev, 'danger' | 'warning' | 'info' | 'neutral'> = {
   critical: 'danger', high: 'warning', med: 'info', low: 'neutral',
@@ -41,15 +42,17 @@ const HOTSPOTS = [
 
 export function IssuesPageFull() {
   const [tab, setTab] = useState('list');
+  const { data: issues = [] } = useIssues();
+  const stats = computeStats(issues);
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       {/* KPI strip */}
       <div className="grid grid-cols-6 gap-3">
         {[
-          { l: '신규 (24h)', v: '12', t: '+3' },
-          { l: 'P0 진행중', v: '2', t: '!', danger: true },
-          { l: '미할당', v: '4', t: '+1' },
+          { l: '신규 (24h)', v: stats.recent, t: '+3' },
+          { l: 'P0 진행중', v: stats.p0, t: stats.p0 > 0 ? '!' : '0', danger: stats.p0 > 0 },
+          { l: '미할당', v: stats.unassigned, t: '+1' },
           { l: '평균 해결', v: '2.4d', t: '-0.3' },
           { l: 'SLA 준수', v: '94%', t: '+2%' },
           { l: '재발생', v: '3', t: '-1' },
@@ -95,16 +98,16 @@ export function IssuesPageFull() {
         <Tabs.Content value="board" className="pt-4 outline-none">
           <div className="grid grid-cols-4 gap-3">
             {COLUMNS.map(col => {
-              const issues = ISSUES.filter(i => i.status === col.id);
+              const colIssues = issues.filter(i => i.status === col.id);
               return (
                 <div key={col.id} className="bg-bg-1 rounded-lg border border-border min-h-[400px]">
                   <div className="px-3 py-2.5 border-b border-border flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full" style={{ background: col.accent }} />
                     <span className="text-[12.5px] font-semibold text-fg">{col.label}</span>
-                    <span className="text-[11px] mono text-fg-3 ml-auto">{issues.length}</span>
+                    <span className="text-[11px] mono text-fg-3 ml-auto">{colIssues.length}</span>
                   </div>
                   <div className="p-2 space-y-2">
-                    {issues.map(iss => <BoardCard key={iss.id} issue={iss} />)}
+                    {colIssues.map(iss => <BoardCard key={iss.id} issue={iss} />)}
                   </div>
                 </div>
               );
@@ -117,10 +120,10 @@ export function IssuesPageFull() {
           <Card className="col-span-2">
             <CardHeader>
               <CardTitle>SLA 임박 이슈</CardTitle>
-              <Badge tone="warning">{ISSUES.filter(i => i.slaPct >= 60 && !i.resolved).length}건</Badge>
+              <Badge tone="warning">{issues.filter(i => i.slaPct >= 60 && !i.resolved).length}건</Badge>
             </CardHeader>
             <CardBody className="!p-0">
-              {[...ISSUES].filter(i => !i.resolved).sort((a, b) => b.slaPct - a.slaPct).map(iss => {
+              {[...issues].filter(i => !i.resolved).sort((a, b) => b.slaPct - a.slaPct).map(iss => {
                 const u = userById(iss.assignee);
                 return (
                   <div key={iss.id} className="flex items-center gap-3 px-5 py-3 border-b border-border last:border-0">
@@ -257,12 +260,13 @@ function Toolbar() {
 }
 
 function IssueList() {
+  const { data: issues = [] } = useIssues();
   return (
     <Card>
       <div className="grid grid-cols-[80px_1fr_140px_120px_90px_64px] gap-3 px-4 h-9 items-center text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold border-b border-border">
         <div>ID</div><div>제목</div><div>상태</div><div>SLA</div><div>담당자</div><div className="text-right">생성</div>
       </div>
-      {ISSUES.map(iss => {
+      {issues.map(iss => {
         const u = userById(iss.assignee);
         return (
           <div key={iss.id} className="grid grid-cols-[80px_1fr_140px_120px_90px_64px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors cursor-pointer">
@@ -294,8 +298,9 @@ function IssueList() {
 
 function BoardCard({ issue }: { issue: Issue }) {
   const u = userById(issue.assignee);
+  const { transition } = useIssueMutations();
   return (
-    <div className="rounded-md border border-border bg-bg-elev p-2.5 cursor-grab hover:shadow-md hover:border-border-strong transition-all">
+    <div className="rounded-md border border-border bg-bg-elev p-2.5 hover:shadow-md hover:border-border-strong transition-all">
       <div className="flex items-center gap-1.5 mb-1.5">
         <span className="text-[10px] mono font-bold px-1.5 py-0.5 rounded text-white" style={{ background: PRIO_COLOR[issue.prio] }}>{issue.prio}</span>
         <span className="px-1.5 h-4 rounded text-[10px] mono font-semibold text-white" style={{ background: issue.projColor }}>{issue.proj}</span>
@@ -311,8 +316,33 @@ function BoardCard({ issue }: { issue: Issue }) {
         <Progress value={issue.slaPct} tone={issue.slaPct >= 80 ? 'danger' : issue.slaPct >= 60 ? 'warning' : 'accent'} className="flex-1" />
         <span className={`text-[10.5px] mono font-semibold ${issue.slaPct >= 80 ? 'text-danger' : 'text-fg-2'}`}>{issue.slaPct}%</span>
       </div>
+      <div className="mt-2">
+        <select
+          aria-label="상태 변경"
+          value={issue.status}
+          disabled={transition.isPending}
+          onChange={(e) => transition.mutate({
+            id: issue.id,
+            input: { status: e.target.value as IssueStatus },
+          })}
+          className="w-full h-6 text-[11px] rounded bg-bg-1 border border-border px-1.5 focus:outline-none focus:border-accent"
+        >
+          <option value="open">Open</option>
+          <option value="in-progress">진행중</option>
+          <option value="in-review">검토</option>
+          <option value="resolved">해결됨</option>
+        </select>
+      </div>
     </div>
   );
+}
+
+function computeStats(issues: Issue[]) {
+  return {
+    recent: issues.length,
+    p0: issues.filter(i => i.prio === 'P0' && i.status !== 'resolved').length,
+    unassigned: issues.filter(i => !i.assignee).length,
+  };
 }
 
 function AISuggestion() {

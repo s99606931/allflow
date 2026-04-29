@@ -1,8 +1,9 @@
 'use client';
 
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress } from '@/components/ui/primitives';
-import { TEAM, userById } from '@/lib/fixtures';
-import { Activity, AlertTriangle, Cpu, Database, Lock, Server, Settings2, Shield } from 'lucide-react';
+import { userById } from '@/lib/fixtures';
+import { useOrgMutations } from '@/lib/hooks/use-data';
+import { Activity, AlertTriangle, Cpu, Database, Lock } from 'lucide-react';
 
 const HEALTH = [
   { l: 'Uptime', v: '99.97%', icon: Activity, tone: 'success' as const },
@@ -32,6 +33,7 @@ const AUDIT = [
 ];
 
 export function AdminPage() {
+  const { revokeToken } = useOrgMutations();
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <div className="grid grid-cols-6 gap-3">
@@ -91,7 +93,15 @@ export function AdminPage() {
             <CardHeader><CardTitle className="text-danger">위험 작업</CardTitle></CardHeader>
             <CardBody className="space-y-2">
               <Button variant="secondary" size="sm" className="w-full !text-danger">전체 세션 강제 종료</Button>
-              <Button variant="secondary" size="sm" className="w-full !text-danger">API 토큰 일괄 회수</Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full !text-danger"
+                disabled={revokeToken.isPending}
+                onClick={() => revokeToken.mutate({ tokenId: 'webhook-prod', reason: 'admin bulk revoke' })}
+              >
+                {revokeToken.isPending ? '회수 중...' : 'API 토큰 일괄 회수'}
+              </Button>
               <Button variant="secondary" size="sm" className="w-full !text-danger">워크스페이스 잠금</Button>
             </CardBody>
           </Card>

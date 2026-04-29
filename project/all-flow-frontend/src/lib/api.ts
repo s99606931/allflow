@@ -7,7 +7,8 @@ import {
   type ProjectCreate, type TaskCreate, type TaskPatch,
 } from './schemas';
 import { z } from 'zod';
-import ky from 'ky';
+import { http, parsed, sleep, USE_MOCK } from './api/http';
+import { extendedApi } from './api/extended';
 
 /**
  * API 클라이언트 — 픽스처(현재) ↔ 백엔드(추후) 단일 시멘.
@@ -16,36 +17,12 @@ import ky from 'ky';
  * 환경변수:
  *   NEXT_PUBLIC_USE_MOCK=false              → 실제 API 사용
  *   NEXT_PUBLIC_API_BASE_URL=https://...    → 백엔드 베이스 URL
+ *
+ * 확장 엔드포인트(approvals, clients, events, docs, channels, org, ...)는
+ * `./api/extended.ts`에서 정의하여 본 파일이 500 LOC를 초과하지 않도록 분리.
  */
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== 'false';
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api/v1';
 
-const http = ky.create({
-  prefixUrl: BASE,
-  timeout: 15_000,
-  retry: { limit: 1 },
-  hooks: {
-    beforeRequest: [
-      // next-auth v5 세션 토큰 첨부 (서버사이드: cookies, 클라이언트: useSession)
-      // req => req.headers.set('Authorization', `Bearer ${token}`),
-    ],
-  },
-});
-
-const sleep = (ms = 250) => new Promise(r => setTimeout(r, ms));
-
-/** 응답을 Zod 스키마로 검증해서 반환. 실패 시 콘솔 경고 + 원본 반환 (프로덕션 안전). */
-async function parsed<T>(promise: Promise<unknown>, schema: z.ZodType<T>): Promise<T> {
-  const raw = await promise;
-  const result = schema.safeParse(raw);
-  if (!result.success) {
-    console.warn('[api] schema validation failed', result.error);
-    return raw as T;
-  }
-  return result.data;
-}
-
-export const api = {
+const baseApi = {
   /* Identity --------------------------------------------------------------- */
   me: async (): Promise<User> =>
     USE_MOCK ? (await sleep(), ME) : parsed(http.get('users/me').json(), UserSchema),
@@ -175,5 +152,11 @@ export const api = {
     );
   },
 };
+
+/**
+ * 단일 진입점 `api` — 기본 엔드포인트(`baseApi`) + 확장 엔드포인트(`extendedApi`) 병합.
+ * 호출자는 `api.<method>` 단일 표면만 사용한다.
+ */
+export const api = { ...baseApi, ...extendedApi };
 
 export { userById };

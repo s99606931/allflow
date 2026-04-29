@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
-import { Card, CardBody, CardHeader, CardTitle, Avatar, AvatarStack, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
-import { PROJECTS, userById } from '@/lib/fixtures';
+import { Card, CardBody, CardHeader, CardTitle, Badge, Progress } from '@/components/ui/primitives';
+import { useProjects } from '@/lib/hooks/use-data';
 import { LayoutGrid, GanttChart, HeartPulse } from 'lucide-react';
 
 const HEALTH = [
@@ -13,6 +13,8 @@ const HEALTH = [
 
 export function ProgressPage() {
   const [tab, setTab] = useState('portfolio');
+  const { data: projects = [] } = useProjects();
+  const PROJECTS = projects;
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
