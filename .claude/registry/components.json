@@ -1,14 +1,14 @@
 {
   "_meta": {
-    "version": "2.3",
+    "version": "2.4",
     "created": "2026-03-29",
-    "updated": "2026-04-28",
+    "updated": "2026-04-29",
     "description": "AutoVibe ecosystem registry",
     "total": {
-      "agents": 13,
-      "skills": 18,
-      "hooks": 10,
-      "rules": 6
+      "agents": 19,
+      "skills": 22,
+      "hooks": 13,
+      "rules": 7
     }
   },
   "rules": {
@@ -70,6 +70,16 @@
       "created": "2026-04-27",
       "autovibe": true,
       "domain": "base",
+      "portable": true
+    },
+    "av-oss-collab-protocol": {
+      "group": "oss",
+      "version": "1.0",
+      "file": ".claude/rules/av-oss-collab-protocol.md",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "oss",
       "portable": true
     }
   },
@@ -257,6 +267,66 @@
       "domain": "base",
       "portable": true,
       "description": "API/Changelog/README 자동 생성"
+    },
+    "av-oss-dev-lead": {
+      "group": "oss",
+      "version": "1.0",
+      "file": ".claude/agents/av-oss-dev-lead.md",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "oss",
+      "portable": true
+    },
+    "av-oss-test-engineer": {
+      "group": "oss",
+      "version": "1.0",
+      "file": ".claude/agents/av-oss-test-engineer.md",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "oss",
+      "portable": true
+    },
+    "av-oss-docs-curator": {
+      "group": "oss",
+      "version": "1.0",
+      "file": ".claude/agents/av-oss-docs-curator.md",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "oss",
+      "portable": true
+    },
+    "av-oss-pr-reviewer": {
+      "group": "oss",
+      "version": "1.0",
+      "file": ".claude/agents/av-oss-pr-reviewer.md",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "oss",
+      "portable": true
+    },
+    "av-oss-security-officer": {
+      "group": "oss",
+      "version": "1.0",
+      "file": ".claude/agents/av-oss-security-officer.md",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "oss",
+      "portable": true
+    },
+    "av-oss-release-manager": {
+      "group": "oss",
+      "version": "1.0",
+      "file": ".claude/agents/av-oss-release-manager.md",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "oss",
+      "portable": true
     }
   },
   "skills": {
@@ -485,6 +555,50 @@
       "domain": "base",
       "portable": true,
       "description": "PM 팀 구성 + 병렬 실행 + 자동 학습 (memory-keeper 동시 가동)"
+    },
+    "av-oss-init": {
+      "group": "oss",
+      "version": "1.0",
+      "file": ".claude/skills/av-oss-init/SKILL.md",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "oss",
+      "portable": true,
+      "user_invocable": true
+    },
+    "av-oss-pr-triage": {
+      "group": "oss",
+      "version": "1.0",
+      "file": ".claude/skills/av-oss-pr-triage/SKILL.md",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "oss",
+      "portable": true,
+      "user_invocable": true
+    },
+    "av-oss-release": {
+      "group": "oss",
+      "version": "1.0",
+      "file": ".claude/skills/av-oss-release/SKILL.md",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "oss",
+      "portable": true,
+      "user_invocable": true
+    },
+    "av-oss-contrib-onboard": {
+      "group": "oss",
+      "version": "1.0",
+      "file": ".claude/skills/av-oss-contrib-onboard/SKILL.md",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "oss",
+      "portable": true,
+      "user_invocable": true
     }
   },
   "hooks": {
@@ -615,6 +729,36 @@
       "domain": "base",
       "portable": true,
       "description": "plugin drift 트리거 파일 감지 시 sync 권장을 컨텍스트로 자동 주입 (active sync)"
+    },
+    "av-oss-secret-scan": {
+      "group": "oss",
+      "version": "1.0",
+      "file": ".claude/hooks/av-oss-secret-scan.sh",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "oss",
+      "portable": true
+    },
+    "av-oss-license-check": {
+      "group": "oss",
+      "version": "1.0",
+      "file": ".claude/hooks/av-oss-license-check.sh",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "oss",
+      "portable": true
+    },
+    "av-oss-sign-off": {
+      "group": "oss",
+      "version": "1.0",
+      "file": ".claude/hooks/av-oss-sign-off.sh",
+      "status": "active",
+      "created": "2026-04-29",
+      "autovibe": true,
+      "domain": "oss",
+      "portable": true
     }
   }
 }

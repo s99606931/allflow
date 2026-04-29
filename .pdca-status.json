@@ -1,0 +1,15 @@
+{
+  ".claude": {
+    "phase": "archived",
+    "matchRate": 96.20,
+    "matchRateAfterFix": 99.2,
+    "iterationCount": 1,
+    "criticalGaps": 0,
+    "successCriteria": "8/8",
+    "startedAt": "2026-04-29T00:07:00+09:00",
+    "completedAt": "2026-04-29T11:48:00+09:00",
+    "archivedAt": "2026-04-29T11:51:00+09:00",
+    "archivedTo": "docs/archive/2026-04/dotclaude/",
+    "summary": "AutoVibe OSS 6트랙 분업화 (Dev/Test/Docs/Review/Security/Release). 25 신규 산출물 + Minor 6건 개선. 정합성 5계층 일관 달성, 학습 2건 적재."
+  }
+}

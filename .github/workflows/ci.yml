@@ -1,0 +1,53 @@
+# Owner: av-oss-test-engineer
+# CI matrix workflow — runs on every PR + main push
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-docs:
+    name: Lint markdown + structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify required OSS files exist
+        run: |
+          for f in LICENSE README.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md; do
+            test -f "$f" || { echo "missing $f"; exit 1; }
+          done
+      - name: Markdown lint (best-effort)
+        run: |
+          npx --yes markdownlint-cli2 "**/*.md" "#node_modules" || true
+
+  validate-claude-config:
+    name: Validate .claude registry + frontmatter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate components.json is valid JSON
+        run: |
+          python3 -c "import json; json.load(open('.claude/registry/components.json'))"
+      - name: Verify all referenced files exist
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          reg = json.load(open('.claude/registry/components.json'))
+          missing = []
+          for kind in ('rules','agents','skills','hooks'):
+              for name, meta in reg.get(kind, {}).items():
+                  if isinstance(meta, dict) and 'file' in meta:
+                      if not os.path.exists(meta['file']):
+                          missing.append(f"{kind}.{name} -> {meta['file']}")
+          if missing:
+              print("Missing files referenced in registry:")
+              for m in missing: print(" -", m)
+              sys.exit(1)
+          print("registry OK")
+          PY

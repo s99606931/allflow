@@ -1,0 +1,49 @@
+# Owner mapping per OSS track. Update GitHub usernames before going public.
+# Format: pattern  @owner1 @owner2
+
+# Default — all changes
+*                                    @autovibe-maintainers
+
+# Dev track
+/.editorconfig                       @autovibe-dev-leads
+/.devcontainer/                      @autovibe-dev-leads
+
+# Test track
+/.github/workflows/ci.yml            @autovibe-test-leads
+/.github/workflows/security.yml      @autovibe-security-leads
+/tests/                              @autovibe-test-leads
+
+# Docs track
+/README.md                           @autovibe-docs-leads
+/CHANGELOG.md                        @autovibe-docs-leads
+/CONTRIBUTING.md                     @autovibe-docs-leads
+/docs/                               @autovibe-docs-leads
+/.github/ISSUE_TEMPLATE/             @autovibe-docs-leads
+/.github/PULL_REQUEST_TEMPLATE.md    @autovibe-docs-leads
+
+# Security track
+/SECURITY.md                         @autovibe-security-leads
+/.github/dependabot.yml              @autovibe-security-leads
+/.githooks/                          @autovibe-security-leads
+/.claude/hooks/av-oss-*.sh           @autovibe-security-leads
+
+# Release track
+/.github/workflows/release.yml       @autovibe-release-leads
+/VERSION                             @autovibe-release-leads
+
+# AV ecosystem (meta) — all maintainers (default)
+/.claude/                            @autovibe-maintainers
+
+# AV OSS meta components — track-specific ownership
+/.claude/agents/av-oss-dev-lead.md          @autovibe-dev-leads
+/.claude/agents/av-oss-test-engineer.md     @autovibe-test-leads
+/.claude/agents/av-oss-docs-curator.md      @autovibe-docs-leads
+/.claude/agents/av-oss-pr-reviewer.md       @autovibe-maintainers
+/.claude/agents/av-oss-security-officer.md  @autovibe-security-leads
+/.claude/agents/av-oss-release-manager.md   @autovibe-release-leads
+/.claude/skills/av-oss-init/                @autovibe-maintainers
+/.claude/skills/av-oss-pr-triage/           @autovibe-maintainers
+/.claude/skills/av-oss-release/             @autovibe-release-leads
+/.claude/skills/av-oss-contrib-onboard/     @autovibe-docs-leads
+/.claude/hooks/av-oss-*.sh                  @autovibe-security-leads
+/.claude/rules/av-oss-collab-protocol.md    @autovibe-maintainers

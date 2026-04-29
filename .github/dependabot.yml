@@ -1,0 +1,10 @@
+# Owner: av-oss-security-officer
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      ci-actions:
+        patterns: ["*"]

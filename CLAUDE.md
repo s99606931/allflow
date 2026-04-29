@@ -1,10 +1,12 @@
 # AutoVibe (av) 프로젝트
-> **CC v2.1.119+ 최적화** | bkit v2.0.8 Dynamic | 5차 PDCA 완료 (gap 99.5% / code 100점 ⭐⭐) | 2026-04-27
+> **CC v2.1.119+ 최적화** | bkit v2.0.8 Dynamic | 5차 PDCA 완료 (gap 99.5% / code 100점 ⭐⭐) | 2026-04-29
+> **OSS 모드 활성화**: 6 트랙(Dev/Test/Docs/Review/Security/Release) 분업화 (av-oss-*)
 
 @.claude/rules/av-base-spec.md
 @.claude/rules/av-base-plugin-routing.md
 @.claude/rules/av-org-protocol.md
 @.claude/rules/av-base-code-quality-gates.md
+@.claude/rules/av-oss-collab-protocol.md
 
 ## AutoVibe 생태계
 
@@ -51,10 +53,25 @@
 
 | 유형 | 수량 | 경로 |
 |------|-----:|------|
-| Agents | 13 | `.claude/agents/` |
-| Skills | 18 | `.claude/skills/` |
-| Hooks | 10 | `.claude/hooks/` |
-| Rules | 6 | `.claude/rules/` |
+| Agents | 19 (base 13 + oss 6) | `.claude/agents/` |
+| Skills | 22 (base 18 + oss 4) | `.claude/skills/` |
+| Hooks | 13 (base 10 + oss 3) | `.claude/hooks/` |
+| Rules | 7 (base 6 + oss 1) | `.claude/rules/` |
+
+### OSS 트랙 (6) — github.com 공개 협업
+
+| 트랙 | 에이전트 | 진입 스킬 |
+|------|---------|----------|
+| Dev | av-oss-dev-lead | (PR 자동) |
+| Test | av-oss-test-engineer | (CI 자동) |
+| Docs | av-oss-docs-curator | (머지 후 자동) |
+| Review | av-oss-pr-reviewer | `/av-oss-pr-triage` |
+| Security | av-oss-security-officer | (훅 자동) |
+| Release | av-oss-release-manager | `/av-oss-release` |
+| (공통) | — | `/av-oss-init`, `/av-oss-contrib-onboard` |
+
+훅: `av-oss-secret-scan`, `av-oss-license-check`, `av-oss-sign-off` (DCO).
+프로토콜: `.claude/rules/av-oss-collab-protocol.md` (RACI + 핸드오프 + 게이트 매트릭스).
 
 ### 외부 플러그인
 
