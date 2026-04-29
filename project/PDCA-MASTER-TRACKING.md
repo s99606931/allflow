@@ -130,7 +130,7 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | BE-N5 | docs | 2 | Doc (title/body markdown/version) | 2d |
 | BE-N6 | channels/messages | 2 | Channel + Message (멤버십 + paging) | 3d |
 | BE-N7 | org/units + invitations | 2 | OrgUnit (tree) + Invitation (token, expiry) | 2d |
-| BE-N8 | auth/tokens/revoke | 1 | Refresh token blacklist | 0.5d |
+| BE-N8 | auth/tokens/revoke | 1 | Refresh token blacklist | 0.5d | ✓ done (audit-log stub, 영속화 후속) |
 
 ### 트랙 3 — FE-WIRING (BE 정상이거나 BE-CORE 완료 시 활성화)
 
@@ -239,14 +239,14 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | 트랙 | 총 | done | in-review | in-progress | todo | 진행률 |
 |------|---:|-----:|----------:|------------:|-----:|------:|
 | BE-CORE (C1~C5) | 5 | 5 | 0 | 0 | 0 | **100%** ✓ |
-| BE-NEW (N1~N8) | 8 | 0 | 0 | 0 | 8 | 0% |
+| BE-NEW (N1~N8) | 8 | 1 | 0 | 0 | 7 | 12.5% |
 | FE-WIRING (W1~W9) | 9 | 0 | 0 | 0 | 9 | 0% |
 | TEST (B1~B4 + F1~F4) | 8 | 0 | 0 | 0 | 8 | 0% |
 | CLEANUP (CL1~CL2) | 2 | 0 | 0 | 0 | 2 | 0% |
-| **합계** | **32** | **5** | **0** | **0** | **27** | **15.6%** |
+| **합계** | **32** | **6** | **0** | **0** | **26** | **18.8%** |
 
-마지막 측정: 2026-04-29 (loop iter 5 — BE-C4 완료, **BE-CORE 트랙 종결**)
-다음 측정: loop iter 6 (예상: BE-N8 auth/tokens/revoke 0.5d 또는 FE-W7 avatar dropdown)
+마지막 측정: 2026-04-29 (loop iter 6 — BE-N8 완료)
+다음 측정: loop iter 7 (예상: FE-W7 avatar dropdown — FE 트랙 첫 진입)
 
 ### 사이클 진행 로그
 
@@ -257,6 +257,7 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | 3 | 2026-04-29 | BE-C1 (DELETE /tasks/:id) | tasks 11/11 / 전체 198/198 / typecheck 0 | 소프트 삭제 + comment cascade(`comment.updateMany`), RBAC 멤버십 검사, 4 신규 단위 테스트(401/204+cascade/403/404). 204 No Content 응답 |
 | 4 | 2026-04-29 | BE-C2 (issue transition) | issues 16/16 / 전체 208/208 / FE contract 39/39 / typecheck 0 | 상태 머신 (open↔in-progress↔in-review↔resolved + 재오픈), comment 옵션 시 audit Comment row 생성, 멱등 동일전이 허용. 10 신규 테스트 |
 | 5 | 2026-04-29 | BE-C4 (reports/:id/send) | reports 12/12 / 전체 214/214 / typecheck 0 | 수신자 이메일 큐 적재 stub, audit log, OpenAPI 등재. 6 신규 테스트(401/200/빈 recipients 400/잘못된 이메일 400/strict/리포트 없음). **BE-CORE 트랙 5/5 종결 ✓** — SMTP 실연동은 follow-up |
+| 6 | 2026-04-29 | BE-N8 (auth/tokens/revoke) | auth 7/7 / 전체 221/221 / typecheck 0 | 새 `auth` 모듈 신설(`modules/auth/auth.routes.ts`), strict zod, audit-log 기반 stub, 멱등 보장. OpenAPI 응답 스키마 정합화. 7 신규 테스트. 영속화 모델(RevokedToken)은 follow-up. BE-NEW 트랙 1/8 진입 |
 
 ---
 

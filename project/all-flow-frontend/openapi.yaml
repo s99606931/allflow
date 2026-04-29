@@ -643,19 +643,32 @@ paths:
   /auth/tokens/revoke:
     post:
       tags: [auth]
-      summary: 토큰 폐기
+      summary: 토큰 폐기 (멱등)
+      description: |
+        지정된 tokenId 의 폐기를 요청한다. 본 단계는 audit 로그만 기록하며,
+        실제 블록리스트 영속화는 후속 작업 (Prisma RevokedToken 모델 + auth 플러그인 검사).
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [tokenId]
               properties:
-                tokenId: { type: string }
-                reason: { type: string }
+                tokenId: { type: string, minLength: 1, maxLength: 200 }
+                reason: { type: string, minLength: 1, maxLength: 500 }
       responses:
-        '200': { description: OK }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [revoked, tokenId]
+                properties:
+                  revoked: { type: boolean }
+                  tokenId: { type: string }
 
   # /users/me PATCH merged into /users/me path object above (PDCA-01 cleanup).
 
