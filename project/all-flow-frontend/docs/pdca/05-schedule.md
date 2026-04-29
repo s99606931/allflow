@@ -1,6 +1,6 @@
 # PDCA-05 — 스케줄 트랙: 캘린더 / 회의실·리소스
 
-> Phase: 3 (Collaboration) | Owner: FE | Status: todo | Created: 2026-04-29
+> Phase: 3 (Collaboration) | Owner: FE | Status: done | Created: 2026-04-29 | Closed: 2026-04-29
 > Acceptance: 인벤토리 1.6.* / 5.4.* wired. Google/Outlook OAuth 1차 통합.
 > Dependencies: PDCA-01
 

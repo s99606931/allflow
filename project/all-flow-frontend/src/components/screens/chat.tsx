@@ -1,9 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Avatar, Badge, Button, IconButton } from '@/components/ui/primitives';
 import { TEAM, ME, userById } from '@/lib/fixtures';
-import { Hash, Lock, Plus, Search, Smile, Paperclip, AtSign, Sparkles, ArrowUp, MessageSquare, Pin } from 'lucide-react';
+import { Hash, Lock, Plus, Search, Smile, Paperclip, AtSign, Sparkles, ArrowUp, MessageSquare, Pin, X } from 'lucide-react';
+import { Composer } from '@/components/chat/composer';
+import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel';
+import { MentionPopover } from '@/components/chat/mention-popover';
+import { useTaskMutations } from '@/lib/hooks/use-data';
+import { useTranslation } from '@/lib/i18n';
 
 const CHANNELS = [
   { id: 'general', name: 'general', type: 'public', unread: 0 },
@@ -25,8 +30,43 @@ const MSGS = [
 ];
 
 export function ChatPage() {
+  const { t } = useTranslation();
   const [active, setActive] = useState('eng');
-  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState(MSGS);
+  const [openThreadId, setOpenThreadId] = useState<number | null>(null);
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [extractedDismissed, setExtractedDismissed] = useState(false);
+  const taskMutations = useTaskMutations();
+
+  const threadParent = useMemo<ThreadMessage | null>(() => {
+    const found = messages.find(m => m.id === openThreadId);
+    if (!found) return null;
+    return { id: found.id, who: found.who, time: found.time, text: found.text };
+  }, [openThreadId, messages]);
+
+  const onCreateTaskFromAI = async (text: string) => {
+    // Pull the first bullet "• title" from the AI message body.
+    const bullet = text.match(/•\s+"?([^"\n]+)"?/);
+    const title = bullet ? bullet[1].trim() : '채팅에서 추출된 액션';
+    await taskMutations.create.mutateAsync({
+      title,
+      proj: 'PRJ-204',
+      assignee: ME.id,
+    });
+    setExtractedDismissed(true);
+  };
+
+  const onSent = (text: string) => {
+    setMessages(prev => [
+      ...prev,
+      {
+        id: prev.length + 1,
+        who: ME.id,
+        time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        text,
+      },
+    ]);
+  };
 
   return (
     <div className="grid grid-cols-[260px_1fr_320px] h-[calc(100vh-56px)] border-t border-border">
@@ -87,7 +127,7 @@ export function ChatPage() {
         </header>
 
         <div className="flex-1 overflow-y-auto scroll p-5 space-y-4">
-          {MSGS.map(m => {
+          {messages.map(m => {
             if (m.who === 'ai') {
               return (
                 <div key={m.id} className="flex gap-2.5 rounded-lg border border-accent/20 bg-accent-soft p-3">
@@ -98,10 +138,17 @@ export function ChatPage() {
                       <span className="text-[10.5px] text-fg-3">{m.time}</span>
                     </div>
                     <div className="text-[12.5px] text-fg-1 mt-0.5 whitespace-pre-wrap">{m.text}</div>
-                    {m.extracted && (
+                    {m.extracted && !extractedDismissed && (
                       <div className="flex gap-1.5 mt-2">
-                        <Button variant="primary" size="sm">태스크로 등록</Button>
-                        <Button variant="ghost" size="sm">무시</Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => onCreateTaskFromAI(m.text)}
+                          disabled={taskMutations.create.isPending}
+                        >
+                          {t('chat.toTask')}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setExtractedDismissed(true)}>무시</Button>
                       </div>
                     )}
                   </div>
@@ -126,7 +173,14 @@ export function ChatPage() {
                   {m.threads && (
                     <div className={`flex items-center gap-1.5 mt-1 text-[11px] text-accent-strong ${mine ? 'justify-end' : ''}`}>
                       <MessageSquare size={11} />
-                      <button className="hover:underline">{m.threads}개 답글 · 2분 전</button>
+                      <button
+                        type="button"
+                        className="hover:underline"
+                        onClick={() => setOpenThreadId(typeof m.id === 'number' ? m.id : null)}
+                        aria-label={t('chat.thread')}
+                      >
+                        {m.threads}개 답글 · 2분 전
+                      </button>
                     </div>
                   )}
                 </div>
@@ -136,25 +190,37 @@ export function ChatPage() {
         </div>
 
         {/* Composer */}
-        <div className="p-3 border-t border-border bg-bg-1">
-          <div className="rounded-lg border border-border bg-bg-elev focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-soft transition-colors">
-            <textarea value={input} onChange={e => setInput(e.target.value)} placeholder="#engineering 에 메시지 보내기..." rows={2}
-              className="w-full resize-none bg-transparent px-3 py-2.5 text-[13px] focus:outline-none" />
-            <div className="flex items-center justify-between px-2 pb-1.5">
-              <div className="flex gap-0.5 text-fg-3">
-                <IconButton size="sm"><Paperclip size={13} /></IconButton>
-                <IconButton size="sm"><AtSign size={13} /></IconButton>
-                <IconButton size="sm"><Smile size={13} /></IconButton>
-                <IconButton size="sm" className="text-accent-strong"><Sparkles size={13} /></IconButton>
-              </div>
-              <Button variant="primary" size="sm" disabled={!input.trim()}><ArrowUp size={13} /></Button>
-            </div>
-          </div>
+        <div className="relative p-3 border-t border-border bg-bg-1">
+          <Composer channelId={active} onSent={onSent} onMention={() => setMentionOpen(true)} />
+          <MentionPopover
+            open={mentionOpen}
+            onClose={() => setMentionOpen(false)}
+            onSelect={u => {
+              setMentionOpen(false);
+              onSent(`@${u.name} `);
+            }}
+            className="bottom-20 left-3"
+          />
         </div>
       </div>
 
-      {/* Right panel — channel info + AI */}
-      <div className="bg-bg-1 border-l border-border overflow-y-auto scroll p-4 space-y-4">
+      {/* Right panel — channel info + AI (or thread when active) */}
+      {threadParent && (
+        <div className="bg-bg-1 border-l border-border">
+          <div className="flex items-center justify-between border-b border-border px-3 py-2">
+            <span className="text-[12px] font-semibold text-fg">{t('chat.thread')}</span>
+            <IconButton size="sm" type="button" aria-label={t('common.close')} onClick={() => setOpenThreadId(null)}>
+              <X size={13} />
+            </IconButton>
+          </div>
+          <ThreadPanel
+            channelId={active}
+            parent={threadParent}
+            replies={[]}
+          />
+        </div>
+      )}
+      {!threadParent && <div className="bg-bg-1 border-l border-border overflow-y-auto scroll p-4 space-y-4">
         <div>
           <div className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold mb-2">고정된 메시지 (3)</div>
           <div className="rounded-md border border-border bg-bg-elev p-2.5 text-[11.5px] text-fg-1 leading-relaxed">
@@ -174,7 +240,7 @@ export function ChatPage() {
             ))}
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

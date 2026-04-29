@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, AvatarStack, Badge, Button, Progress } from '@/components/ui/primitives';
 import { TEAM, userById } from '@/lib/fixtures';
 import { Calendar, Download, FileBarChart, Mail, RefreshCw, Send, Sparkles } from 'lucide-react';
+import { ReportRecipientsEditor } from '@/components/dialogs/report-recipients-editor';
 
 // react-pdf is client-only and heavy — lazy load to avoid SSR issues
 const ReportDownloadButton = dynamic(
@@ -34,6 +36,7 @@ const SAMPLE_REPORT = {
 };
 
 export function ReportWeeklyPage() {
+  const [sendOpen, setSendOpen] = useState(false);
   return (
     <div className="p-6 grid grid-cols-12 gap-5 max-w-[1440px] mx-auto">
       {/* LEFT — settings */}
@@ -114,7 +117,13 @@ export function ReportWeeklyPage() {
           >
             <Download size={13} /> PDF
           </ReportDownloadButton>
-          <Button variant="primary" size="sm"><Send size={13} /> 발송</Button>
+          <Button variant="primary" size="sm" onClick={() => setSendOpen(true)}><Send size={13} /> 발송</Button>
+          <ReportRecipientsEditor
+            open={sendOpen}
+            onOpenChange={setSendOpen}
+            reportId={SAMPLE_REPORT.id}
+            defaultRecipients={['exec@allflow.io']}
+          />
         </div>
 
         <Card>

@@ -29,10 +29,14 @@ flowchart TD
     G01 --> G02 --> G03 --> G04
     G04 --> G05 --> G06 --> G07
     G07 --> G08 --> G09 --> G10
+    G10 --> G11["11 PDCA 개발완료 후 프로세스<br/>Check Act Report Archive"]
+    G11 --> G12["12 PDCA Loop 개발 가이드<br/>/loop 자동화 + PM 반복"]
 
     style G01 fill:#2d6a4f,color:#fff
     style G04 fill:#1d3557,color:#fff
     style G07 fill:#457b9d,color:#fff
+    style G11 fill:#6f42c1,color:#fff
+    style G12 fill:#6f42c1,color:#fff
 ```
 
 ---
@@ -62,6 +66,13 @@ flowchart TD
 | 1 | [08-프로젝트-이전.md](08-프로젝트-이전.md) | 이전 전략 3가지 |
 | 2 | [09-유지보수.md](09-유지보수.md) | 건강도 관리 |
 
+### PDCA를 처음 적용하는 분
+
+| 순서 | 가이드 | 핵심 |
+|------|--------|------|
+| 1 | [11-PDCA-개발완료-후-프로세스.md](11-PDCA-개발완료-후-프로세스.md) | 개발 완료 후 4단계 (Check/Act/Report/Archive) |
+| 2 | [12-PDCA-Loop-개발-가이드.md](12-PDCA-Loop-개발-가이드.md) | `/loop` 자동화로 PM이 task 반복 수행 |
+
 ---
 
 ## 전체 가이드 목록
@@ -79,3 +90,5 @@ flowchart TD
 | 08 | [08-프로젝트-이전.md](08-프로젝트-이전.md) | 신규 프로젝트에 생태계 이전 | 운영 |
 | 09 | [09-유지보수.md](09-유지보수.md) | 건강도 관리, 최적화, 백업 | 운영 |
 | 10 | [10-문제-해결.md](10-문제-해결.md) | 증상별 해결 가이드 | 운영 |
+| 11 | [11-PDCA-개발완료-후-프로세스.md](11-PDCA-개발완료-후-프로세스.md) | Check → Act → Report → Archive 단계별 도식 | PDCA 입문 |
+| 12 | [12-PDCA-Loop-개발-가이드.md](12-PDCA-Loop-개발-가이드.md) | `/loop` 으로 PM 에이전트 반복 자동화 + 진행 리뷰 | PDCA 자동화 |

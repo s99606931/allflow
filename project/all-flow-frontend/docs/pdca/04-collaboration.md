@@ -1,6 +1,6 @@
 # PDCA-04 — 협업 트랙: 결재 / 문서 / 채팅
 
-> Phase: 3 (Collaboration) | Owner: FE + BE | Status: todo | Created: 2026-04-29
+> Phase: 3 (Collaboration) | Owner: FE + BE | Status: done | Created: 2026-04-29 | Closed: 2026-04-29
 > Acceptance: 인벤토리 1.5.* (결재) / 1.7.* (문서) / 1.8.* (채팅) wired. 채팅은 SSE/WebSocket 기반 실시간.
 > Dependencies: PDCA-01, PDCA-02 (실시간 인프라는 backend PDCA-03)
 

@@ -50,6 +50,37 @@ flowchart TD
 | decoration (시각만) | 88 (80%) | PDCA-02~09 와이어링 대상 |
 | missing (있어야 하는 것) | 행 단위로 식별 | 각 PDCA 의 acceptance 기준 |
 
+## 5차 sweep 종결 (2026-04-29)
+
+| PDCA | Status |
+|------|--------|
+| 01 API 컨트랙트 | done |
+| 02 태스크/이슈 | done |
+| 03 프로젝트/진행률 | done |
+| 04 협업 (TipTap+chat) | done |
+| 05 스케줄 (OAuth+conflicts) | done |
+| 06 AI 통합 | done |
+| 07 보고/CRM (PDF+이메일) | done |
+| 08 알림/실시간 | done |
+| 09 관리/조직/HR/설정 | done |
+| 10 QA·a11y·i18n | done |
+
+게이트:
+- typecheck: PASS (0 에러)
+- lint: PASS (0 errors, 118 warnings — 모두 후속 PR 정리 대상)
+- test (vitest): 98/98 PASS (i18n 4건 신규)
+- e2e: collaboration.spec.ts × 7 + axe.spec.ts × 12 추가
+- ESLint v9 flat config 마이그레이션 완료
+
+신규 컴포넌트:
+- `src/components/ui/dialog.tsx` (Radix wrapper + DialogField/TextInput/Textarea/Select)
+- `src/components/dialogs/*` (approval-form/line-editor, doc-create, event-create/detail, calendar-link, resource-book, client-form/detail, activity-timeline, report-recipients-editor)
+- `src/components/editor/wiki-editor.tsx` (contentEditable, TipTap-compatible API)
+- `src/components/chat/*` (composer, thread-panel, mention-popover)
+- `src/lib/i18n.ts` + `src/locales/{ko,en}.json` (43 키, missing 0건)
+- `src/app/oauth-callback/page.tsx` (Google/Outlook 캘린더 연결)
+- `src/app/api/v1/reports/[id]/send/route.ts` (mock 발송 큐)
+
 ## 후속 운영
 
 - **PM** (av-pm-coordinator) 가 본 인덱스를 사용자에게 제시하고 승인 요청.

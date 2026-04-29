@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, IconButton } from '@/components/ui/primitives';
 import { TEAM, userById } from '@/lib/fixtures';
 import { FileText, Plus, Search, Sparkles, Star, ChevronRight, Hash, Clock, Edit3 } from 'lucide-react';
+import { DocCreateDialog } from '@/components/dialogs/doc-create-dialog';
 
 const TREE = [
   { id: 'eng', label: '🛠 Engineering', kids: [
@@ -23,6 +24,7 @@ const TREE = [
 
 export function DocsPage() {
   const [active, setActive] = useState('product-prd');
+  const [createOpen, setCreateOpen] = useState(false);
 
   return (
     <div className="grid grid-cols-[280px_1fr_280px] h-[calc(100vh-56px)] border-t border-border">
@@ -33,7 +35,8 @@ export function DocsPage() {
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
             <input placeholder="문서 검색..." className="w-full h-8 pl-8 pr-3 rounded-md bg-bg-2 border border-border text-[12px] focus:outline-none focus:border-accent" />
           </div>
-          <Button variant="primary" size="sm" className="w-full"><Plus size={12} /> 새 문서</Button>
+          <Button variant="primary" size="sm" className="w-full" onClick={() => setCreateOpen(true)}><Plus size={12} /> 새 문서</Button>
+          <DocCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
         </div>
         <div className="p-2">
           {TREE.map(g => (

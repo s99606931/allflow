@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button } from '@/components/ui/primitives';
 import { TEAM, userById } from '@/lib/fixtures';
 import { ChevronLeft, ChevronRight, Plus, Video, MapPin, Sparkles } from 'lucide-react';
+import { EventCreateDialog } from '@/components/dialogs/event-create-dialog';
+import { EventDetailPopover, type EventLike } from '@/components/dialogs/event-detail-popover';
+import { CalendarLinkCard } from '@/components/dialogs/calendar-link-card';
 
 const EVENTS: { day: number; hour: number; len: number; title: string; type: 'meeting' | 'focus' | 'review' | 'oncall'; attendees: string[] }[] = [
   { day: 1, hour: 10, len: 1, title: '주간 동기화', type: 'meeting', attendees: ['me', 'u1', 'u2', 'u4'] },
@@ -25,6 +28,28 @@ const TYPE_COLOR: Record<string, string> = {
 
 export function CalendarPage() {
   const [view, setView] = useState<'week' | 'month'>('week');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [detail, setDetail] = useState<EventLike | null>(null);
+
+  // Map fixture events into ISO-shaped objects so the dialog conflict check
+  // can compare them with the new event the user is creating.
+  const baseDate = new Date();
+  baseDate.setHours(0, 0, 0, 0);
+  const isoEvents: EventLike[] = EVENTS.map(ev => {
+    const dayOffset = ev.day - 1; // demo "월=1"
+    const start = new Date(baseDate);
+    start.setDate(start.getDate() + dayOffset);
+    start.setHours(ev.hour, 0, 0, 0);
+    const end = new Date(start);
+    end.setHours(start.getHours() + ev.len);
+    return {
+      title: ev.title,
+      start: start.toISOString().slice(0, 16),
+      end: end.toISOString().slice(0, 16),
+      attendees: ev.attendees,
+      source: 'internal' as const,
+    };
+  });
   const days = ['월', '화', '수', '목', '금'];
   const dates = ['28', '29', '30', '01', '02'];
   const hours = Array.from({ length: 11 }, (_, i) => 8 + i); // 8 ~ 18
@@ -49,8 +74,14 @@ export function CalendarPage() {
           ))}
         </div>
         <Button variant="secondary" size="sm">캘린더 동기화</Button>
-        <Button variant="primary" size="sm"><Plus size={13} /> 일정 추가</Button>
+        <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
+          <Plus size={13} /> 일정 추가
+        </Button>
+        <EventCreateDialog open={createOpen} onOpenChange={setCreateOpen} existingEvents={isoEvents} />
+        {detail && <EventDetailPopover event={detail} onClose={() => setDetail(null)} />}
       </div>
+
+      <CalendarLinkCard />
 
       <Card className="overflow-hidden">
         <div className="grid grid-cols-[60px_repeat(5,1fr)] border-b border-border">
@@ -75,8 +106,12 @@ export function CalendarPage() {
           )))}
           {/* Events */}
           {EVENTS.map((ev, i) => (
-            <div key={i}
-              className="m-1 rounded-md p-2 cursor-pointer text-white shadow-sm hover:shadow-md transition-shadow"
+            <button
+              key={i}
+              type="button"
+              onClick={() => setDetail(isoEvents[i])}
+              aria-label={`${ev.title} ${ev.hour}:00`}
+              className="m-1 rounded-md p-2 cursor-pointer text-white shadow-sm hover:shadow-md transition-shadow text-left"
               style={{
                 gridRow: `${ev.hour - 7} / span ${ev.len}`,
                 gridColumn: ev.day + 1,
@@ -92,7 +127,7 @@ export function CalendarPage() {
                 {ev.attendees.length > 3 && <span className="text-[9px] opacity-80">+{ev.attendees.length - 3}</span>}
                 {ev.type === 'meeting' && <Video size={10} className="ml-auto opacity-80" />}
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </Card>

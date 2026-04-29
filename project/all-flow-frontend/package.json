@@ -19,7 +19,9 @@
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:install": "playwright install --with-deps chromium",
-    "test:all": "pnpm test && pnpm e2e"
+    "test:all": "pnpm test && pnpm e2e",
+    "test:a11y": "playwright test tests/a11y",
+    "screenshot:list": "tsx scripts/screenshot-diff.ts"
   },
   "dependencies": {
     "@auth/core": "^0.40.0",
@@ -51,6 +53,9 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.2",
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^9.39.4",
     "@playwright/test": "^1.50.0",
     "@storybook/addon-themes": "^10.3.5",
     "@storybook/nextjs": "^10.3.5",

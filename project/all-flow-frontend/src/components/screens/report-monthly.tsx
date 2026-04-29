@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress } from '@/components/ui/primitives';
 import { Download, Send, Sparkles } from 'lucide-react';
+import { ReportRecipientsEditor } from '@/components/dialogs/report-recipients-editor';
 
 const ReportDownloadButton = dynamic(
   () => import('@/lib/pdf-reports').then(m => m.ReportDownloadButton),
@@ -59,6 +61,7 @@ const RISKS = [
 const SEV_TONE: any = { critical: 'danger', high: 'warning', med: 'info', low: 'neutral' };
 
 export function ReportMonthlyPage() {
+  const [sendOpen, setSendOpen] = useState(false);
   return (
     <div className="p-6 max-w-[1100px] mx-auto space-y-5">
       <div className="flex items-center gap-2">
@@ -71,7 +74,13 @@ export function ReportMonthlyPage() {
         >
           <Download size={13} /> PDF
         </ReportDownloadButton>
-        <Button variant="primary" size="sm"><Send size={13} /> 임원진 발송</Button>
+        <Button variant="primary" size="sm" onClick={() => setSendOpen(true)}><Send size={13} /> 임원진 발송</Button>
+        <ReportRecipientsEditor
+          open={sendOpen}
+          onOpenChange={setSendOpen}
+          reportId={MONTHLY_REPORT.id}
+          defaultRecipients={['exec@allflow.io', 'board@allflow.io']}
+        />
       </div>
 
       <Card>

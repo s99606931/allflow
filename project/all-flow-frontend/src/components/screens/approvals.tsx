@@ -7,6 +7,9 @@ import {
   Plane, Receipt, ShoppingCart, FileText, Stamp, ChevronRight, Sparkles, MoreHorizontal,
 } from 'lucide-react';
 import { useState } from 'react';
+import { ApprovalForm } from '@/components/dialogs/approval-form';
+import { useApprovalMutations } from '@/lib/hooks/use-data';
+import { toast } from 'sonner';
 
 type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'recalled';
 type ApprovalKind = 'leave' | 'expense' | 'purchase' | 'general' | 'overtime';
@@ -65,6 +68,7 @@ type TabId = typeof TABS[number]['id'];
 export function ApprovalsPage() {
   const [tab, setTab] = useState<TabId>('inbox');
   const [selected, setSelected] = useState<Approval | null>(APPROVALS[0]);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const list = tab === 'inbox' ? APPROVALS.filter(a => a.status === 'pending') :
                tab === 'history' ? APPROVALS.filter(a => a.status === 'approved' || a.status === 'rejected') :
@@ -79,7 +83,8 @@ export function ApprovalsPage() {
             <FileSignature size={18} className="text-accent" />
             <h2 className="text-[15px] font-bold text-fg">전자결재</h2>
             <div className="flex-1" />
-            <Button size="sm" variant="primary"><Plus size={13} /> 새 결재</Button>
+            <Button size="sm" variant="primary" onClick={() => setCreateOpen(true)}><Plus size={13} /> 새 결재</Button>
+            <ApprovalForm open={createOpen} onOpenChange={setCreateOpen} />
           </div>
           <button className="w-full h-8 px-2.5 rounded-md bg-bg-2 hover:bg-hover border border-border text-[12px] text-fg-3 flex items-center gap-2 transition-colors">
             <Search size={13} /><span className="flex-1 text-left">결재 검색...</span>
@@ -158,6 +163,17 @@ export function ApprovalsPage() {
 function ApprovalDetail({ approval }: { approval: Approval }) {
   const Icon = KIND_META[approval.kind].icon;
   const requester = userById(approval.requester);
+  const { decide } = useApprovalMutations();
+  const [comment, setComment] = useState('');
+
+  const onDecide = async (decision: 'approved' | 'rejected') => {
+    try {
+      await decide.mutateAsync({ id: approval.id, input: { decision, comment: comment || undefined } });
+      setComment('');
+    } catch {
+      toast.error('처리에 실패했습니다');
+    }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto scroll bg-bg">
@@ -278,12 +294,19 @@ function ApprovalDetail({ approval }: { approval: Approval }) {
         {approval.status === 'pending' && (
           <div className="sticky bottom-4 flex items-center gap-2 p-3 rounded-lg border border-border bg-bg-elev shadow-pop">
             <textarea
+              aria-label="결재 의견"
               placeholder="의견 (선택)..."
+              value={comment}
+              onChange={e => setComment(e.target.value)}
               className="flex-1 h-9 px-3 py-2 rounded-md bg-bg-1 border border-border text-[12.5px] resize-none focus:outline-none focus:ring-2 focus:ring-accent"
             />
-            <Button variant="secondary" size="md"><XCircle size={13} /> 반려</Button>
+            <Button variant="secondary" size="md" onClick={() => onDecide('rejected')} disabled={decide.isPending}>
+              <XCircle size={13} /> 반려
+            </Button>
             <Button variant="secondary" size="md">보류</Button>
-            <Button variant="primary" size="md"><Stamp size={13} /> 승인</Button>
+            <Button variant="primary" size="md" onClick={() => onDecide('approved')} disabled={decide.isPending}>
+              <Stamp size={13} /> 승인
+            </Button>
           </div>
         )}
       </div>

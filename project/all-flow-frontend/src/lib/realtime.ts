@@ -126,7 +126,7 @@ export const realtime = (): RealtimeClient => {
 };
 
 export function useRealtime() {
-  const client = useMemo(realtime, []);
+  const client = useMemo(() => realtime(), []);
   const [status, setStatus] = useState(client.status());
   useEffect(() => {
     client.connect();
@@ -139,6 +139,6 @@ export function useRealtime() {
 export function useRealtimeEvents<T extends EventType>(type: T, handler: Listener<T>) {
   const { subscribe } = useRealtime();
   const ref = useRef(handler);
-  ref.current = handler;
+  useEffect(() => { ref.current = handler; }, [handler]);
   useEffect(() => subscribe(type, p => ref.current(p)), [subscribe, type]);
 }

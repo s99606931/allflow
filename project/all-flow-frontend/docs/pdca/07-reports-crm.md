@@ -1,6 +1,6 @@
 # PDCA-07 — 보고 / CRM (PDF + 이메일 발송)
 
-> Phase: 5 (Operations) | Owner: FE + BE | Status: todo | Created: 2026-04-29
+> Phase: 5 (Operations) | Owner: FE + BE | Status: done | Created: 2026-04-29 | Closed: 2026-04-29
 > Acceptance: 인벤토리 4.1.* / 4.2.* / 2.2.* wired. 주간/월간 PDF 다운로드 + 이메일 발송 동작.
 > Dependencies: PDCA-01, PDCA-06 (AI 합성)
 

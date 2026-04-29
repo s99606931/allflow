@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { useUIStore } from '@/store/ui-store';
+import { useTranslation, type Locale } from '@/lib/i18n';
 
 const SECTIONS = [
   { id: 'profile',       label: '프로필',         icon: User },
@@ -373,15 +374,20 @@ function AppearanceSection() {
 
 /* Language ------------------------------------------------------------- */
 function LanguageSection() {
+  const { locale, setLocale, t } = useTranslation();
   return (
     <Section title="언어 / 시간대">
       <Card>
         <CardBody className="space-y-1">
-          <Row label="앱 언어">
-            <select className="h-8 px-2.5 rounded-md bg-bg-1 border border-border text-[12.5px]">
-              <option>한국어</option>
-              <option>English</option>
-              <option>日本語</option>
+          <Row label={t('settings.locale')}>
+            <select
+              aria-label={t('settings.locale')}
+              value={locale}
+              onChange={e => setLocale(e.target.value as Locale)}
+              className="h-8 px-2.5 rounded-md bg-bg-1 border border-border text-[12.5px]"
+            >
+              <option value="ko">{t('settings.locale.ko')}</option>
+              <option value="en">{t('settings.locale.en')}</option>
             </select>
           </Row>
           <Row label="시간대">

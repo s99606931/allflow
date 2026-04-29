@@ -1,7 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button } from '@/components/ui/primitives';
 import { Building2, ChevronRight, MapPin, Plus, Search, TrendingUp } from 'lucide-react';
+import { ClientForm } from '@/components/dialogs/client-form';
+import { ClientDetail } from '@/components/dialogs/client-detail';
 
 const CLIENTS = [
   { id: 1, name: 'CJ ENM', code: 'CJ', tier: '진행', mrr: 12_000, arr: 144_000, projects: 3, contacts: 8, last: '2일 전', health: 92 },
@@ -17,6 +20,8 @@ const CLIENTS = [
 const TIER_TONE: Record<string, 'success' | 'accent' | 'warning'> = { 진행: 'success', 제안: 'accent', 리드: 'warning' };
 
 export function ClientsPage() {
+  const [createOpen, setCreateOpen] = useState(false);
+  const [selected, setSelected] = useState<(typeof CLIENTS)[number] | null>(null);
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <div className="grid grid-cols-4 gap-3">
@@ -49,12 +54,31 @@ export function ClientsPage() {
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
           <input placeholder="고객사 검색..." className="h-8 w-56 pl-8 pr-3 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent" />
         </div>
-        <Button variant="primary" size="sm"><Plus size={13} /> 새 고객사</Button>
+        <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}><Plus size={13} /> 새 고객사</Button>
+        <ClientForm open={createOpen} onOpenChange={setCreateOpen} />
+        {selected && (
+          <ClientDetail
+            client={{ id: selected.id, name: selected.name, code: selected.code, tier: selected.tier }}
+            onClose={() => setSelected(null)}
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-4 gap-4">
         {CLIENTS.map(c => (
-          <Card key={c.id} hoverable>
+          <Card
+            key={c.id}
+            hoverable
+            role="button"
+            tabIndex={0}
+            onClick={() => setSelected(c)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setSelected(c);
+              }
+            }}
+            aria-label={`${c.name} 상세 보기`}>
             <CardBody className="space-y-3">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-lg bg-accent-soft text-accent-strong grid place-items-center font-bold mono shrink-0">{c.code}</div>

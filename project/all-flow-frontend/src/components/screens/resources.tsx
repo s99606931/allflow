@@ -6,7 +6,8 @@ import {
   CalendarClock, Users, Monitor, Wifi, Coffee, MapPin, Mic, Camera,
   Plus, ChevronLeft, ChevronRight, Search, Sparkles, Car, Box,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { ResourceBookDialog } from '@/components/dialogs/resource-book-dialog';
 
 interface Resource {
   id: string;
@@ -63,6 +64,19 @@ const HOURS = Array.from({ length: 11 }, (_, i) => i + 8); // 8 ~ 18
 export function ResourcesPage() {
   const [floor, setFloor] = useState<'all' | '11F' | '12F' | '13F'>('all');
   const [type, setType] = useState<'all' | Resource['type']>('all');
+  const [bookOpen, setBookOpen] = useState(false);
+
+  // Map fixture bookings into ISO timestamps for conflict detection.
+  const today = new Date().toISOString().slice(0, 10);
+  const isoBookings = useMemo(
+    () =>
+      BOOKINGS.map(b => ({
+        resourceId: b.resource,
+        start: `${today}T${String(Math.floor(b.start)).padStart(2, '0')}:${b.start % 1 ? '30' : '00'}`,
+        end: `${today}T${String(Math.floor(b.end)).padStart(2, '0')}:${b.end % 1 ? '30' : '00'}`,
+      })),
+    [today],
+  );
 
   const filtered = RESOURCES.filter(r =>
     (floor === 'all' || r.floor === floor) &&
@@ -78,7 +92,13 @@ export function ResourcesPage() {
         <IconButton size="sm"><ChevronLeft size={14} /></IconButton>
         <Button size="sm" variant="secondary">오늘</Button>
         <IconButton size="sm"><ChevronRight size={14} /></IconButton>
-        <Button size="sm" variant="primary"><Plus size={13} /> 예약</Button>
+        <Button size="sm" variant="primary" onClick={() => setBookOpen(true)}><Plus size={13} /> 예약</Button>
+        <ResourceBookDialog
+          open={bookOpen}
+          onOpenChange={setBookOpen}
+          resources={RESOURCES.map(r => ({ id: r.id, name: r.name }))}
+          existingBookings={isoBookings}
+        />
       </div>
 
       {/* Filters */}
