@@ -1,5 +1,5 @@
 /**
- * tasks 모듈 — `GET/POST /tasks` + `PATCH /tasks/:id`.
+ * tasks 모듈 — `GET/POST /tasks` + `PATCH /tasks/:id` + `DELETE /tasks/:id`.
  *
  * OpenAPI 컨트랙트(frontend openapi.yaml `Task`):
  *   - 응답: { id, title, status, proj, assignee, due, priority, tags }
@@ -178,6 +178,38 @@ export async function tasksRoutes(app: FastifyInstance): Promise<void> {
     });
 
     return toApiTask(updated as unknown as TaskRow);
+  });
+
+  app.delete('/tasks/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const existing = await app.prisma.task.findFirst({
+      where: { id, deletedAt: null },
+      select: {
+        id: true,
+        project: { select: { members: { where: { userId }, select: { userId: true } } } },
+      },
+    });
+    if (!existing) throw new NotFoundError('Task', id);
+    if (existing.project.members.length === 0) {
+      throw new ForbiddenError('프로젝트 멤버가 아닙니다');
+    }
+
+    const now = new Date();
+    await app.prisma.task.update({
+      where: { id },
+      data: { deletedAt: now },
+    });
+    // Cascade soft-delete comments belonging to this task.
+    await app.prisma.comment.updateMany({
+      where: { taskId: id, deletedAt: null },
+      data: { deletedAt: now },
+    });
+
+    reply.code(204);
+    return null;
   });
 }
 

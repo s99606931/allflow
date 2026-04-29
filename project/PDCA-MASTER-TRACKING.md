@@ -111,7 +111,7 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 
 | Task | 작업 | Acceptance | 의존 | 추정 | Status |
 |------|------|-----------|-----|----:|:------:|
-| BE-C1 | `DELETE /tasks/:id` 핸들러 + cascade(comments) + RBAC | unit + integration test PASS, 404→OK 회귀 | — | 0.5d | ☐ todo |
+| BE-C1 | `DELETE /tasks/:id` 핸들러 + cascade(comments) + RBAC | unit + integration test PASS, 404→OK 회귀 | — | 0.5d | ✓ done |
 | BE-C2 | `POST /issues/:id/transition` 상태머신(open→in-progress→resolved→closed) | unit + integration + 잘못된 전이 400 | — | 1d | ☐ todo |
 | BE-C3 | `PATCH /users/me` (name/role/dept/initials/color/email) | unit + integration test PASS | — | 0.5d | ✓ done |
 | BE-C4 | `POST /reports/:id/send` (이메일/SMTP 또는 큐) | unit + integration + 발송 모킹 | — | 1d | ☐ todo |
@@ -238,15 +238,15 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 
 | 트랙 | 총 | done | in-review | in-progress | todo | 진행률 |
 |------|---:|-----:|----------:|------------:|-----:|------:|
-| BE-CORE (C1~C5) | 5 | 2 | 0 | 0 | 3 | 40% |
+| BE-CORE (C1~C5) | 5 | 3 | 0 | 0 | 2 | 60% |
 | BE-NEW (N1~N8) | 8 | 0 | 0 | 0 | 8 | 0% |
 | FE-WIRING (W1~W9) | 9 | 0 | 0 | 0 | 9 | 0% |
 | TEST (B1~B4 + F1~F4) | 8 | 0 | 0 | 0 | 8 | 0% |
 | CLEANUP (CL1~CL2) | 2 | 0 | 0 | 0 | 2 | 0% |
-| **합계** | **32** | **2** | **0** | **0** | **30** | **6.3%** |
+| **합계** | **32** | **3** | **0** | **0** | **29** | **9.4%** |
 
-마지막 측정: 2026-04-29 (loop iter 2 — BE-C3 완료)
-다음 측정: loop iter 3 (예상: BE-C1 — DELETE /tasks)
+마지막 측정: 2026-04-29 (loop iter 3 — BE-C1 완료)
+다음 측정: loop iter 4 (예상: BE-C2 — POST /issues/:id/transition)
 
 ### 사이클 진행 로그
 
@@ -254,6 +254,7 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 |-----:|------|----------|------|------|
 | 1 | 2026-04-29 | BE-C5 (OpenAPI 정합) | redocly 0 errors / FE contract 39/39 / BE comments+notifications 17/17 | comments(4) + read-all body 정정 + /health 추가 + /ws 명시적 제외 표기 + Comment/CommentCreate schema 추가 |
 | 2 | 2026-04-29 | BE-C3 (PATCH /users/me) | identity 10/10 / typecheck 0 / FE contract 39/39 | strict zod (additionalProperties:false), 6 mutable fields, 5 신규 단위 테스트(401/200/no-op/색상검증/strict/404). OpenAPI initials+color 추가 |
+| 3 | 2026-04-29 | BE-C1 (DELETE /tasks/:id) | tasks 11/11 / 전체 198/198 / typecheck 0 | 소프트 삭제 + comment cascade(`comment.updateMany`), RBAC 멤버십 검사, 4 신규 단위 테스트(401/204+cascade/403/404). 204 No Content 응답 |
 
 ---
 

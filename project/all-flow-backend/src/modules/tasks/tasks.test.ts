@@ -28,6 +28,9 @@ interface PrismaTaskMock {
   projectMember: {
     findUnique: (args: AnyArgs) => Promise<unknown>;
   };
+  comment?: {
+    updateMany: (args: AnyArgs) => Promise<{ count: number }>;
+  };
 }
 
 function makePrismaStubPlugin(prismaMock: PrismaTaskMock) {
@@ -265,6 +268,118 @@ describe('modules/tasks', () => {
       url: '/tasks/missing',
       headers: { authorization: `Bearer ${await token()}` },
       payload: { title: 'x' },
+    });
+    expect(r.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('DELETE /tasks/:id → 인증 없으면 401', async () => {
+    const app = await buildTestApp({
+      task: {
+        findMany: async () => [],
+        findFirst: async () => null,
+        create: async () => ({}),
+        update: async () => ({}),
+      },
+      project: { findFirst: async () => null },
+      user: { findFirst: async () => null },
+      projectMember: { findUnique: async () => null },
+    });
+    const r = await app.inject({ method: 'DELETE', url: '/tasks/t1' });
+    expect(r.statusCode).toBe(401);
+    await app.close();
+  });
+
+  it('DELETE /tasks/:id → 정상: 204 + task soft-delete + comment cascade', async () => {
+    const taskUpdates: { where: AnyArgs; data: AnyArgs }[] = [];
+    const commentUpdateMany: { where: AnyArgs; data: AnyArgs }[] = [];
+    const app = await buildTestApp({
+      task: {
+        findMany: async () => [],
+        findFirst: async () => ({
+          id: 't1',
+          project: { members: [{ userId: 'u1' }] },
+        }),
+        create: async () => ({}),
+        update: async (args: AnyArgs) => {
+          taskUpdates.push(args);
+          return { id: 't1' };
+        },
+      },
+      project: { findFirst: async () => null },
+      user: { findFirst: async () => null },
+      projectMember: { findUnique: async () => null },
+      comment: {
+        updateMany: async (args: AnyArgs) => {
+          commentUpdateMany.push(args);
+          return { count: 3 };
+        },
+      },
+    });
+
+    const r = await app.inject({
+      method: 'DELETE',
+      url: '/tasks/t1',
+      headers: { authorization: `Bearer ${await token('u1')}` },
+    });
+    expect(r.statusCode).toBe(204);
+    expect(taskUpdates).toHaveLength(1);
+    const taskCall = taskUpdates[0];
+    if (!taskCall) throw new Error('task.update was not called');
+    expect(taskCall).toMatchObject({ where: { id: 't1' } });
+    expect(taskCall.data.deletedAt).toBeInstanceOf(Date);
+    expect(commentUpdateMany).toHaveLength(1);
+    const commentCall = commentUpdateMany[0];
+    if (!commentCall) throw new Error('comment.updateMany was not called');
+    expect(commentCall).toMatchObject({ where: { taskId: 't1', deletedAt: null } });
+    expect(commentCall.data.deletedAt).toBeInstanceOf(Date);
+    await app.close();
+  });
+
+  it('DELETE /tasks/:id → 멤버 아니면 403', async () => {
+    const app = await buildTestApp({
+      task: {
+        findMany: async () => [],
+        findFirst: async () => ({
+          id: 't1',
+          project: { members: [] },
+        }),
+        create: async () => ({}),
+        update: async () => ({}),
+      },
+      project: { findFirst: async () => null },
+      user: { findFirst: async () => null },
+      projectMember: { findUnique: async () => null },
+      comment: { updateMany: async () => ({ count: 0 }) },
+    });
+
+    const r = await app.inject({
+      method: 'DELETE',
+      url: '/tasks/t1',
+      headers: { authorization: `Bearer ${await token('u-other')}` },
+    });
+    expect(r.statusCode).toBe(403);
+    await app.close();
+  });
+
+  it('DELETE /tasks/:id → 없거나 이미 삭제된 태스크는 404', async () => {
+    const app = await buildTestApp({
+      task: {
+        findMany: async () => [],
+        findFirst: async () => null,
+        create: async () => ({}),
+        update: async () => ({}),
+      },
+      project: { findFirst: async () => null },
+      user: { findFirst: async () => null },
+      projectMember: { findUnique: async () => null },
+      comment: { updateMany: async () => ({ count: 0 }) },
+    });
+
+    const r = await app.inject({
+      method: 'DELETE',
+      url: '/tasks/missing',
+      headers: { authorization: `Bearer ${await token()}` },
     });
     expect(r.statusCode).toBe(404);
     await app.close();
