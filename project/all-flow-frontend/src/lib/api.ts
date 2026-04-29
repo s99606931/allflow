@@ -132,6 +132,41 @@ const baseApi = {
     return parsed(http.post('reports/weekly', { json: input }).json(), ReportSchema);
   },
 
+  generateMonthlyReport: async (input: {
+    year: number; month: number;
+  }): Promise<Report> => {
+    if (USE_MOCK) {
+      await sleep(1400);
+      const periodStart = `${input.year}-${String(input.month).padStart(2, '0')}-01`;
+      const lastDay = new Date(input.year, input.month, 0).getDate();
+      const periodEnd = `${input.year}-${String(input.month).padStart(2, '0')}-${lastDay}`;
+      return {
+        id: 'rpt-m-' + Date.now(),
+        kind: 'monthly',
+        periodStart,
+        periodEnd,
+        generatedAt: new Date().toISOString(),
+        author: 'AI Assistant',
+        tldr: `${input.year}년 ${input.month}월 임원 요약 — 분기 OKR 진척도 72%, 리스크 1건(P0), NPS +8pt.`,
+        kpis: [
+          { label: '월간 ARR', value: '$2.1M', delta: '+8.4%', dir: 'up' },
+          { label: 'OKR 진척도', value: '72%', delta: '+12pt', dir: 'up' },
+          { label: '활성 이슈', value: '14', delta: '-6', dir: 'down' },
+          { label: '월간 활성 사용자', value: '3,420', delta: '+412', dir: 'up' },
+          { label: '평균 SLA', value: '93%', delta: '+1pt', dir: 'up' },
+          { label: '배포 횟수', value: '47', delta: '+9', dir: 'up' },
+        ],
+        sections: [
+          { heading: 'Executive Summary', body: `${input.month}월 핵심 성과 — CJ ENM 영상 분석 프로젝트 베타 종료, ALL-Flow 다국어 지원 출시.` },
+          { heading: 'OKR 진척도', body: 'O1: 70% (목표 80%), O2: 85% (목표 75%), O3: 60% (목표 70%)' },
+          { heading: '리스크 매트릭스', body: 'P0 1건(결제 PG 통합 지연), P1 3건, P2 7건. 완화 계획 첨부.' },
+          { heading: '다음 달 계획', body: 'OKR 분기 마감 점검, 파트너 컨퍼런스, 신규 채용 5명.' },
+        ],
+      };
+    }
+    return parsed(http.post('reports/monthly', { json: input }).json(), ReportSchema);
+  },
+
   /* AI -------------------------------------------------------------------- */
   aiComplete: async (prompt: string): Promise<string> => {
     if (USE_MOCK) {

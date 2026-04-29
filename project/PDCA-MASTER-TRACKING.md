@@ -240,13 +240,13 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 |------|---:|-----:|----------:|------------:|-----:|------:|
 | BE-CORE (C1~C5) | 5 | 5 | 0 | 0 | 0 | **100%** ✓ |
 | BE-NEW (N1~N8) | 8 | 1 | 0 | 0 | 7 | 12.5% |
-| FE-WIRING (W1~W9) | 9 | 4 | 0 | 0 | 5 | 44.4% |
+| FE-WIRING (W1~W9) | 9 | 5 | 0 | 0 | 4 | 55.6% |
 | TEST (B1~B4 + F1~F4) | 8 | 0 | 0 | 0 | 8 | 0% |
 | CLEANUP (CL1~CL2) | 2 | 0 | 0 | 0 | 2 | 0% |
-| **합계** | **32** | **10** | **0** | **0** | **22** | **31.3%** |
+| **합계** | **32** | **11** | **0** | **0** | **21** | **34.4%** |
 
-마지막 측정: 2026-04-29 (loop iter 10 — FE-W4 완료)
-다음 측정: loop iter 11 (예상: FE-W5 reports/monthly hook + UI)
+마지막 측정: 2026-04-29 (loop iter 11 — FE-W5 완료)
+다음 측정: loop iter 12 (예상: FE-W6 ai/complete or FE-W8 comments)
 
 ### 사이클 진행 로그
 
@@ -262,6 +262,7 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | 8 | 2026-04-29 | FE-W3 (PATCH /projects) | FE typecheck 0 / 98/98 vitest | api.updateProject + useProjectMutations(create+update) 훅 신설, progress portfolio 행에 status select 인라인 편집 와이어링. **진행률 25% 도달 (1/4 마일스톤)** |
 | 9 | 2026-04-29 | FE-W1 (POST /projects) | FE typecheck 0 / 98/98 vitest | 신규 `ProjectCreateDialog` (name/code/color/due 필드, autoFocus, color picker), progress 화면 우상단에 "새 프로젝트" 버튼 추가, 빈 상태 안내. useProjectMutations.create 와이어링 |
 | 10 | 2026-04-29 | FE-W4 (POST /issues) | FE typecheck 0 / 98/98 vitest | 신규 `IssueCreateDialog` (title/proj/assignee/reporter/sev/prio 필드, 기본값 PROJECTS[0]/TEAM[0]/med/P2), issues-full 툴바 "새 이슈" 버튼에 onClick 와이어링, Toolbar prop drilling. useIssueMutations.create 사용 (FE 스키마 names 형태 준수, BE id 형태와의 contract drift는 별도 follow-up) |
+| 11 | 2026-04-29 | FE-W5 (POST /reports/monthly) | FE typecheck 0 / 98/98 vitest | api.generateMonthlyReport({year,month}) + useAiMutations.monthlyReport 추가, report-monthly 화면 "AI 다시 생성" 버튼에 onClick 와이어링 (loading 상태 표시, 생성 결과로 화면 swap, periodLabel 동적 계산). USE_MOCK 분기에 임원용 6개 KPI/OKR/리스크 매트릭스 픽스처 |
 
 ---
 

@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress } from '@/components/ui/primitives';
 import { Download, Send, Sparkles } from 'lucide-react';
 import { ReportRecipientsEditor } from '@/components/dialogs/report-recipients-editor';
+import { useAiMutations } from '@/lib/hooks/use-data';
+import type { Report } from '@/lib/schemas';
 
 const ReportDownloadButton = dynamic(
   () => import('@/lib/pdf-reports').then(m => m.ReportDownloadButton),
@@ -62,14 +64,33 @@ const SEV_TONE: any = { critical: 'danger', high: 'warning', med: 'info', low: '
 
 export function ReportMonthlyPage() {
   const [sendOpen, setSendOpen] = useState(false);
+  const [generated, setGenerated] = useState<Report | null>(null);
+  const { monthlyReport } = useAiMutations();
+  const report = generated ?? MONTHLY_REPORT;
+  const periodLabel = `${report.periodStart.slice(0, 4)}년 ${Number(report.periodStart.slice(5, 7))}월`;
+  const onRegenerate = async () => {
+    const start = new Date(report.periodStart);
+    const result = await monthlyReport.mutateAsync({
+      year: start.getFullYear(),
+      month: start.getMonth() + 1,
+    });
+    setGenerated(result);
+  };
   return (
     <div className="p-6 max-w-[1100px] mx-auto space-y-5">
       <div className="flex items-center gap-2">
-        <h2 className="text-[16px] font-bold text-fg flex-1">월간 보고 — 2026년 4월</h2>
-        <Button variant="secondary" size="sm"><Sparkles size={13} /> AI 다시 생성</Button>
+        <h2 className="text-[16px] font-bold text-fg flex-1">월간 보고 — {periodLabel}</h2>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onRegenerate}
+          disabled={monthlyReport.isPending}
+        >
+          <Sparkles size={13} /> {monthlyReport.isPending ? '생성 중…' : 'AI 다시 생성'}
+        </Button>
         <ReportDownloadButton
-          report={MONTHLY_REPORT}
-          fileName={`monthly-report-${MONTHLY_REPORT.periodStart.slice(0, 7)}.pdf`}
+          report={report}
+          fileName={`monthly-report-${report.periodStart.slice(0, 7)}.pdf`}
           className="inline-flex items-center justify-center font-medium rounded-md transition-colors h-7 px-2.5 text-[12.5px] gap-1.5 bg-bg-elev border border-border text-fg-1 hover:bg-hover hover:border-border-strong"
         >
           <Download size={13} /> PDF
@@ -78,7 +99,7 @@ export function ReportMonthlyPage() {
         <ReportRecipientsEditor
           open={sendOpen}
           onOpenChange={setSendOpen}
-          reportId={MONTHLY_REPORT.id}
+          reportId={report.id}
           defaultRecipients={['exec@allflow.io', 'board@allflow.io']}
         />
       </div>
@@ -87,7 +108,7 @@ export function ReportMonthlyPage() {
         <CardBody className="!p-10 space-y-8">
           <div>
             <div className="text-[11px] text-fg-3 uppercase tracking-wider font-semibold">EXECUTIVE SUMMARY · 임원진 발송용</div>
-            <h1 className="text-[28px] font-bold text-fg mt-1 tracking-tight">2026년 4월 월간 보고</h1>
+            <h1 className="text-[28px] font-bold text-fg mt-1 tracking-tight">{periodLabel} 월간 보고</h1>
             <p className="text-[14px] text-fg-1 mt-3 leading-relaxed">
               4월은 <strong>MAU 2.4M(+18%)</strong> 달성으로 OKR 96% 진척, 모바일 v3.0 출시 D-22 일정 안에서 진행 중.
               결제 PG 안정성 이슈가 핵심 리스크로, 5월 초 백업 라우트 도입 예정.

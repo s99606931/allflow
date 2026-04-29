@@ -298,5 +298,11 @@ export function useAiMutations() {
     onSuccess: () => toast.success('주간 보고서가 생성되었습니다'),
     onError,
   });
-  return { complete, extractActions, weeklyReport };
+  const monthlyReport = useMutation({
+    mutationFn: (input: Parameters<typeof api.generateMonthlyReport>[0]) =>
+      api.generateMonthlyReport(input),
+    onSuccess: () => toast.success('월간 보고서가 생성되었습니다'),
+    onError,
+  });
+  return { complete, extractActions, weeklyReport, monthlyReport };
 }
