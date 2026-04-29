@@ -239,14 +239,14 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | 트랙 | 총 | done | in-review | in-progress | todo | 진행률 |
 |------|---:|-----:|----------:|------------:|-----:|------:|
 | BE-CORE (C1~C5) | 5 | 5 | 0 | 0 | 0 | **100%** ✓ |
-| BE-NEW (N1~N8) | 8 | 2 | 0 | 0 | 6 | 25% |
+| BE-NEW (N1~N8) | 8 | 3 | 0 | 0 | 5 | 37.5% |
 | FE-WIRING (W1~W9) | 9 | 9 | 0 | 0 | 0 | **100%** ✓ |
 | TEST (B1~B4 + F1~F4) | 8 | 0 | 0 | 0 | 8 | 0% |
 | CLEANUP (CL1~CL2) | 2 | 0 | 0 | 0 | 2 | 0% |
-| **합계** | **32** | **16** | **0** | **0** | **16** | **50.0%** ⭐ |
+| **합계** | **32** | **17** | **0** | **0** | **15** | **53.1%** |
 
-마지막 측정: 2026-04-29 (loop iter 16 — BE-N1 완료, **반환점 50% 도달 ⭐**)
-다음 측정: loop iter 17 (예상: BE-N2 clients)
+마지막 측정: 2026-04-29 (loop iter 17 — BE-N2 완료)
+다음 측정: loop iter 18 (예상: BE-N3 events)
 
 ### 사이클 진행 로그
 
@@ -268,6 +268,7 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | 14 | 2026-04-29 | FE-W8 (comments 훅 + Detail 통합) | FE typecheck 0 / 98/98 vitest | Comment/CommentCreate Zod 스키마 + extendedApi(listTaskComments/createTaskComment/listIssueComments/createIssueComment) + 4개 hooks(useTaskComments/useTaskCommentCreate/useIssueComments/useIssueCommentCreate). 신규 재사용 컴포넌트 `CommentThread` (kind: 'task'\|'issue', 상대 시간, loading/empty 상태, 인라인 composer). TaskDetailDialog의 unwired footer composer 제거하고 `<CommentThread kind="task" parentId={task.id} />` 통합. IssueDetail 표면은 미존재이므로 hooks + 컴포넌트가 향후 통합 준비 상태 |
 | 15 | 2026-04-29 | FE-W2 (project detail route) | FE typecheck 0 / 98/98 vitest | 신규 dynamic route `app/projects/[id]/page.tsx` (Next.js 15 async params), `ProjectDetail` + `ProjectDetailRoute` 컴포넌트. useProject(id) + useTasks({projectId}) 훅 사용. 진행률/태스크/멤버 3-카드 KPI + 태스크 목록 + 새로고침 + not-found 분기. **FE-WIRING 트랙 9/9 종결 ✓** |
 | 16 | 2026-04-29 | BE-N1 (approvals 3 EP) | BE 229/229 vitest (+8 신규) / approvals 8/8 | 신규 `modules/approvals/approvals.routes.ts` (in-memory store + audit log stub 패턴, BE-N8 동일). 3 라우트: GET /approvals (status filter), POST /approvals (201), POST /approvals/:id/decision (RBAC: approver만, 멱등 거절 시 400, 존재없음 404). app.ts 등록. 8 테스트(401/입력검증/생성+조회/필터/RBAC/멱등/404). **반환점 50% 도달 ⭐ — 영속화는 follow-up** |
+| 17 | 2026-04-29 | BE-N2 (clients 2 EP) | BE 235/235 vitest (+6 신규) / clients 6/6 | 신규 `modules/clients/clients.routes.ts` (BE-N1 동일 패턴). 2 라우트: GET /clients (createdAt desc), POST /clients (201, ownerId 자동). audit log `clients.create`. 6 테스트(401×2/생성+ownerId/빈name 400/이메일 검증 400/정렬). 영속화는 follow-up |
 
 ---
 
