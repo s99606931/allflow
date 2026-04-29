@@ -239,14 +239,14 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | 트랙 | 총 | done | in-review | in-progress | todo | 진행률 |
 |------|---:|-----:|----------:|------------:|-----:|------:|
 | BE-CORE (C1~C5) | 5 | 5 | 0 | 0 | 0 | **100%** ✓ |
-| BE-NEW (N1~N8) | 8 | 7 | 0 | 0 | 1 | 87.5% |
+| BE-NEW (N1~N8) | 8 | 8 | 0 | 0 | 0 | **100%** ✓ |
 | FE-WIRING (W1~W9) | 9 | 9 | 0 | 0 | 0 | **100%** ✓ |
 | TEST (B1~B4 + F1~F4) | 8 | 0 | 0 | 0 | 8 | 0% |
 | CLEANUP (CL1~CL2) | 2 | 0 | 0 | 0 | 2 | 0% |
-| **합계** | **32** | **21** | **0** | **0** | **11** | **65.6%** |
+| **합계** | **32** | **22** | **0** | **0** | **10** | **68.8%** |
 
-마지막 측정: 2026-04-29 (loop iter 21 — BE-N6 완료)
-다음 측정: loop iter 22 (예상: BE-N7 org/units + invitations — BE-NEW 트랙 종결 시도)
+마지막 측정: 2026-04-29 (loop iter 22 — BE-N7 완료, **BE-NEW 트랙 종결 ✓**)
+다음 측정: loop iter 23 (예상: TEST 트랙 진입 — TEST-B1 BE 통합 backfill)
 
 ### 사이클 진행 로그
 
@@ -273,6 +273,7 @@ FE는 이미 mock 기반으로 와이어링 완료. BE 핸들러 부재로 USE_M
 | 19 | 2026-04-29 | BE-N4 (resources + booking 충돌 검증) | BE 248/248 vitest (+8 신규) / resources 8/8 | 신규 `modules/resources/resources.routes.ts`. 2 라우트: GET /resources (시드 카탈로그 3건), POST /resources/book ([start,end) 반-개구간 충돌 검증, ConflictError → 409, boundary touch 허용). audit log `resources.book`. 8 테스트(401×2/카탈로그/예약/충돌 409/boundary 허용/다른 resourceId 무충돌/존재없음 400/end<=start 400). 카탈로그 관리 API는 follow-up |
 | 20 | 2026-04-29 | BE-N5 (docs 2 EP) | BE 253/253 vitest (+5 신규) / docs 5/5 | 신규 `modules/docs/docs.routes.ts`. 2 라우트: GET /docs (updatedAt desc), POST /docs (201, ownerId 자동, content 첫 200자 preview 추출). audit log `docs.create`. 5 테스트(401×2/생성+ownerId+preview/content 없을 때 preview 미포함/빈title 400/정렬). Markdown 렌더와 버전은 follow-up |
 | 21 | 2026-04-29 | BE-N6 (channels/messages 2 EP) | BE 260/260 vitest (+7 신규) / channels 7/7 | 신규 `modules/channels/channels.routes.ts`. 시드 채널 4개(public×2 + private + dm). GET /channels (멤버십 필터 — `*` wildcard 또는 caller 포함), POST /channels/:channelId/messages (201, RBAC: 비멤버 403, 미존재 400). audit log `channels.message`. 7 테스트(401×2/멤버 visible/비멤버 hidden/메시지 전송/private 403/채널 미존재 400/빈text 400). 페이징 GET/실시간 fan-out은 follow-up |
+| 22 | 2026-04-29 | BE-N7 (org/units + invitations 2 EP) | BE 270/270 vitest (+10 신규) / org 10/10 / typecheck 0 | 신규 `modules/org/org.routes.ts`. 시드 OrgUnit 4개(`org-root` + `org-eng` + `org-design` + `org-platform` 트리). GET /org/units (트리/parentId 포함), POST /org/invitations (email/orgUnitId/role 검증, 미존재 unit 400, 동일 (email,orgUnitId) 멱등 200·신규 201). audit log `org.invite`. 응답 `{id, pending:true}` (FE inviteUser 컨트랙트 정합). 10 테스트(401×2/시드 트리/201 신규/멱등 200/orgUnit별 신규/잘못된 email 400/미존재 unit 400/빈 role 400/strict 거절). **BE-NEW 트랙 8/8 종결 ✓** — 영속화·SMTP·토큰 만료는 follow-up |
 
 ---
 

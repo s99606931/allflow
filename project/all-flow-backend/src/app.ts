@@ -15,6 +15,7 @@ import { healthRoutes } from './modules/health/health.routes.js';
 import { identityRoutes } from './modules/identity/identity.routes.js';
 import { issuesRoutes } from './modules/issues/issues.routes.js';
 import { notificationsRoutes } from './modules/notifications/notifications.routes.js';
+import { orgRoutes } from './modules/org/org.routes.js';
 import { projectsRoutes } from './modules/projects/projects.routes.js';
 import { realtimeBus } from './modules/realtime/realtime-bus.js';
 import { realtimeRoutes } from './modules/realtime/realtime.routes.js';
@@ -94,6 +95,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     await app.register(resourcesRoutes);
     await app.register(docsRoutes);
     await app.register(channelsRoutes);
+    await app.register(orgRoutes);
 
     if (env.REDIS_URL) {
       const handle: RedisFanoutHandle = await attachRedisFanout(realtimeBus, env.REDIS_URL);
