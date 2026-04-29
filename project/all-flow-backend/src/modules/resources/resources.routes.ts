@@ -73,7 +73,9 @@ export async function resourcesRoutes(app: FastifyInstance): Promise<void> {
     if (!exists) throw new ValidationError(`존재하지 않는 리소스: ${parsed.data.resourceId}`);
 
     const existing = bookings.get(parsed.data.resourceId) ?? [];
-    const conflict = existing.find((b) => overlaps(startMs, endMs, Date.parse(b.start), Date.parse(b.end)));
+    const conflict = existing.find((b) =>
+      overlaps(startMs, endMs, Date.parse(b.start), Date.parse(b.end)),
+    );
     if (conflict) {
       throw new ConflictError(
         `해당 시간대에 이미 예약이 있습니다: ${conflict.start} ~ ${conflict.end}`,

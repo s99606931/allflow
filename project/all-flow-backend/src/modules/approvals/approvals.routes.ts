@@ -16,7 +16,7 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { NotFoundError, ValidationError, ForbiddenError } from '../../shared/errors.js';
+import { ForbiddenError, NotFoundError, ValidationError } from '../../shared/errors.js';
 
 type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 
@@ -65,9 +65,10 @@ const newId = (): string => {
 
 export async function approvalsRoutes(app: FastifyInstance): Promise<void> {
   app.get('/approvals', { preHandler: [app.authenticate] }, async (req) => {
-    const status = typeof (req.query as { status?: string })?.status === 'string'
-      ? StatusFilter.safeParse((req.query as { status?: string }).status)
-      : null;
+    const status =
+      typeof (req.query as { status?: string })?.status === 'string'
+        ? StatusFilter.safeParse((req.query as { status?: string }).status)
+        : null;
 
     const all: ApprovalRow[] = Array.from(store.values()).sort((a, b) =>
       b.createdAt.localeCompare(a.createdAt),

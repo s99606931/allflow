@@ -44,7 +44,11 @@ describe('modules/resources — BE-N4', () => {
         await app.inject({
           method: 'POST',
           url: '/resources/book',
-          payload: { resourceId: 'room-101', start: '2026-05-04T01:00:00Z', end: '2026-05-04T02:00:00Z' },
+          payload: {
+            resourceId: 'room-101',
+            start: '2026-05-04T01:00:00Z',
+            end: '2026-05-04T02:00:00Z',
+          },
         })
       ).statusCode,
     ).toBe(401);
@@ -73,7 +77,11 @@ describe('modules/resources — BE-N4', () => {
       method: 'POST',
       url: '/resources/book',
       headers: { authorization: `Bearer ${token}` },
-      payload: { resourceId: 'room-101', start: '2026-05-04T01:00:00Z', end: '2026-05-04T02:00:00Z' },
+      payload: {
+        resourceId: 'room-101',
+        start: '2026-05-04T01:00:00Z',
+        end: '2026-05-04T02:00:00Z',
+      },
     });
     expect(r.statusCode).toBe(200);
     expect(r.json()).toMatchObject({
@@ -92,14 +100,22 @@ describe('modules/resources — BE-N4', () => {
       method: 'POST',
       url: '/resources/book',
       headers: { authorization: `Bearer ${token}` },
-      payload: { resourceId: 'room-101', start: '2026-05-04T01:00:00Z', end: '2026-05-04T02:00:00Z' },
+      payload: {
+        resourceId: 'room-101',
+        start: '2026-05-04T01:00:00Z',
+        end: '2026-05-04T02:00:00Z',
+      },
     });
     expect(ok.statusCode).toBe(200);
     const dup = await app.inject({
       method: 'POST',
       url: '/resources/book',
       headers: { authorization: `Bearer ${token}` },
-      payload: { resourceId: 'room-101', start: '2026-05-04T01:30:00Z', end: '2026-05-04T02:30:00Z' },
+      payload: {
+        resourceId: 'room-101',
+        start: '2026-05-04T01:30:00Z',
+        end: '2026-05-04T02:30:00Z',
+      },
     });
     expect(dup.statusCode).toBe(409);
     await app.close();
@@ -112,13 +128,21 @@ describe('modules/resources — BE-N4', () => {
       method: 'POST',
       url: '/resources/book',
       headers: { authorization: `Bearer ${token}` },
-      payload: { resourceId: 'room-101', start: '2026-05-04T01:00:00Z', end: '2026-05-04T02:00:00Z' },
+      payload: {
+        resourceId: 'room-101',
+        start: '2026-05-04T01:00:00Z',
+        end: '2026-05-04T02:00:00Z',
+      },
     });
     const adj = await app.inject({
       method: 'POST',
       url: '/resources/book',
       headers: { authorization: `Bearer ${token}` },
-      payload: { resourceId: 'room-101', start: '2026-05-04T02:00:00Z', end: '2026-05-04T03:00:00Z' },
+      payload: {
+        resourceId: 'room-101',
+        start: '2026-05-04T02:00:00Z',
+        end: '2026-05-04T03:00:00Z',
+      },
     });
     expect(adj.statusCode).toBe(200);
     await app.close();
@@ -131,13 +155,21 @@ describe('modules/resources — BE-N4', () => {
       method: 'POST',
       url: '/resources/book',
       headers: { authorization: `Bearer ${token}` },
-      payload: { resourceId: 'room-101', start: '2026-05-04T01:00:00Z', end: '2026-05-04T02:00:00Z' },
+      payload: {
+        resourceId: 'room-101',
+        start: '2026-05-04T01:00:00Z',
+        end: '2026-05-04T02:00:00Z',
+      },
     });
     const other = await app.inject({
       method: 'POST',
       url: '/resources/book',
       headers: { authorization: `Bearer ${token}` },
-      payload: { resourceId: 'room-102', start: '2026-05-04T01:00:00Z', end: '2026-05-04T02:00:00Z' },
+      payload: {
+        resourceId: 'room-102',
+        start: '2026-05-04T01:00:00Z',
+        end: '2026-05-04T02:00:00Z',
+      },
     });
     expect(other.statusCode).toBe(200);
     await app.close();
@@ -150,7 +182,11 @@ describe('modules/resources — BE-N4', () => {
       method: 'POST',
       url: '/resources/book',
       headers: { authorization: `Bearer ${token}` },
-      payload: { resourceId: 'room-999', start: '2026-05-04T01:00:00Z', end: '2026-05-04T02:00:00Z' },
+      payload: {
+        resourceId: 'room-999',
+        start: '2026-05-04T01:00:00Z',
+        end: '2026-05-04T02:00:00Z',
+      },
     });
     expect(r.statusCode).toBe(400);
     await app.close();
@@ -163,7 +199,11 @@ describe('modules/resources — BE-N4', () => {
       method: 'POST',
       url: '/resources/book',
       headers: { authorization: `Bearer ${token}` },
-      payload: { resourceId: 'room-101', start: '2026-05-04T02:00:00Z', end: '2026-05-04T01:00:00Z' },
+      payload: {
+        resourceId: 'room-101',
+        start: '2026-05-04T02:00:00Z',
+        end: '2026-05-04T01:00:00Z',
+      },
     });
     expect(r.statusCode).toBe(400);
     await app.close();

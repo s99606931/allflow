@@ -334,8 +334,7 @@ describe('modules/reports/reports.routes', () => {
     function buildSendApp(opts: { reportExists: boolean }) {
       return buildTestApp({
         members: ['p1'],
-        reportFindFirst: async () =>
-          opts.reportExists ? { id: 'r1', kind: 'weekly' } : null,
+        reportFindFirst: async () => (opts.reportExists ? { id: 'r1', kind: 'weekly' } : null),
       });
     }
 

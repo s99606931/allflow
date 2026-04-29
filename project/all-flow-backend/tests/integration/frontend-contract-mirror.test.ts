@@ -80,6 +80,22 @@ const PDCA_01_ENDPOINTS = [
   'PATCH /users/me',
 ];
 
+// TEST-B3 — comments / notifications/read-all body / ai/* / reports/* 추가 가드.
+// 백엔드 BE-C4/BE-C5 에서 신설된 라우트의 OpenAPI 노출이 우발적으로 회귀하지
+// 않도록 별도로 검증한다.
+const TEST_B3_ENDPOINTS = [
+  'GET /tasks/{id}/comments',
+  'POST /tasks/{id}/comments',
+  'GET /issues/{id}/comments',
+  'POST /issues/{id}/comments',
+  'POST /notifications/read-all',
+  'POST /ai/complete',
+  'POST /ai/extract-actions',
+  'POST /reports/weekly',
+  'POST /reports/monthly',
+  'POST /reports/{id}/send',
+];
+
 describe('BE-R4 contract mirror — frontend openapi.yaml exposes all PDCA-01 endpoints', () => {
   for (const ep of PDCA_01_ENDPOINTS) {
     it(`exposes ${ep}`, () => {
@@ -89,5 +105,27 @@ describe('BE-R4 contract mirror — frontend openapi.yaml exposes all PDCA-01 en
 
   it('contract size sanity (≥ 22 PDCA-01 + ≥ 10 base = ≥ 32 ops)', () => {
     expect(ops.size).toBeGreaterThanOrEqual(32);
+  });
+});
+
+describe('TEST-B3 contract mirror — comments / notifications / ai / reports', () => {
+  for (const ep of TEST_B3_ENDPOINTS) {
+    it(`exposes ${ep}`, () => {
+      expect(ops, `missing ${ep} in frontend openapi.yaml`).toContain(ep);
+    });
+  }
+});
+
+// CL-2 — `/realtime/ws` 는 WebSocket 프로토콜이라 OpenAPI 3.x 표준 표기 대상 아님.
+// 의도적으로 paths 에서 제외하고 NOTE 주석으로만 등재한다는 결정의 회귀 가드.
+describe('CL-2 — /realtime/ws WebSocket 의도적 OpenAPI 제외', () => {
+  it('does not declare /realtime/ws as an HTTP method (intentional exclusion)', () => {
+    for (const op of ops) {
+      expect(op).not.toContain('/realtime/ws');
+    }
+  });
+
+  it('keeps /realtime/sse (HTTP-compatible) declared', () => {
+    expect(ops).toContain('GET /realtime/sse');
   });
 });

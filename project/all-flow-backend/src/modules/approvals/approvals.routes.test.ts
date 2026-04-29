@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
 import { resetEnvForTests } from '../../config/env.js';
 import { authPlugin } from '../../plugins/auth.js';
-import { approvalsRoutes, __resetApprovalsForTests } from './approvals.routes.js';
+import { __resetApprovalsForTests, approvalsRoutes } from './approvals.routes.js';
 
 const TEST_AUTH = 'a'.repeat(16) + 'b'.repeat(16);
 
@@ -106,12 +106,14 @@ describe('modules/approvals — BE-N1', () => {
     const u1 = await makeJws('u1');
     const u2 = await makeJws('u2');
     await app.inject({
-      method: 'POST', url: '/approvals',
+      method: 'POST',
+      url: '/approvals',
       headers: { authorization: `Bearer ${u1}` },
       payload: { title: 'A', approver: 'u2' },
     });
     const second = await app.inject({
-      method: 'POST', url: '/approvals',
+      method: 'POST',
+      url: '/approvals',
       headers: { authorization: `Bearer ${u1}` },
       payload: { title: 'B', approver: 'u2' },
     });
@@ -143,7 +145,8 @@ describe('modules/approvals — BE-N1', () => {
     const u1 = await makeJws('u1');
     const u3 = await makeJws('u3');
     const post = await app.inject({
-      method: 'POST', url: '/approvals',
+      method: 'POST',
+      url: '/approvals',
       headers: { authorization: `Bearer ${u1}` },
       payload: { title: 'A', approver: 'u2' },
     });
@@ -163,7 +166,8 @@ describe('modules/approvals — BE-N1', () => {
     const u1 = await makeJws('u1');
     const u2 = await makeJws('u2');
     const post = await app.inject({
-      method: 'POST', url: '/approvals',
+      method: 'POST',
+      url: '/approvals',
       headers: { authorization: `Bearer ${u1}` },
       payload: { title: 'A', approver: 'u2' },
     });

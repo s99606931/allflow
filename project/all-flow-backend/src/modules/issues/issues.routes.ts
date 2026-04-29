@@ -175,13 +175,11 @@ export async function issuesRoutes(app: FastifyInstance): Promise<void> {
         status: true,
         project: { select: { members: { where: { userId }, select: { userId: true } } } },
       },
-    })) as
-      | {
-          id: string;
-          status: keyof typeof DB_TO_WIRE_STATUS;
-          project: { members: { userId: string }[] };
-        }
-      | null;
+    })) as {
+      id: string;
+      status: keyof typeof DB_TO_WIRE_STATUS;
+      project: { members: { userId: string }[] };
+    } | null;
     if (!existing) throw new NotFoundError('Issue', id);
     if (existing.project.members.length === 0) {
       throw new ForbiddenError('프로젝트 멤버가 아닙니다');

@@ -40,11 +40,13 @@ describe('modules/events — BE-N3', () => {
     const app = await buildTestApp();
     expect((await app.inject({ method: 'GET', url: '/events' })).statusCode).toBe(401);
     expect(
-      (await app.inject({
-        method: 'POST',
-        url: '/events',
-        payload: { title: 'x', start: '2026-05-01T09:00:00Z', end: '2026-05-01T10:00:00Z' },
-      })).statusCode,
+      (
+        await app.inject({
+          method: 'POST',
+          url: '/events',
+          payload: { title: 'x', start: '2026-05-01T09:00:00Z', end: '2026-05-01T10:00:00Z' },
+        })
+      ).statusCode,
     ).toBe(401);
     await app.close();
   });
