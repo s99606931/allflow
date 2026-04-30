@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import type { McpClientManager } from './mcp-client-registry.js';
 
 export interface AiTool {
   name: string;
@@ -52,9 +53,11 @@ export const BUILTIN_TOOLS: AiTool[] = [
 
 export class ToolDispatcher {
   private readonly tools: Map<string, AiTool>;
+  private readonly mcp?: McpClientManager;
 
-  constructor(tools: AiTool[]) {
+  constructor(tools: AiTool[], mcp?: McpClientManager) {
     this.tools = new Map(tools.map((t) => [t.name, t]));
+    this.mcp = mcp;
   }
 
   list(): AiTool[] {
@@ -67,7 +70,16 @@ export class ToolDispatcher {
     prisma: PrismaClient,
   ): Promise<string> {
     const tool = this.tools.get(name);
-    if (!tool) return JSON.stringify({ error: `알 수 없는 도구: ${name}` });
-    return tool.execute(args, prisma);
+    if (tool) return tool.execute(args, prisma);
+
+    if (this.mcp) {
+      const [serverName, ...rest] = name.split('.');
+      if (rest.length > 0 && serverName) {
+        const toolName = rest.join('.');
+        return this.mcp.callTool(serverName, toolName, args);
+      }
+    }
+
+    return JSON.stringify({ error: `알 수 없는 도구: ${name}` });
   }
 }

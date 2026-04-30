@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button } from '@/components/ui/primitives';
-import { userById } from '@/lib/fixtures';
 import { useOrgMutations, useOrgUnits } from '@/lib/hooks/use-data';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { Plus, Search, UserPlus } from 'lucide-react';
 
 export function OrgPage() {
   const { data: units = [], isLoading, error } = useOrgUnits();
   const { invite } = useOrgMutations();
+  const userMap = useUserMap();
   const [email, setEmail] = useState('');
   const [activeUnitId, setActiveUnitId] = useState<string>('');
 
@@ -94,7 +95,7 @@ export function OrgPage() {
               <CardBody className="space-y-3">
                 <div className="space-y-1.5">
                   {d.members.map(m => {
-                    const u = userById(m);
+                    const u = userMap.get(m);
                     return u ? (
                       <div key={m} className="flex items-center gap-2 text-[12px]">
                         <Avatar user={u} size={20} />

@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Card, Avatar, Badge, Button, StatusDot } from '@/components/ui/primitives';
-import { userById } from '@/lib/fixtures';
 import { useTasks, useTaskMutations, useProjects } from '@/lib/hooks/use-data';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { StatusKey } from '@/lib/schemas';
 import { TaskDetailDialog } from './task-detail';
 import { CheckCircle2, Circle, Filter, KanbanSquare, LayoutList, Plus, Search, CalendarDays } from 'lucide-react';
@@ -25,6 +25,7 @@ export function TasksPage() {
   const { data: tasks = [] } = useTasks();
   const { data: projects = [] } = useProjects();
   const { update, create } = useTaskMutations();
+  const userMap = useUserMap();
 
   const filtered = tasks.filter(t => {
     if (filter === 'mine' && t.assignee !== 'me') return false;
@@ -89,7 +90,7 @@ export function TasksPage() {
         <Tabs.Content value="list" className="pt-4 outline-none">
           <Card>
             {filtered.map(t => {
-              const u = userById(t.assignee);
+              const u = userMap.get(t.assignee);
               return (
                 <button key={t.id} onClick={() => setOpenTask(t.id)}
                   className="w-full grid grid-cols-[20px_80px_1fr_120px_70px_100px_24px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors text-left">
@@ -119,7 +120,7 @@ export function TasksPage() {
                   </div>
                   <div className="p-2 space-y-2">
                     {items.map(t => {
-                      const u = userById(t.assignee);
+                      const u = userMap.get(t.assignee);
                       const proj = projects.find(p => p.id === t.proj);
                       return (
                         <div key={t.id} className="rounded-md border border-border bg-bg-elev p-2.5 hover:shadow-md hover:border-border-strong transition-all space-y-2">

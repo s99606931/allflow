@@ -2,12 +2,13 @@
 
 import { Card, CardBody, CardHeader, CardTitle, AvatarStack, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
 import { useProjects } from '@/lib/hooks/use-data';
-import { userById } from '@/lib/fixtures';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { Loader2, Plus } from 'lucide-react';
 import Link from 'next/link';
 
 export function ProjectsPage() {
   const { data: projects = [], isLoading } = useProjects();
+  const userMap = useUserMap();
   const activeCount = projects.filter(p => p.status !== 'done').length;
   const doneCount = projects.filter(p => p.status === 'done').length;
 
@@ -60,7 +61,7 @@ export function ProjectsPage() {
                     <Progress value={p.progress} tone={p.status === 'done' ? 'success' : 'accent'} />
                   </div>
                   <div className="flex items-center justify-between pt-1">
-                    <AvatarStack users={p.members.map(id => userById(id)!).filter(Boolean)} size={22} />
+                    <AvatarStack users={p.members.map(id => userMap.get(id)!).filter(Boolean)} size={22} />
                     <div className="text-[11px] text-fg-2 mono">{p.tasks.done}/{p.tasks.total} 태스크</div>
                   </div>
                 </CardBody>

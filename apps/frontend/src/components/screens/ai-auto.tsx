@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress } from '@/components/ui/primitives';
 import { AiChatPanel } from '@/components/ai/ai-chat-panel';
 import { useAiMutations, useProjects, useTaskMutations } from '@/lib/hooks/use-data';
-import { userById } from '@/lib/fixtures';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { ExtractedAction } from '@/lib/schemas';
 import { FileText, Mail, Mic, Sparkles, Upload, Database, Wand2, X, Check, FileAudio } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -33,6 +33,7 @@ export function AIAutoPage() {
   const [defaultProjOverride, setDefaultProjOverride] = useState<string | null>(null);
   const defaultProj = defaultProjOverride ?? firstProjectId;
 
+  const userMap = useUserMap();
   const ai = useAiMutations();
   const tasks = useTaskMutations();
   const extracting = ai.extractActions.isPending;
@@ -203,7 +204,7 @@ export function AIAutoPage() {
             {extracted && (
               <div className="space-y-2">
                 {items.map(item => {
-                  const u = userById(item.assignee);
+                  const u = userMap.get(item.assignee);
                   const proj = projects.find(p => p.id === item.proj);
                   const sel = selected.includes(item.id);
                   return (

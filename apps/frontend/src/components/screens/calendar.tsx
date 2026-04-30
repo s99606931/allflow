@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { Card, CardBody, Avatar, Button } from '@/components/ui/primitives';
-import { userById } from '@/lib/fixtures';
 import { ChevronLeft, ChevronRight, Plus, Video, Sparkles } from 'lucide-react';
 import { EventCreateDialog } from '@/components/dialogs/event-create-dialog';
 import { EventDetailPopover, type EventLike } from '@/components/dialogs/event-detail-popover';
 import { CalendarLinkCard } from '@/components/dialogs/calendar-link-card';
 import { useEvents } from '@/lib/hooks/use-data';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 
 const TYPE_COLOR_DEFAULT = 'oklch(0.62 0.18 255)';
 const HOURS = Array.from({ length: 11 }, (_, i) => 8 + i);
@@ -39,6 +39,7 @@ export function CalendarPage() {
 
   const [window] = useState(computeWeekWindow);
   const { data: events = [], isLoading, error } = useEvents({ from: window.from, to: window.to });
+  const userMap = useUserMap();
 
   const isoEvents: EventLike[] = events.map(e => ({
     title: e.title,
@@ -126,7 +127,7 @@ export function CalendarPage() {
                 <div className="text-[10px] opacity-85 mono mt-0.5">{ev.hour}:00 — {ev.hour + ev.len}:00</div>
                 <div className="flex items-center gap-1 mt-1.5">
                   {ev.attendees.slice(0, 3).map(id => {
-                    const u = userById(id);
+                    const u = userMap.get(id);
                     return u ? <Avatar key={id} user={u} size={14} className="!ring-white/30" /> : null;
                   })}
                   {ev.attendees.length > 3 && <span className="text-[9px] opacity-80">+{ev.attendees.length - 3}</span>}

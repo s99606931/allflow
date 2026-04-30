@@ -1,10 +1,10 @@
 'use client';
 
 import { Card, CardBody, Avatar, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
-import { userById } from '@/lib/fixtures';
 import type { IssueSev, IssuePrio } from '@/lib/types';
 import { Filter, Plus, Search, Sparkles } from 'lucide-react';
 import { useIssues } from '@/lib/hooks/use-data';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 
 const SEV_TONE: Record<IssueSev, 'danger' | 'warning' | 'info' | 'neutral'> = {
   critical: 'danger', high: 'warning', med: 'info', low: 'neutral',
@@ -18,6 +18,7 @@ const PRIO_COLOR: Record<IssuePrio, string> = {
 
 export function IssuesPage() {
   const { data: issues = [], isLoading, error } = useIssues();
+  const userMap = useUserMap();
   const p0Count = issues.filter(i => i.prio === 'P0' && (i.status === 'open' || i.status === 'in-progress')).length;
   const newCount = issues.filter(i => i.status === 'open').length;
   const slaAtRisk = issues.filter(i => i.slaPct >= 80).length;
@@ -91,7 +92,7 @@ export function IssuesPage() {
           <div className="px-4 py-12 text-center text-[12px] text-fg-3">표시할 이슈가 없습니다.</div>
         )}
         {issues.map(iss => {
-          const u = userById(iss.assignee);
+          const u = userMap.get(iss.assignee);
           return (
             <div
               key={iss.id}

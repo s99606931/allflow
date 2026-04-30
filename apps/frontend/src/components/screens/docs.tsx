@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { Avatar, Button, IconButton } from '@/components/ui/primitives';
-import { userById } from '@/lib/fixtures';
 import { FileText, Plus, Search, Sparkles, Star, ChevronRight, Hash, Clock } from 'lucide-react';
 import { DocCreateDialog } from '@/components/dialogs/doc-create-dialog';
 import { useDocs } from '@/lib/hooks/use-data';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 
 export function DocsPage() {
   const { data: docs = [], isLoading, error } = useDocs();
+  const userMap = useUserMap();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const active = selectedId ?? docs[0]?.id ?? null;
   const [createOpen, setCreateOpen] = useState(false);
@@ -37,7 +38,7 @@ export function DocsPage() {
             <div className="mb-1">
               <div className="px-2 py-1.5 text-[11px] uppercase tracking-wider text-fg-3 font-semibold">전체 문서</div>
               {docs.map(d => {
-                const u = userById(d.ownerId);
+                const u = userMap.get(d.ownerId);
                 return (
                   <button key={d.id} onClick={() => setSelectedId(d.id)}
                     className={`w-full flex items-center gap-2 px-2 h-8 rounded text-[12.5px] transition-colors ${active === d.id ? 'bg-accent-soft text-accent-strong font-semibold' : 'text-fg-1 hover:bg-hover'}`}>
@@ -61,7 +62,7 @@ export function DocsPage() {
             </div>
           )}
           {activeDoc && (() => {
-            const owner = userById(activeDoc.ownerId);
+            const owner = userMap.get(activeDoc.ownerId);
             return (
               <>
                 <div className="text-[11px] text-fg-3 flex items-center gap-1.5">

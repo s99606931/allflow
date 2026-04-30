@@ -4,7 +4,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Avatar, Badge, Button, IconButton, StatusDot } from '@/components/ui/primitives';
 import { CommentThread } from '@/components/comments/comment-thread';
 import { useProjects, useTasks } from '@/lib/hooks/use-data';
-import { userById } from '@/lib/fixtures';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import {
   ArrowUpRight,
   Calendar,
@@ -26,10 +26,11 @@ interface TaskDetailProps {
 export function TaskDetailDialog({ taskId, onClose }: TaskDetailProps) {
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
   const { data: projects = [] } = useProjects();
+  const userMap = useUserMap();
 
   const task = taskId ? tasks.find(t => t.id === taskId) : undefined;
   const proj = task ? projects.find(p => p.id === task.proj) : undefined;
-  const assignee = task ? userById(task.assignee) : undefined;
+  const assignee = task ? userMap.get(task.assignee) : undefined;
   const subTasks = task ? tasks.filter(t => t.parentTaskId === task.id) : [];
   const subDone = subTasks.filter(s => s.status === 'done').length;
 
@@ -127,7 +128,7 @@ export function TaskDetailDialog({ taskId, onClose }: TaskDetailProps) {
                   ) : (
                     <div className="space-y-1.5">
                       {subTasks.map(s => {
-                        const u = userById(s.assignee);
+                        const u = userMap.get(s.assignee);
                         const isDone = s.status === 'done';
                         return (
                           <div key={s.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-hover">

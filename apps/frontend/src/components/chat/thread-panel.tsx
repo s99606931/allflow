@@ -8,7 +8,7 @@
 
 import { Avatar } from '@/components/ui/primitives';
 import { Composer } from '@/components/chat/composer';
-import { userById } from '@/lib/fixtures';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { useTranslation } from '@/lib/i18n';
 
 export interface ThreadMessage {
@@ -27,7 +27,8 @@ interface Props {
 
 export function ThreadPanel({ channelId, parent, replies, onReplySent }: Props) {
   const { t } = useTranslation();
-  const parentUser = userById(parent.who);
+  const userMap = useUserMap();
+  const parentUser = userMap.get(parent.who);
   return (
     <aside aria-label={t('chat.thread')} className="flex h-full flex-col">
       <div className="border-b border-border p-3">
@@ -43,7 +44,7 @@ export function ThreadPanel({ channelId, parent, replies, onReplySent }: Props) 
           <div className="text-center text-[12px] text-fg-3">아직 답글이 없습니다</div>
         )}
         {replies.map(reply => {
-          const user = userById(reply.who);
+          const user = userMap.get(reply.who);
           return (
             <div key={reply.id} className="flex gap-2">
               {user && <Avatar user={user} size={24} />}

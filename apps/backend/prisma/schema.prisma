@@ -124,6 +124,7 @@ model User {
   leaveRequests     LeaveRequest[]    @relation("LeaveRequester")
   approvedLeaves    LeaveRequest[]    @relation("LeaveApprover")
   notionConnections NotionConnection[] @relation("NotionConnections")
+  docs      Doc[]
 
   @@index([deletedAt])
   @@map("users")
@@ -675,4 +676,20 @@ model McpConnection {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("mcp_connections")
+}
+
+// =====================================================================
+// Doc (documentation / knowledge base)
+// =====================================================================
+
+model Doc {
+  id        String   @id @default(cuid())
+  title     String   @db.VarChar(200)
+  content   String?  @db.Text
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
 }

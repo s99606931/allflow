@@ -1,16 +1,74 @@
 import { SignJWT } from 'jose';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
 import { resetEnvForTests } from '../../config/env.js';
 import { authPlugin } from '../../plugins/auth.js';
-import { __resetDocsForTests, docsRoutes } from './docs.routes.js';
+import { docsRoutes } from './docs.routes.js';
 
 const TEST_AUTH = 'a'.repeat(16) + 'b'.repeat(16);
+
+// biome-ignore lint/suspicious/noExplicitAny: 테스트 mock prisma 시그니처 신뢰.
+type AnyArgs = any;
+
+interface DocRow {
+  id: string;
+  title: string;
+  content: string | null;
+  ownerId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+function makeStore() {
+  const rows = new Map<string, DocRow>();
+  let seq = 0;
+  return {
+    count: async () => rows.size,
+    createMany: async (args: AnyArgs) => {
+      for (const d of args.data) {
+        seq += 1;
+        const now = new Date(Date.now() + seq);
+        const row: DocRow = {
+          id: `doc-${seq}`,
+          title: d.title,
+          content: d.content ?? null,
+          ownerId: d.ownerId,
+          createdAt: now,
+          updatedAt: now,
+        };
+        rows.set(row.id, row);
+      }
+    },
+    findMany: async (args: AnyArgs) => {
+      const all = Array.from(rows.values());
+      if (args?.orderBy?.updatedAt === 'desc') {
+        return all.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+      }
+      return all;
+    },
+    create: async (args: AnyArgs) => {
+      seq += 1;
+      const now = new Date(Date.now() + seq);
+      const row: DocRow = {
+        id: `doc-${seq}`,
+        title: args.data.title,
+        content: args.data.content ?? null,
+        ownerId: args.data.ownerId,
+        createdAt: now,
+        updatedAt: now,
+      };
+      rows.set(row.id, row);
+      return row;
+    },
+  };
+}
 
 async function buildTestApp() {
   resetEnvForTests();
   process.env.AUTH_SECRET = TEST_AUTH;
   const app = await buildApp({ logger: false });
+  const store = makeStore();
+  app.decorate('prisma', { doc: store } as never);
   await app.register(authPlugin);
   await app.register(docsRoutes);
   return app;
@@ -31,9 +89,6 @@ describe('modules/docs — BE-N5', () => {
   afterAll(() => {
     process.env.AUTH_SECRET = undefined;
     resetEnvForTests();
-  });
-  afterEach(() => {
-    __resetDocsForTests();
   });
 
   it('인증 없으면 401 (GET, POST)', async () => {

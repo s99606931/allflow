@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { Avatar, Button, IconButton } from '@/components/ui/primitives';
-import { userById } from '@/lib/fixtures';
 import { Hash, Lock, Plus, Search, Sparkles, MessageSquare, Pin, X } from 'lucide-react';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { Composer } from '@/components/chat/composer';
 import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel';
 import { MentionPopover } from '@/components/chat/mention-popover';
@@ -13,6 +13,7 @@ import { useTranslation } from '@/lib/i18n';
 
 export function ChatPage() {
   const { t } = useTranslation();
+  const userMap = useUserMap();
   const { data: me } = useMe();
   const { data: channels = [], isLoading: channelsLoading, error: channelsError } = useChannels();
   const [activeId, setActiveId] = useState<string>('');
@@ -149,7 +150,7 @@ export function ChatPage() {
                 </div>
               );
             }
-            const u = userById(m.authorId);
+            const u = userMap.get(m.authorId);
             const mine = m.authorId === me?.id;
             const displayUser = u ?? { name: m.author?.name ?? m.authorId, initials: m.author?.initials ?? '?', color: m.author?.color ?? '#888' };
             const msgTime = new Date(m.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -228,7 +229,7 @@ export function ChatPage() {
           <div className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold mb-2">멤버 ({activeChannel?.members.length ?? 0})</div>
           <div className="space-y-1.5">
             {(activeChannel?.members ?? []).slice(0, 8).map(memberId => {
-              const u = userById(memberId);
+              const u = userMap.get(memberId);
               return (
                 <div key={memberId} className="flex items-center gap-2 text-[12px]">
                   {u ? <Avatar user={u} size={20} /> : <span className="w-5 h-5 rounded-full bg-bg-2" />}

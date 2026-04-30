@@ -2,7 +2,7 @@
 
 import { Card, CardBody, CardHeader, CardTitle, Avatar, AvatarStack, Badge, Button, IconButton, Progress, StatusDot } from '@/components/ui/primitives';
 import { useMe, useProjects, useTasks } from '@/lib/hooks/use-data';
-import { userById } from '@/lib/fixtures';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { CheckCircle2, Circle, MoreHorizontal, Sparkles, Plus, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -12,6 +12,7 @@ export function DashboardPage() {
   const { data: me } = useMe();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
+  const userMap = useUserMap();
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
   const todoCount = tasks.filter(t => t.status !== 'done').length;
@@ -80,7 +81,7 @@ export function DashboardPage() {
             )}
             {tasks.slice(0, 5).map(t => {
               const proj = projects.find(p => p.id === t.proj);
-              const u = userById(t.assignee);
+              const u = userMap.get(t.assignee);
               return (
                 <div key={t.id} className="flex items-center gap-3 px-5 py-2.5 border-b border-border last:border-0 hover:bg-hover transition-colors">
                   {t.status === 'done' ? <CheckCircle2 size={16} className="text-success" /> : <Circle size={16} className="text-fg-3" />}
@@ -143,7 +144,7 @@ export function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Progress value={p.progress} className="flex-1" tone={p.status === 'done' ? 'success' : 'accent'} />
-                  <AvatarStack users={p.members.map(id => userById(id)!).filter(Boolean)} max={3} size={20} />
+                  <AvatarStack users={p.members.map(id => userMap.get(id)!).filter(Boolean)} max={3} size={20} />
                 </div>
               </div>
             ))}
@@ -163,7 +164,7 @@ export function DashboardPage() {
               <div className="text-fg-3 text-[12px] text-center py-4">활동 내역이 없습니다.</div>
             )}
             {tasks.slice(0, 5).map(t => {
-              const u = userById(t.assignee);
+              const u = userMap.get(t.assignee);
               const proj = projects.find(p => p.id === t.proj);
               return (
                 <div key={t.id} className="flex gap-2.5 text-[12px]">

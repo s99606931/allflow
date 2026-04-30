@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardHeader, CardTitle, CardBody, Avatar, Badge, Button, IconButton } from '@/components/ui/primitives';
-import { userById } from '@/lib/fixtures';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import {
   FileSignature, Plus, Search, Inbox, Send, CheckCircle2, XCircle, Clock,
   FileText, Stamp, Sparkles, MoreHorizontal,
@@ -45,6 +45,7 @@ export function ApprovalsPage() {
   const [selected, setSelected] = useState<Approval | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const { data: approvals = [], isLoading, error } = useApprovals();
+  const userMap = useUserMap();
 
   const list = useMemo(() => {
     if (tab === 'inbox') return approvals.filter(a => a.status === 'pending');
@@ -106,7 +107,7 @@ export function ApprovalsPage() {
             <div className="px-5 py-12 text-center text-[12px] text-fg-3">표시할 결재가 없습니다.</div>
           )}
           {list.map(a => {
-            const requester = userById(a.requester);
+            const requester = userMap.get(a.requester);
             const isActive = selected?.id === a.id;
             return (
               <button
@@ -145,8 +146,9 @@ export function ApprovalsPage() {
 }
 
 function ApprovalDetail({ approval }: { approval: Approval }) {
-  const requester = userById(approval.requester);
-  const approver = userById(approval.approver);
+  const userMap = useUserMap();
+  const requester = userMap.get(approval.requester);
+  const approver = userMap.get(approval.approver);
   const { decide } = useApprovalMutations();
   const [comment, setComment] = useState('');
 

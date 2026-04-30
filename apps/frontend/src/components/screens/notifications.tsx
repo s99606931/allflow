@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { Card, Badge, Button, IconButton } from '@/components/ui/primitives';
-import { userById } from '@/lib/fixtures';
 import { useNotifications, useNotificationMutations } from '@/lib/hooks/use-data';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import {
   AlertCircle, AtSign, Bell, Sparkles,
   Filter, Settings2, MessageSquare,
@@ -27,6 +27,7 @@ const FILTERS: { id: FilterKey; label: string }[] = [
 export function NotificationsPage() {
   const { data: notifs = [], isLoading } = useNotifications();
   const { markRead, markAll } = useNotificationMutations();
+  const userMap = useUserMap();
   const [filter, setFilter] = useState<FilterKey>('all');
 
   const filtered = useMemo(
@@ -74,7 +75,7 @@ export function NotificationsPage() {
         )}
         {filtered.map(n => {
           const Icon = TYPE_ICON[n.kind] ?? Bell;
-          const u = n.actor ? userById(n.actor) : null;
+          const u = n.actor ? userMap.get(n.actor) : null;
           return (
             <button
               key={n.id}

@@ -6,7 +6,7 @@
 import Link from 'next/link';
 import { Card, CardBody, CardHeader, CardTitle, AvatarStack, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
 import { useProject, useTasks } from '@/lib/hooks/use-data';
-import { userById } from '@/lib/fixtures';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
 interface Props {
@@ -20,6 +20,7 @@ const STATUS_LABEL: Record<string, string> = {
 export function ProjectDetail({ projectId }: Props) {
   const projectQuery = useProject(projectId);
   const tasksQuery = useTasks({ projectId });
+  const userMap = useUserMap();
   const project = projectQuery.data;
 
   if (projectQuery.isLoading) {
@@ -45,7 +46,7 @@ export function ProjectDetail({ projectId }: Props) {
     );
   }
 
-  const members = project.members.map(id => userById(id)).filter((u): u is NonNullable<typeof u> => Boolean(u));
+  const members = project.members.map(id => userMap.get(id)).filter((u): u is NonNullable<typeof u> => Boolean(u));
   const tasks = tasksQuery.data ?? [];
 
   return (
@@ -114,7 +115,7 @@ export function ProjectDetail({ projectId }: Props) {
             </div>
           )}
           {tasks.map(task => {
-            const owner = userById(task.assignee);
+            const owner = userMap.get(task.assignee);
             return (
               <div
                 key={task.id}
