@@ -37,7 +37,39 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** 내 프로필 수정 (모든 필드 optional, 빈 객체 = no-op) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        role?: string;
+                        dept?: string;
+                        initials?: string;
+                        color?: string;
+                        /** Format: email */
+                        email?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["User"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/projects": {
@@ -245,7 +277,27 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** 태스크 삭제 */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         options?: never;
         head?: never;
         /** 태스크 부분 수정 */
@@ -275,6 +327,204 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/tasks/{id}/dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** 단일 태스크 의존성 그래프 (선후 관계) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            predecessors: components["schemas"]["TaskDependency"][];
+                            successors: components["schemas"]["TaskDependency"][];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** 의존성 생성 (사이클 검증, FS 검증) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        successorId: string;
+                        type?: components["schemas"]["DependencyType"];
+                        /** @default 0 */
+                        lagDays?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaskDependency"];
+                    };
+                };
+                /** @description Cycle or schedule violation */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{id}/dependencies/{depId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                depId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 의존성 제거 */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    depId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gantt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 포트폴리오 간트 조회 (cross-project) */
+        get: {
+            parameters: {
+                query?: {
+                    projectId?: string;
+                    assigneeId?: string;
+                    from?: string;
+                    to?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GanttResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gantt/by-assignee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 담당자별 그룹 + 충돌 카운트 (Phase 3 전체, Phase 1 최소 그룹) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GanttByAssignee"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/issues": {
@@ -309,7 +559,31 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /** 이슈 생성 */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["IssueCreate"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Issue"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -397,6 +671,55 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Report"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/{id}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 리포트 이메일 발송 큐 적재 */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        recipients: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            queued: number;
+                            recipients: string[];
+                        };
                     };
                 };
             };
@@ -498,6 +821,214 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["ExtractedAction"][];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/llm-connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 등록된 LLM 연결 목록 (관리자) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LlmConnection"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** LLM 연결 등록 (관리자) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LlmConnectionInput"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LlmConnection"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/llm-connections/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** LLM 연결 삭제 (관리자, 기본/활성 제외) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** LLM 연결 수정 (관리자) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LlmConnectionInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LlmConnection"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/llm-connections/{id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** LLM 연결을 활성 기본값으로 설정 (관리자) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LlmConnection"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/llm-connections/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** LLM 연결 핑 테스트 (관리자) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ok?: boolean;
+                            latencyMs?: number;
+                            detail?: string;
+                        };
                     };
                 };
             };
@@ -627,7 +1158,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 알림 일괄 읽음 처리 */
+        /**
+         * 알림 일괄 읽음 처리 (본인 모든 미읽음을 읽음으로)
+         * @description 본인의 모든 미읽음 알림을 일괄 읽음 처리. 멱등(idempotent).
+         *     요청 본문 없음. 응답에 갱신된 건수를 반환.
+         */
         post: {
             parameters: {
                 query?: never;
@@ -635,95 +1170,18 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        ids: string[];
-                    };
-                };
-            };
+            requestBody?: never;
             responses: {
                 /** @description OK */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tasks/{id}/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** 태스크 삭제 */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Deleted */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/issues/post": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 이슈 생성 */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["IssueCreate"];
-                };
-            };
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
                     content: {
-                        "application/json": components["schemas"]["Issue"];
+                        "application/json": {
+                            /** @description 읽음으로 갱신된 알림 수 */
+                            updated: number;
+                        };
                     };
                 };
             };
@@ -1311,7 +1769,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 토큰 폐기 */
+        /**
+         * 토큰 폐기 (멱등)
+         * @description 지정된 tokenId 의 폐기를 요청한다. 본 단계는 audit 로그만 기록하며,
+         *     실제 블록리스트 영속화는 후속 작업 (Prisma RevokedToken 모델 + auth 플러그인 검사).
+         */
         post: {
             parameters: {
                 query?: never;
@@ -1333,7 +1795,12 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            revoked: boolean;
+                            tokenId: string;
+                        };
+                    };
                 };
             };
         };
@@ -1343,38 +1810,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/users/me/patch": {
+    "/health": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** 내 프로필 수정 */
-        patch: {
+        /**
+         * 서비스 헬스체크 (Public)
+         * @description 인증 불필요. 인프라/모니터링용 liveness 엔드포인트.
+         */
+        get: {
             parameters: {
                 query?: never;
                 header?: never;
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        name?: string;
-                        role?: string;
-                        dept?: string;
-                        /** Format: email */
-                        email?: string;
-                    };
-                };
-            };
+            requestBody?: never;
             responses: {
                 /** @description OK */
                 200: {
@@ -1382,11 +1836,155 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["User"];
+                        "application/json": {
+                            /** @example ok */
+                            status: string;
+                            /** @description 가동 시간(초) */
+                            uptime?: number;
+                            version?: string;
+                        };
                     };
                 };
             };
         };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** 태스크 코멘트 목록 */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Comment"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** 태스크 코멘트 추가 */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CommentCreate"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Comment"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/issues/{id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** 이슈 코멘트 목록 */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Comment"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** 이슈 코멘트 추가 */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CommentCreate"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Comment"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -1444,6 +2042,13 @@ export interface components {
             /** @enum {string} */
             priority: "high" | "med" | "low";
             tags: string[];
+            /** Format: date */
+            startDate?: string | null;
+            /** Format: date */
+            endDate?: string | null;
+            parentTaskId?: string | null;
+            kind?: components["schemas"]["TaskKind"];
+            progress?: number;
         };
         TaskCreate: {
             title: string;
@@ -1460,6 +2065,59 @@ export interface components {
             assignee?: string;
             /** Format: date */
             due?: string;
+            /** Format: date */
+            startDate?: string | null;
+            /** Format: date */
+            endDate?: string | null;
+            kind?: components["schemas"]["TaskKind"];
+            progress?: number;
+        };
+        /** @enum {string} */
+        TaskKind: "task" | "milestone" | "summary";
+        /** @enum {string} */
+        DependencyType: "FS" | "SS" | "FF" | "SF";
+        TaskDependency: {
+            id: string;
+            predecessorId: string;
+            successorId: string;
+            type: components["schemas"]["DependencyType"];
+            lagDays: number;
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        GanttTask: {
+            id: string;
+            title: string;
+            kind: components["schemas"]["TaskKind"];
+            projectId: string;
+            projectColor?: string;
+            assigneeId?: string | null;
+            /** Format: date */
+            startDate?: string | null;
+            /** Format: date */
+            endDate?: string | null;
+            progress: number;
+            status: components["schemas"]["StatusKey"];
+            /** @enum {string} */
+            priority: "high" | "med" | "low";
+        };
+        GanttResponse: {
+            range?: {
+                /** Format: date */
+                from?: string;
+                /** Format: date */
+                to?: string;
+            };
+            tasks: components["schemas"]["GanttTask"][];
+            dependencies: components["schemas"]["TaskDependency"][];
+        };
+        GanttByAssignee: {
+            groups: {
+                assigneeId: string | null;
+                assigneeName?: string | null;
+                tasks: components["schemas"]["GanttTask"][];
+                conflictCount?: number;
+            }[];
         };
         /** @enum {string} */
         IssueSev: "critical" | "high" | "med" | "low";
@@ -1523,6 +2181,30 @@ export interface components {
             priority?: "high" | "med" | "low";
             confidence: number;
             sourceQuote?: string;
+        };
+        /** @enum {string} */
+        LlmKind: "lmstudio" | "ollama" | "openai" | "anthropic" | "custom_openai_compat";
+        LlmConnection: {
+            id: string;
+            name: string;
+            kind: components["schemas"]["LlmKind"];
+            baseUrl: string;
+            model: string;
+            hasApiKey: boolean;
+            isActive: boolean;
+            isDefault: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        LlmConnectionInput: {
+            name: string;
+            kind: components["schemas"]["LlmKind"];
+            /** Format: uri */
+            baseUrl: string;
+            model: string;
+            apiKey?: string | null;
         };
         Notification: {
             id: string;
@@ -1697,6 +2379,19 @@ export interface components {
             sev: components["schemas"]["IssueSev"];
             prio: components["schemas"]["IssuePrio"];
             tags?: string[];
+        };
+        Comment: {
+            id: string;
+            body: string;
+            author: {
+                id: string;
+                name: string;
+            };
+            /** Format: date-time */
+            createdAt: string;
+        };
+        CommentCreate: {
+            body: string;
         };
     };
     responses: never;

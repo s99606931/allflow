@@ -95,4 +95,14 @@ export const keys = {
     list: (filters?: Filters) => list('reports', filters),
     detail: (id: string) => detail('reports', id),
   },
+
+  gantt: {
+    all: () => root('gantt'),
+    data: (filters?: Filters) => list('gantt', filters),
+  },
+
+  health: {
+    all: () => root('health'),
+    status: () => list('health'),
+  },
 } as const;

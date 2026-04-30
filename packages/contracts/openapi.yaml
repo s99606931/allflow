@@ -32,6 +32,7 @@ tags:
   - name: chat
   - name: org
   - name: auth
+  - name: gantt
 
 paths:
   /users/me:
@@ -178,6 +179,86 @@ paths:
       summary: 태스크 삭제
       responses:
         '204': { description: Deleted }
+
+  /tasks/{id}/dependencies:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [tasks]
+      summary: 단일 태스크 의존성 그래프 (선후 관계)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [predecessors, successors]
+                properties:
+                  predecessors:
+                    type: array
+                    items: { $ref: '#/components/schemas/TaskDependency' }
+                  successors:
+                    type: array
+                    items: { $ref: '#/components/schemas/TaskDependency' }
+    post:
+      tags: [tasks]
+      summary: 의존성 생성 (사이클 검증, FS 검증)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [successorId]
+              properties:
+                successorId: { type: string }
+                type: { $ref: '#/components/schemas/DependencyType' }
+                lagDays: { type: integer, default: 0 }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TaskDependency' }
+        '422': { description: Cycle or schedule violation }
+
+  /tasks/{id}/dependencies/{depId}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: depId, in: path, required: true, schema: { type: string } }
+    delete:
+      tags: [tasks]
+      summary: 의존성 제거
+      responses:
+        '204': { description: No Content }
+
+  /gantt:
+    get:
+      tags: [gantt]
+      summary: 포트폴리오 간트 조회 (cross-project)
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: assigneeId, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GanttResponse' }
+
+  /gantt/by-assignee:
+    get:
+      tags: [gantt]
+      summary: 담당자별 그룹 + 충돌 카운트 (Phase 3 전체, Phase 1 최소 그룹)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GanttByAssignee' }
 
   /issues:
     get:
@@ -346,6 +427,87 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/ExtractedAction' }
+
+  /llm-connections:
+    get:
+      tags: [ai]
+      summary: 등록된 LLM 연결 목록 (관리자)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/LlmConnection' }
+    post:
+      tags: [ai]
+      summary: LLM 연결 등록 (관리자)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LlmConnectionInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LlmConnection' }
+
+  /llm-connections/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    patch:
+      tags: [ai]
+      summary: LLM 연결 수정 (관리자)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LlmConnectionInput' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LlmConnection' }
+    delete:
+      tags: [ai]
+      summary: LLM 연결 삭제 (관리자, 기본/활성 제외)
+      responses:
+        '204': { description: No Content }
+
+  /llm-connections/{id}/activate:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [ai]
+      summary: LLM 연결을 활성 기본값으로 설정 (관리자)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LlmConnection' }
+
+  /llm-connections/{id}/test:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [ai]
+      summary: LLM 연결 핑 테스트 (관리자)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  latencyMs: { type: integer }
+                  detail: { type: string }
 
   /realtime/sse:
     get:
@@ -831,6 +993,11 @@ components:
         tags:
           type: array
           items: { type: string }
+        startDate: { type: [string, 'null'], format: date }
+        endDate: { type: [string, 'null'], format: date }
+        parentTaskId: { type: [string, 'null'] }
+        kind: { $ref: '#/components/schemas/TaskKind' }
+        progress: { type: integer, minimum: 0, maximum: 100 }
 
     TaskCreate:
       type: object
@@ -851,6 +1018,80 @@ components:
         status: { $ref: '#/components/schemas/StatusKey' }
         assignee: { type: string }
         due: { type: string, format: date }
+        startDate: { type: [string, 'null'], format: date }
+        endDate: { type: [string, 'null'], format: date }
+        kind: { $ref: '#/components/schemas/TaskKind' }
+        progress: { type: integer, minimum: 0, maximum: 100 }
+
+    TaskKind:
+      type: string
+      enum: [task, milestone, summary]
+
+    DependencyType:
+      type: string
+      enum: [FS, SS, FF, SF]
+
+    TaskDependency:
+      type: object
+      required: [id, predecessorId, successorId, type, lagDays]
+      properties:
+        id: { type: string }
+        predecessorId: { type: string }
+        successorId: { type: string }
+        type: { $ref: '#/components/schemas/DependencyType' }
+        lagDays: { type: integer }
+        createdAt: { type: string, format: date-time }
+
+    GanttTask:
+      type: object
+      required: [id, title, kind, projectId, status, priority, progress]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        kind: { $ref: '#/components/schemas/TaskKind' }
+        projectId: { type: string }
+        projectColor: { type: string }
+        assigneeId: { type: [string, 'null'] }
+        startDate: { type: [string, 'null'], format: date }
+        endDate: { type: [string, 'null'], format: date }
+        progress: { type: integer, minimum: 0, maximum: 100 }
+        status: { $ref: '#/components/schemas/StatusKey' }
+        priority:
+          type: string
+          enum: [high, med, low]
+
+    GanttResponse:
+      type: object
+      required: [tasks, dependencies]
+      properties:
+        range:
+          type: object
+          properties:
+            from: { type: string, format: date }
+            to: { type: string, format: date }
+        tasks:
+          type: array
+          items: { $ref: '#/components/schemas/GanttTask' }
+        dependencies:
+          type: array
+          items: { $ref: '#/components/schemas/TaskDependency' }
+
+    GanttByAssignee:
+      type: object
+      required: [groups]
+      properties:
+        groups:
+          type: array
+          items:
+            type: object
+            required: [assigneeId, tasks]
+            properties:
+              assigneeId: { type: [string, 'null'] }
+              assigneeName: { type: [string, 'null'] }
+              tasks:
+                type: array
+                items: { $ref: '#/components/schemas/GanttTask' }
+              conflictCount: { type: integer, minimum: 0 }
 
     IssueSev:
       type: string
@@ -935,6 +1176,35 @@ components:
         priority: { type: string, enum: [high, med, low] }
         confidence: { type: number, minimum: 0, maximum: 1 }
         sourceQuote: { type: string }
+
+    LlmKind:
+      type: string
+      enum: [lmstudio, ollama, openai, anthropic, custom_openai_compat]
+
+    LlmConnection:
+      type: object
+      required: [id, name, kind, baseUrl, model, hasApiKey, isActive, isDefault, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        kind: { $ref: '#/components/schemas/LlmKind' }
+        baseUrl: { type: string }
+        model: { type: string }
+        hasApiKey: { type: boolean }
+        isActive: { type: boolean }
+        isDefault: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    LlmConnectionInput:
+      type: object
+      required: [name, kind, baseUrl, model]
+      properties:
+        name: { type: string, maxLength: 80 }
+        kind: { $ref: '#/components/schemas/LlmKind' }
+        baseUrl: { type: string, format: uri }
+        model: { type: string, maxLength: 120 }
+        apiKey: { type: string, nullable: true }
 
     Notification:
       type: object

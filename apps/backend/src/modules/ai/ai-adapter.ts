@@ -134,8 +134,20 @@ export class OpenAIAdapter implements AIAdapter {
   }
 }
 
-/** 단순 레지스트리. T-406 에서 모델 라우팅/페일오버로 확장. */
-export class AIAdapterRegistry {
+/**
+ * Registry contract — `aiRoutes` and `reportsRoutes` only need `get()` + `list()`.
+ *
+ * Implementations:
+ *   - `StaticAIAdapterRegistry` — env-built or test-built, in-memory map.
+ *   - `DbBackedAIRegistry`     — DB lookup with TTL cache (production).
+ */
+export interface AIAdapterRegistry {
+  get(name?: string): AIAdapter;
+  list(): string[];
+}
+
+/** Static registry. Used in tests and as the env-built fallback seed. */
+export class StaticAIAdapterRegistry implements AIAdapterRegistry {
   private readonly adapters = new Map<string, AIAdapter>();
   private defaultName: string | null = null;
 
@@ -157,12 +169,15 @@ export class AIAdapterRegistry {
   }
 }
 
+/** Backwards-compatible alias — existing tests import `AIAdapterRegistry` as a class. */
+export const AIAdapterRegistry = StaticAIAdapterRegistry;
+
 /**
  * env 기반 기본 레지스트리 빌더.
  * OPENAI_API_KEY 가 있으면 OpenAIAdapter 등록, 없으면 InMemoryAdapter (개발/테스트 안전망).
  */
-export function buildDefaultAIRegistry(env: { OPENAI_API_KEY?: string }): AIAdapterRegistry {
-  const reg = new AIAdapterRegistry();
+export function buildDefaultAIRegistry(env: { OPENAI_API_KEY?: string }): StaticAIAdapterRegistry {
+  const reg = new StaticAIAdapterRegistry();
   if (env.OPENAI_API_KEY) {
     reg.register(
       new OpenAIAdapter({

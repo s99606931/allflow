@@ -105,3 +105,4 @@ apps/frontend/playwright/.auth/
 
 # ─── Harness 결과 (로컬 전용) ───────────────────────────────────────────────
 .githooks-report/
+.gstack/

@@ -1,9 +1,10 @@
 'use client';
 
-import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, IconButton, Progress, StatusDot } from '@/components/ui/primitives';
-import { ISSUES, userById } from '@/lib/fixtures';
+import { Card, CardBody, Avatar, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
+import { userById } from '@/lib/fixtures';
 import type { IssueSev, IssuePrio } from '@/lib/types';
-import { AlertCircle, Filter, Plus, Search, Sparkles } from 'lucide-react';
+import { Filter, Plus, Search, Sparkles } from 'lucide-react';
+import { useIssues } from '@/lib/hooks/use-data';
 
 const SEV_TONE: Record<IssueSev, 'danger' | 'warning' | 'info' | 'neutral'> = {
   critical: 'danger', high: 'warning', med: 'info', low: 'neutral',
@@ -16,17 +17,21 @@ const PRIO_COLOR: Record<IssuePrio, string> = {
 };
 
 export function IssuesPage() {
+  const { data: issues = [], isLoading, error } = useIssues();
+  const p0Count = issues.filter(i => i.prio === 'P0' && (i.status === 'open' || i.status === 'in-progress')).length;
+  const newCount = issues.filter(i => i.status === 'open').length;
+  const slaAtRisk = issues.filter(i => i.slaPct >= 80).length;
+
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
-      {/* KPI strip */}
       <div className="grid grid-cols-6 gap-3">
         {[
-          { l: '신규 (24h)', v: '12', t: '+3' },
-          { l: 'P0 진행중', v: '2', t: '!' },
-          { l: '미할당', v: '4', t: '+1' },
-          { l: '평균 해결', v: '2.4d', t: '-0.3' },
-          { l: 'SLA 준수', v: '94%', t: '+2%' },
-          { l: '재발생', v: '3', t: '-1' },
+          { l: '오픈 이슈', v: String(newCount), t: '' },
+          { l: 'P0 진행중', v: String(p0Count), t: p0Count > 0 ? '!' : '' },
+          { l: '전체', v: String(issues.length), t: '' },
+          { l: 'SLA 임박', v: String(slaAtRisk), t: '' },
+          { l: '평균 해결', v: '—', t: '' },
+          { l: '재발생', v: '—', t: '' },
         ].map(m => (
           <Card key={m.l}>
             <CardBody className="!p-3.5">
@@ -80,7 +85,12 @@ export function IssuesPage() {
           <div className="text-center">🔗</div>
           <div className="text-right">생성</div>
         </div>
-        {ISSUES.map(iss => {
+        {isLoading && <div className="px-4 py-12 text-center text-[12px] text-fg-3">불러오는 중...</div>}
+        {error && <div className="px-4 py-12 text-center text-[12px] text-danger">이슈를 불러오지 못했습니다.</div>}
+        {!isLoading && !error && issues.length === 0 && (
+          <div className="px-4 py-12 text-center text-[12px] text-fg-3">표시할 이슈가 없습니다.</div>
+        )}
+        {issues.map(iss => {
           const u = userById(iss.assignee);
           return (
             <div

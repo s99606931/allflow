@@ -760,6 +760,37 @@ async function main() {
   }
   console.info(`[seed] issues: ${ISSUES.length}`);
 
+  // ----- LLM connections -----
+  // Default LMStudio connection (PRD: 192.168.0.104:1234, gemma-4-e4b-it).
+  // Identified by `isDefault: true` so re-runs do not duplicate.
+  const existingDefault = await prisma.llmConnection.findFirst({ where: { isDefault: true } });
+  if (existingDefault) {
+    await prisma.llmConnection.update({
+      where: { id: existingDefault.id },
+      data: {
+        name: 'LMStudio (local)',
+        kind: 'lmstudio',
+        baseUrl: 'http://192.168.0.104:1234',
+        model: 'gemma-4-e4b-it',
+      },
+    });
+  } else {
+    // Activate the default only if no other connection is currently active.
+    const activeExists = await prisma.llmConnection.findFirst({ where: { isActive: true } });
+    await prisma.llmConnection.create({
+      data: {
+        name: 'LMStudio (local)',
+        kind: 'lmstudio',
+        baseUrl: 'http://192.168.0.104:1234',
+        model: 'gemma-4-e4b-it',
+        apiKey: null,
+        isDefault: true,
+        isActive: !activeExists,
+      },
+    });
+  }
+  console.info('[seed] llm_connections: default LMStudio ensured');
+
   console.info('[seed] 완료');
 }
 

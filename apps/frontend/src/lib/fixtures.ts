@@ -55,6 +55,7 @@ export const NAV: NavSection[] = [
     { id: 'home', label: '대시보드', icon: 'LayoutDashboard', href: '/' },
     { id: 'projects', label: '프로젝트', icon: 'FolderKanban', count: 5, href: '/projects' },
     { id: 'tasks', label: '내 태스크', icon: 'CheckSquare', count: 12, href: '/tasks' },
+    { id: 'gantt', label: '간트차트', icon: 'GanttChart', href: '/gantt' },
     { id: 'issues', label: '이슈 관리', icon: 'AlertCircle', count: 9, href: '/issues' },
     { id: 'approvals', label: '결재함', icon: 'FileCheck2', count: 4, href: '/approvals' },
     { id: 'calendar', label: '캘린더', icon: 'Calendar', href: '/calendar' },

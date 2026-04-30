@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Card, Avatar, Badge, Button, StatusDot } from '@/components/ui/primitives';
-import { PROJECTS, TASKS, userById } from '@/lib/fixtures';
-import { useTasks, useTaskMutations } from '@/lib/hooks/use-data';
+import { userById } from '@/lib/fixtures';
+import { useTasks, useTaskMutations, useProjects } from '@/lib/hooks/use-data';
 import type { StatusKey } from '@/lib/schemas';
 import { TaskDetailDialog } from './task-detail';
 import { CheckCircle2, Circle, Filter, KanbanSquare, LayoutList, Plus, Search, CalendarDays } from 'lucide-react';
@@ -23,6 +23,7 @@ export function TasksPage() {
   const [filter, setFilter] = useState<'all' | 'mine' | 'today' | 'overdue'>('all');
   const [search, setSearch] = useState('');
   const { data: tasks = [], isLoading } = useTasks();
+  const { data: projects = [] } = useProjects();
   const { update, create } = useTaskMutations();
 
   const filtered = tasks.filter(t => {
@@ -35,7 +36,7 @@ export function TasksPage() {
   const onCreate = () =>
     create.mutate({
       title: '새 태스크',
-      proj: PROJECTS[0]?.id ?? 'p1',
+      proj: projects[0]?.id ?? '',
       assignee: 'me',
       priority: 'med',
     });
@@ -89,7 +90,7 @@ export function TasksPage() {
           <Card>
             {filtered.map(t => {
               const u = userById(t.assignee);
-              const proj = PROJECTS.find(p => p.id === t.proj);
+              const proj = projects.find(p => p.id === t.proj);
               return (
                 <button key={t.id} onClick={() => setOpenTask(t.id)}
                   className="w-full grid grid-cols-[20px_80px_1fr_120px_70px_100px_24px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors text-left">
@@ -120,7 +121,7 @@ export function TasksPage() {
                   <div className="p-2 space-y-2">
                     {items.map(t => {
                       const u = userById(t.assignee);
-                      const proj = PROJECTS.find(p => p.id === t.proj);
+                      const proj = projects.find(p => p.id === t.proj);
                       return (
                         <div key={t.id} className="rounded-md border border-border bg-bg-elev p-2.5 hover:shadow-md hover:border-border-strong transition-all space-y-2">
                           <button onClick={() => setOpenTask(t.id)} className="w-full text-left">
@@ -159,7 +160,7 @@ export function TasksPage() {
         </Tabs.Content>
 
         <Tabs.Content value="calendar" className="pt-4 outline-none">
-          <CalendarMini onTask={(id) => setOpenTask(id)} />
+          <CalendarMini tasks={filtered} onTask={(id) => setOpenTask(id)} />
         </Tabs.Content>
       </Tabs.Root>
 
@@ -168,7 +169,7 @@ export function TasksPage() {
   );
 }
 
-function CalendarMini({ onTask }: { onTask: (id: string) => void }) {
+function CalendarMini({ tasks, onTask }: { tasks: Array<{ id: string; title: string }>; onTask: (id: string) => void }) {
   // Simplified month view — current week tasks scattered
   const days = ['월', '화', '수', '목', '금', '토', '일'];
   const cells = Array.from({ length: 35 }, (_, i) => i - 6); // pretend offset
@@ -181,7 +182,7 @@ function CalendarMini({ onTask }: { onTask: (id: string) => void }) {
       <div className="grid grid-cols-7">
         {cells.map(c => {
           const day = c < 1 ? '' : c > 30 ? '' : c;
-          const taskHere = day ? TASKS.find((t, i) => i % 5 === c % 5 && c > 5 && c < 25 && i < 5) : undefined;
+          const taskHere = day ? tasks.find((t, i) => i % 5 === c % 5 && c > 5 && c < 25 && i < 5) : undefined;
           return (
             <div key={c} className="min-h-[90px] border-b border-r border-border p-1.5 last:border-r-0">
               <div className="text-[11px] mono text-fg-2">{day}</div>

@@ -33,13 +33,19 @@ const SLA_POLICY = [
   { prio: 'P3', firstResp: '1d', resolve: '3d', escalate: '7d' },
 ];
 
-const HOTSPOTS = [
-  { module: 'payment', count: 8, trend: '+3', status: 'surge' },
-  { module: 'iOS push', count: 5, trend: '+2', status: 'recurring' },
-  { module: 'auth', count: 4, trend: '0', status: 'stable' },
-  { module: 'notion-sync', count: 3, trend: '+1', status: 'stable' },
-  { module: 'calendar tz', count: 2, trend: '-1', status: 'improving' },
-];
+const HOTSPOT_LIMIT = 5;
+
+function deriveHotspots(issues: Issue[]) {
+  const byProj = new Map<string, number>();
+  for (const iss of issues) {
+    byProj.set(iss.proj, (byProj.get(iss.proj) ?? 0) + 1);
+  }
+  const sorted = Array.from(byProj.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, HOTSPOT_LIMIT);
+  const max = sorted[0]?.[1] ?? 1;
+  return sorted.map(([module, count]) => ({ module, count, max }));
+}
 
 export function IssuesPageFull() {
   const [tab, setTab] = useState('list');
@@ -194,24 +200,31 @@ export function IssuesPageFull() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>최다 발생 모듈 Top 5</CardTitle></CardHeader>
+            <CardHeader><CardTitle>최다 발생 프로젝트 Top 5</CardTitle></CardHeader>
             <CardBody className="space-y-2.5">
-              {HOTSPOTS.map(h => (
-                <div key={h.module} className="flex items-center gap-2.5">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[12.5px] font-medium text-fg truncate mono">{h.module}</span>
-                      {h.status === 'surge' && <Badge tone="danger">급증</Badge>}
-                      {h.status === 'recurring' && <Badge tone="warning">재발</Badge>}
+              {(() => {
+                const hotspots = deriveHotspots(issues);
+                if (hotspots.length === 0) {
+                  return (
+                    <div className="text-[12px] text-fg-3 py-4 text-center">
+                      이슈 데이터가 없습니다.
                     </div>
-                    <Progress value={(h.count / 8) * 100} className="mt-1.5" tone={h.status === 'surge' ? 'danger' : 'accent'} />
+                  );
+                }
+                return hotspots.map(h => (
+                  <div key={h.module} className="flex items-center gap-2.5">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[12.5px] font-medium text-fg truncate mono">{h.module}</span>
+                      </div>
+                      <Progress value={(h.count / h.max) * 100} className="mt-1.5" tone="accent" />
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[14px] mono font-bold text-fg">{h.count}</div>
+                    </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="text-[14px] mono font-bold text-fg">{h.count}</div>
-                    <div className={`text-[10px] mono ${h.trend.startsWith('+') ? 'text-danger' : h.trend.startsWith('-') ? 'text-success' : 'text-fg-3'}`}>{h.trend}</div>
-                  </div>
-                </div>
-              ))}
+                ));
+              })()}
             </CardBody>
           </Card>
 

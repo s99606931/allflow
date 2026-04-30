@@ -47,6 +47,56 @@ import {
   type User,
 } from '../schemas';
 
+export interface GanttTask {
+  id: string;
+  title: string;
+  kind: string;
+  projectId: string;
+  projectColor?: string | null;
+  assigneeId?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  progress: number;
+  status: string;
+  priority: string;
+}
+
+export interface GanttDependency {
+  id: string;
+  predecessorId: string;
+  successorId: string;
+  type: 'FS' | 'SS' | 'FF' | 'SF';
+  lagDays: number;
+}
+
+export interface GanttResponse {
+  range?: { from: string; to: string };
+  tasks: GanttTask[];
+  dependencies: GanttDependency[];
+}
+
+const TODAY = new Date();
+const d = (offset: number) => {
+  const dd = new Date(TODAY);
+  dd.setDate(dd.getDate() + offset);
+  return dd.toISOString().slice(0, 10);
+};
+
+const MOCK_GANTT_RESPONSE: GanttResponse = {
+  range: { from: d(-7), to: d(30) },
+  tasks: [
+    { id: 't1', title: '모바일 앱 UI 리뉴얼', kind: 'task', projectId: 'p1', projectColor: '#5B6CFF', startDate: d(-5), endDate: d(5), progress: 60, status: 'doing', priority: 'high' },
+    { id: 't2', title: 'B2B 어드민 대시보드 설계', kind: 'task', projectId: 'p2', projectColor: '#34B27D', startDate: d(0), endDate: d(10), progress: 20, status: 'todo', priority: 'med' },
+    { id: 't3', title: 'Q2 마케팅 랜딩페이지', kind: 'task', projectId: 'p3', projectColor: '#FF7A6B', startDate: d(3), endDate: d(12), progress: 45, status: 'doing', priority: 'med' },
+    { id: 't4', title: '결제 모듈 리팩터링', kind: 'task', projectId: 'p4', projectColor: '#A66CFF', startDate: d(7), endDate: d(20), progress: 10, status: 'todo', priority: 'high' },
+    { id: 't5', title: 'API 문서화', kind: 'task', projectId: 'p1', projectColor: '#5B6CFF', startDate: d(-2), endDate: d(8), progress: 80, status: 'review', priority: 'low' },
+    { id: 't6', title: '배포 자동화 파이프라인', kind: 'milestone', projectId: 'p2', projectColor: '#34B27D', startDate: d(14), endDate: d(14), progress: 0, status: 'todo', priority: 'high' },
+  ],
+  dependencies: [
+    { id: 'd1', predecessorId: 't1', successorId: 't4', type: 'FS', lagDays: 2 },
+  ],
+};
+
 const nowIso = () => new Date().toISOString();
 const newId = (prefix: string) => `${prefix}-${Date.now().toString(36)}`;
 
@@ -260,4 +310,145 @@ export const extendedApi = {
       : http
           .post(`reports/${reportId}/send`, { json: input })
           .json<{ queued: number; recipients: string[] }>(),
+
+  /* Gantt ----------------------------------------------------------------- */
+  getGantt: async (params?: {
+    projectId?: string;
+    assigneeId?: string;
+    from?: string;
+    to?: string;
+  }): Promise<GanttResponse> => {
+    if (USE_MOCK) {
+      await sleep();
+      return MOCK_GANTT_RESPONSE;
+    }
+    return http
+      .get('gantt', { searchParams: params as Record<string, string> })
+      .json<GanttResponse>();
+  },
+
+  /* LLM Connections (admin) --------------------------------------------- */
+  listLlmConnections: async (): Promise<LlmConnection[]> => {
+    if (USE_MOCK) {
+      await sleep();
+      return MOCK_LLM_CONNECTIONS;
+    }
+    return http.get('llm-connections').json<LlmConnection[]>();
+  },
+
+  createLlmConnection: async (input: LlmConnectionInput): Promise<LlmConnection> => {
+    if (USE_MOCK) {
+      await sleep();
+      const created: LlmConnection = {
+        id: newId('llm'),
+        name: input.name,
+        kind: input.kind,
+        baseUrl: input.baseUrl,
+        model: input.model,
+        hasApiKey: !!input.apiKey,
+        isActive: false,
+        isDefault: false,
+        createdAt: nowIso(),
+        updatedAt: nowIso(),
+      };
+      MOCK_LLM_CONNECTIONS.push(created);
+      return created;
+    }
+    return http.post('llm-connections', { json: input }).json<LlmConnection>();
+  },
+
+  updateLlmConnection: async (
+    id: string,
+    input: Partial<LlmConnectionInput>,
+  ): Promise<LlmConnection> => {
+    if (USE_MOCK) {
+      await sleep();
+      const idx = MOCK_LLM_CONNECTIONS.findIndex((c) => c.id === id);
+      if (idx >= 0) {
+        MOCK_LLM_CONNECTIONS[idx] = {
+          ...(MOCK_LLM_CONNECTIONS[idx] as LlmConnection),
+          ...input,
+          updatedAt: nowIso(),
+        };
+        return MOCK_LLM_CONNECTIONS[idx] as LlmConnection;
+      }
+      throw new Error('not found');
+    }
+    return http.patch(`llm-connections/${id}`, { json: input }).json<LlmConnection>();
+  },
+
+  deleteLlmConnection: async (id: string): Promise<void> => {
+    if (USE_MOCK) {
+      await sleep();
+      const idx = MOCK_LLM_CONNECTIONS.findIndex((c) => c.id === id);
+      if (idx >= 0) MOCK_LLM_CONNECTIONS.splice(idx, 1);
+      return;
+    }
+    await http.delete(`llm-connections/${id}`);
+  },
+
+  activateLlmConnection: async (id: string): Promise<LlmConnection> => {
+    if (USE_MOCK) {
+      await sleep();
+      for (const c of MOCK_LLM_CONNECTIONS) c.isActive = c.id === id;
+      return MOCK_LLM_CONNECTIONS.find((c) => c.id === id) as LlmConnection;
+    }
+    return http.post(`llm-connections/${id}/activate`).json<LlmConnection>();
+  },
+
+  testLlmConnection: async (
+    id: string,
+  ): Promise<{ ok: boolean; latencyMs: number; detail?: string }> => {
+    if (USE_MOCK) {
+      await sleep(400);
+      return { ok: true, latencyMs: 87 };
+    }
+    return http
+      .post(`llm-connections/${id}/test`)
+      .json<{ ok: boolean; latencyMs: number; detail?: string }>();
+  },
 };
+
+/* LLM Connection types — kept inline to avoid expanding the schemas barrel. */
+export type LlmKind =
+  | 'lmstudio'
+  | 'ollama'
+  | 'openai'
+  | 'anthropic'
+  | 'custom_openai_compat';
+
+export interface LlmConnection {
+  id: string;
+  name: string;
+  kind: LlmKind;
+  baseUrl: string;
+  model: string;
+  hasApiKey: boolean;
+  isActive: boolean;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LlmConnectionInput {
+  name: string;
+  kind: LlmKind;
+  baseUrl: string;
+  model: string;
+  apiKey?: string | null;
+}
+
+const MOCK_LLM_CONNECTIONS: LlmConnection[] = [
+  {
+    id: 'llm-default-lmstudio',
+    name: 'LMStudio (local)',
+    kind: 'lmstudio',
+    baseUrl: 'http://192.168.0.104:1234',
+    model: 'gemma-4-e4b-it',
+    hasApiKey: false,
+    isActive: true,
+    isDefault: true,
+    createdAt: '2026-04-30T00:00:00.000Z',
+    updatedAt: '2026-04-30T00:00:00.000Z',
+  },
+];

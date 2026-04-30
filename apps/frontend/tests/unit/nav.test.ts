@@ -6,7 +6,7 @@ import { NAV } from '@/lib/fixtures';
  * NAV 의 모든 href 가 실제 라우트와 매칭되는지, 중복이 없는지 검증.
  */
 const ROUTES = [
-  '/', '/projects', '/tasks', '/issues', '/calendar', '/docs', '/chat',
+  '/', '/projects', '/tasks', '/gantt', '/issues', '/calendar', '/docs', '/chat',
   '/progress', '/clients',
   '/ai-auto', '/notion',
   '/reports/weekly', '/reports/monthly',

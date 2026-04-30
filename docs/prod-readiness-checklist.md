@@ -1,6 +1,6 @@
 # 운영 오픈 전수검사 체크리스트
 
-> **생성일**: 2026-04-30 | **마지막 업데이트**: 2026-04-30 테스트 완료
+> **생성일**: 2026-04-30 | **마지막 업데이트**: 2026-04-30 DB×UI 상세 검증 완료
 > **서비스**: AllFlow | **환경**: localhost (FE:80, BE:8080)
 > **범례**: ✅ PASS | ❌ FAIL | ⚠️ 주의 (P1) | 🔄 테스트 중
 
@@ -87,7 +87,8 @@
 | routes.spec.ts | 18 | 0 | ✅ |
 | smoke.spec.ts | 20 | 0 | ✅ |
 | user-flows.spec.ts | 13 | 0 | ✅ |
-| **합계** | **62** | **0** | **✅ 62/62 PASS** |
+| db-verify.spec.ts (DB×UI) | 33 | 0 | ✅ |
+| **합계** | **95** | **0** | **✅ 95/95 PASS** |
 
 ---
 
@@ -141,7 +142,7 @@
 | 게이트 | 기준 | 결과 |
 |--------|------|------|
 | G1: 전체 화면 렌더링 | 22/22 경로 | ✅ **22/22** PASS |
-| G2: Playwright E2E | ≥56/62 | ✅ **62/62** PASS |
+| G2: Playwright E2E | ≥56/62 | ✅ **95/95** PASS (db-verify 33개 추가) |
 | G3: 콘솔 에러 0건 | 0 | ✅ PASS |
 | G4: TypeScript FE 0 errors | 0 | ✅ PASS |
 | G5: BE API 연동 | 9개 도메인 | ✅ PASS |
@@ -169,3 +170,22 @@
 | # | 심각도 | 이슈 | 수정일 |
 |---|--------|------|--------|
 | 1 | P0 | `@fastify/jwt` 미사용 의존성 + CVE (fast-jwt critical×2+high×1) | 2026-04-30 |
+| 2 | P0 | lightningcss + @tailwindcss/oxide Alpine(musl) native binary 미설치 → FE 500 | 2026-04-30 |
+| 3 | P0 | `OPENAI_API_KEY=` 빈 문자열 → Zod min(1) 실패 → BE 시작 불가 | 2026-04-30 |
+
+---
+
+## 10. DB×UI 상세 검증 결과 (db-verify.spec.ts, 33개 테스트)
+
+> 실행: `E2E_BASE_URL=http://localhost pnpm exec playwright test db-verify.spec.ts` (2026-04-30)
+
+| 그룹 | 테스트 수 | 결과 |
+|------|-----------|------|
+| 프로젝트 화면 DB 일치 (8개 프로젝트) | 3 | ✅ PASS |
+| 태스크 화면 DB 일치 (48개) | 4 | ✅ PASS |
+| 이슈 화면 DB 일치 (8건, ISS-208~241) | 5 | ✅ PASS |
+| 사용자 화면 DB 일치 (7명) | 3 | ✅ PASS |
+| 대시보드 위젯 검증 | 2 | ✅ PASS |
+| 주요 메뉴 기능 동작 (15개 화면) | 14 | ✅ PASS |
+| API 응답 모니터링 (500 에러 0건) | 2 | ✅ PASS |
+| **합계** | **33** | **✅ 33/33 PASS** |

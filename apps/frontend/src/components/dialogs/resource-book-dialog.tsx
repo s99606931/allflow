@@ -11,8 +11,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/primitives';
 import { Dialog, DialogField, DialogFooter, Select, TextInput } from '@/components/ui/dialog';
-import { useResourceMutations } from '@/lib/hooks/use-data';
-import { ME } from '@/lib/fixtures';
+import { useMe, useResourceMutations } from '@/lib/hooks/use-data';
 import { useTranslation } from '@/lib/i18n';
 
 interface Slot {
@@ -30,6 +29,7 @@ interface Props {
 
 export function ResourceBookDialog({ open, onOpenChange, resources, existingBookings = [] }: Props) {
   const { t } = useTranslation();
+  const { data: me } = useMe();
   const { create } = useResourceMutations();
   const today = new Date().toISOString().slice(0, 10);
   const [resourceId, setResourceId] = useState(resources[0]?.id ?? '');
@@ -49,7 +49,7 @@ export function ResourceBookDialog({ open, onOpenChange, resources, existingBook
       resourceId,
       start,
       end,
-      bookedBy: ME.id,
+      bookedBy: me?.id ?? '',
     });
     onOpenChange(false);
   };

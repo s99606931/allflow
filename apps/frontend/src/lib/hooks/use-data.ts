@@ -21,12 +21,21 @@ import type {
   IssueTransition, ProfilePatch, ProjectCreate, ProjectPatch, TaskCreate, TaskPatch, BulkMarkRead,
   InviteUser, RevokeToken, MessageSend, DocCreate, ResourceBooking,
 } from '@/lib/schemas';
+import type { GanttResponse, LlmConnection, LlmConnectionInput } from '@/lib/api/extended';
 
 const onError = (err: unknown) => {
   toast.error(toastMessage(err));
 };
 
 /* -------------------------------------------------------- Queries -------- */
+
+export function useHealth() {
+  return useQuery({
+    queryKey: keys.health.status(),
+    queryFn: () => api.getHealth(),
+    refetchInterval: 30_000,
+  });
+}
 
 export function useMe() {
   return useQuery({ queryKey: keys.me(), queryFn: () => api.me() });
@@ -116,6 +125,20 @@ export function useChannels() {
 
 export function useOrgUnits() {
   return useQuery({ queryKey: keys.orgUnits.list(), queryFn: () => api.listOrgUnits() });
+}
+
+/**
+ * Derived users list — BE has no `/users` list endpoint yet, so we collect
+ * unique member IDs from org units and join with the local user fixture for
+ * display fields (name, role, dept, color). Once a real endpoint exists, this
+ * hook is the single migration point.
+ */
+export function useUsers() {
+  const orgQuery = useOrgUnits();
+  const data = (orgQuery.data ?? [])
+    .flatMap(u => u.members)
+    .filter((id, i, arr) => arr.indexOf(id) === i);
+  return { ...orgQuery, data };
 }
 
 /* ------------------------------------------------------ Mutations -------- */
@@ -357,4 +380,71 @@ export function useAiMutations() {
     onError,
   });
   return { complete, extractActions, weeklyReport, monthlyReport };
+}
+
+export function useLlmConnections() {
+  return useQuery<LlmConnection[]>({
+    queryKey: ['llm-connections'],
+    queryFn: () => api.listLlmConnections(),
+  });
+}
+
+export function useLlmConnectionMutations() {
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['llm-connections'] });
+
+  const create = useMutation({
+    mutationFn: (input: LlmConnectionInput) => api.createLlmConnection(input),
+    onSuccess: () => {
+      toast.success('LLM 연결이 추가되었습니다');
+      invalidate();
+    },
+    onError,
+  });
+
+  const update = useMutation({
+    mutationFn: (vars: { id: string; input: Partial<LlmConnectionInput> }) =>
+      api.updateLlmConnection(vars.id, vars.input),
+    onSuccess: () => {
+      toast.success('LLM 연결이 수정되었습니다');
+      invalidate();
+    },
+    onError,
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => api.deleteLlmConnection(id),
+    onSuccess: () => {
+      toast.success('LLM 연결이 삭제되었습니다');
+      invalidate();
+    },
+    onError,
+  });
+
+  const activate = useMutation({
+    mutationFn: (id: string) => api.activateLlmConnection(id),
+    onSuccess: (data) => {
+      toast.success(`${data.name} 활성화됨`);
+      invalidate();
+    },
+    onError,
+  });
+
+  const test = useMutation({
+    mutationFn: (id: string) => api.testLlmConnection(id),
+    onSuccess: (r) => {
+      if (r.ok) toast.success(`연결 OK · ${r.latencyMs}ms`);
+      else toast.error(`연결 실패: ${r.detail ?? 'unknown'}`);
+    },
+    onError,
+  });
+
+  return { create, update, remove, activate, test };
+}
+
+export function useGantt(params?: { projectId?: string; from?: string; to?: string }) {
+  return useQuery<GanttResponse>({
+    queryKey: keys.gantt.data(params),
+    queryFn: () => api.getGantt(params),
+  });
 }

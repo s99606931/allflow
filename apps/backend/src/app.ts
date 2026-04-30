@@ -4,6 +4,8 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { type Env, getEnv } from './config/env.js';
 import { buildDefaultAIRegistry } from './modules/ai/ai-adapter.js';
 import { aiRoutes } from './modules/ai/ai.routes.js';
+import { DbBackedAIRegistry } from './modules/ai/db-backed-registry.js';
+import { llmConnectionsRoutes } from './modules/ai/llm-connections.routes.js';
 import { approvalsRoutes } from './modules/approvals/approvals.routes.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { channelsRoutes } from './modules/channels/channels.routes.js';
@@ -11,6 +13,7 @@ import { clientsRoutes } from './modules/clients/clients.routes.js';
 import { commentsRoutes } from './modules/comments/comments.routes.js';
 import { docsRoutes } from './modules/docs/docs.routes.js';
 import { eventsRoutes } from './modules/events/events.routes.js';
+import { ganttRoutes } from './modules/gantt/gantt.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { identityRoutes } from './modules/identity/identity.routes.js';
 import { issuesRoutes } from './modules/issues/issues.routes.js';
@@ -96,7 +99,12 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   );
 
   if (registerDb && registerRoutes) {
-    const aiRegistry = buildDefaultAIRegistry({ OPENAI_API_KEY: env.OPENAI_API_KEY });
+    const fallback = buildDefaultAIRegistry({ OPENAI_API_KEY: env.OPENAI_API_KEY }).get();
+    const aiRegistry = new DbBackedAIRegistry({
+      prisma: app.prisma,
+      fallback,
+      log: app.log,
+    });
     await app.register(
       async (api) => {
         await api.register(identityRoutes);
@@ -108,11 +116,13 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
         await api.register(realtimeRoutes);
         await api.register(realtimeWsRoutes);
         await api.register(aiRoutes, { registry: aiRegistry });
+        await api.register(llmConnectionsRoutes, { registry: aiRegistry });
         await api.register(reportsRoutes, { registry: aiRegistry });
         await api.register(authRoutes);
         await api.register(approvalsRoutes);
         await api.register(clientsRoutes);
         await api.register(eventsRoutes);
+        await api.register(ganttRoutes);
         await api.register(resourcesRoutes);
         await api.register(docsRoutes);
         await api.register(channelsRoutes);

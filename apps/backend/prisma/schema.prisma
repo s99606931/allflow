@@ -81,6 +81,19 @@ enum CommentTargetKind {
   issue
 }
 
+enum TaskKind {
+  task
+  milestone
+  summary
+}
+
+enum DependencyType {
+  FS
+  SS
+  FF
+  SF
+}
+
 // =====================================================================
 // User / Project / Membership
 // =====================================================================
@@ -160,6 +173,13 @@ model Task {
   tags        String[]                @default([])
   embedding   Unsupported("vector(1536)")?  @map("embedding") // OpenAI text-embedding-3-small
 
+  // Gantt fields (Phase 1 — gantt-chart-2026-04-30)
+  startDate    DateTime? @db.Date @map("start_date")
+  endDate      DateTime? @db.Date @map("end_date")
+  parentTaskId String?            @map("parent_task_id")
+  kind         TaskKind  @default(task)
+  progress     Int       @default(0)
+
   projectId   String    @map("project_id")
   assigneeId  String?   @map("assignee_id")
   createdById String?   @map("created_by_id")
@@ -173,10 +193,35 @@ model Task {
   createdBy  User?     @relation("TaskCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   comments   Comment[] @relation("TaskComments")
 
+  parent       Task?  @relation("TaskHierarchy", fields: [parentTaskId], references: [id], onDelete: SetNull)
+  children     Task[] @relation("TaskHierarchy")
+  predecessors TaskDependency[] @relation("Successor")
+  successors   TaskDependency[] @relation("Predecessor")
+
   @@index([projectId, status])
   @@index([assigneeId])
   @@index([deletedAt])
+  @@index([startDate, endDate])
+  @@index([parentTaskId])
   @@map("tasks")
+}
+
+model TaskDependency {
+  id            String         @id @default(cuid())
+  predecessorId String         @map("predecessor_id")
+  successorId   String         @map("successor_id")
+  type          DependencyType @default(FS)
+  lagDays       Int            @default(0) @map("lag_days")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  predecessor Task @relation("Predecessor", fields: [predecessorId], references: [id], onDelete: Cascade)
+  successor   Task @relation("Successor", fields: [successorId], references: [id], onDelete: Cascade)
+
+  @@unique([predecessorId, successorId])
+  @@index([predecessorId])
+  @@index([successorId])
+  @@map("task_dependencies")
 }
 
 model Issue {
@@ -279,4 +324,45 @@ model Notification {
   @@index([userId, read])
   @@index([userId, createdAt])
   @@map("notifications")
+}
+
+// =====================================================================
+// LLM Connection (admin-managed AI provider registry)
+// =====================================================================
+//
+// Allows admins to register multiple LLM endpoints (local: LMStudio/Ollama,
+// commercial: OpenAI/Anthropic) and switch the active default at runtime
+// without env-var redeploy. Adapter selection is `kind`-based; the request
+// shape is always OpenAI-compatible /v1/chat/completions (LMStudio, Ollama,
+// vLLM, OpenAI, Together, Groq, etc all expose this).
+//
+// Default seed: LMStudio @ http://192.168.0.104:1234 model gemma-4-e4b-it.
+//
+// Secrets policy: apiKey stored encrypted is out of scope for this cycle —
+// kept as plaintext NULLABLE column. Local LLMs (the default) need no key.
+// Commercial entries should be added via admin UI in trusted networks only.
+
+enum LlmKind {
+  lmstudio
+  ollama
+  openai
+  anthropic
+  custom_openai_compat  @map("custom-openai-compat")
+}
+
+model LlmConnection {
+  id          String   @id @default(cuid())
+  name        String   // display name, e.g. "LMStudio (local)"
+  kind        LlmKind
+  baseUrl     String   @map("base_url")  // e.g. http://192.168.0.104:1234
+  model       String                      // e.g. gemma-4-e4b-it
+  apiKey      String?  @map("api_key")    // null for local; required for commercial
+  isActive    Boolean  @default(false) @map("is_active") // exactly one row should be true
+  isDefault   Boolean  @default(false) @map("is_default") // seeded default (cannot be deleted)
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt       @map("updated_at")
+
+  @@index([isActive])
+  @@map("llm_connections")
 }

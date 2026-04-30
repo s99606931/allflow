@@ -51,6 +51,8 @@ export const TaskSchema = z.object({
   due: z.string(),
   priority: PrioritySchema,
   tags: z.array(z.string()),
+  parentTaskId: z.string().nullable().optional(),
+  progress: z.number().int().min(0).max(100).optional(),
 });
 export const TaskCreateSchema = z.object({
   title: z.string().min(1),
@@ -319,7 +321,15 @@ export const RealtimeEventSchema = z.discriminatedUnion('type', [
   }),
 ]);
 
+/* Health ------------------------------------------------------------------ */
+export const HealthSchema = z.object({
+  status: z.literal('ok'),
+  uptime: z.number().int().nonnegative(),
+  version: z.string(),
+});
+
 /* Inferred types — single source of truth --------------------------------- */
+export type Health = z.infer<typeof HealthSchema>;
 export type StatusKey = z.infer<typeof StatusKeySchema>;
 export type User = z.infer<typeof UserSchema>;
 export type Project = z.infer<typeof ProjectSchema>;

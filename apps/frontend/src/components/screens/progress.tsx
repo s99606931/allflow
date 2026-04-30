@@ -5,7 +5,7 @@ import * as Tabs from '@radix-ui/react-tabs';
 import { ProjectCreateDialog } from '@/components/dialogs/project-create-dialog';
 import { Card, CardBody, CardHeader, CardTitle, Badge, Button, Progress } from '@/components/ui/primitives';
 import { useProjects, useProjectMutations } from '@/lib/hooks/use-data';
-import type { StatusKey } from '@/lib/schemas';
+import type { Project, StatusKey } from '@/lib/schemas';
 import { LayoutGrid, GanttChart, HeartPulse, Plus } from 'lucide-react';
 
 const PROJECT_STATUS_OPTIONS: { value: StatusKey; label: string }[] = [
@@ -16,10 +16,34 @@ const PROJECT_STATUS_OPTIONS: { value: StatusKey; label: string }[] = [
   { value: 'blocked', label: '차단' },
 ];
 
-const HEALTH = [
-  { metric: '일정', score: 78 }, { metric: '예산', score: 85 }, { metric: '범위', score: 72 },
-  { metric: '팀 부하', score: 64 }, { metric: '품질', score: 91 }, { metric: '소통', score: 88 },
-];
+type HealthMetric = { metric: string; score: number | null; hint?: string };
+
+function deriveHealth(projects: Project[]): HealthMetric[] {
+  if (projects.length === 0) {
+    return [
+      { metric: '일정', score: null, hint: '프로젝트 없음' },
+      { metric: '범위', score: null, hint: '프로젝트 없음' },
+      { metric: '안정성', score: null, hint: '프로젝트 없음' },
+    ];
+  }
+  // 일정: 진행 또는 완료 상태인 프로젝트 비율
+  const onTrack = projects.filter(p => p.status === 'doing' || p.status === 'done').length;
+  const schedule = Math.round((onTrack / projects.length) * 100);
+  // 범위: 모든 프로젝트의 누적 task done 비율
+  const totals = projects.reduce(
+    (acc, p) => ({ total: acc.total + p.tasks.total, done: acc.done + p.tasks.done }),
+    { total: 0, done: 0 },
+  );
+  const scope = totals.total > 0 ? Math.round((totals.done / totals.total) * 100) : 0;
+  // 안정성: 차단되지 않은 프로젝트 비율
+  const notBlocked = projects.filter(p => p.status !== 'blocked').length;
+  const stability = Math.round((notBlocked / projects.length) * 100);
+  return [
+    { metric: '일정', score: schedule },
+    { metric: '범위', score: scope },
+    { metric: '안정성', score: stability },
+  ];
+}
 
 export function ProgressPage() {
   const [tab, setTab] = useState('portfolio');
@@ -140,14 +164,22 @@ export function ProgressPage() {
           <Card className="col-span-2">
             <CardHeader><CardTitle>프로젝트 헬스 메트릭</CardTitle></CardHeader>
             <CardBody className="grid grid-cols-3 gap-4">
-              {HEALTH.map(h => (
+              {deriveHealth(PROJECTS).map(h => (
                 <div key={h.metric} className="rounded-lg border border-border p-4">
                   <div className="text-[11.5px] text-fg-2 uppercase tracking-wider font-semibold">{h.metric}</div>
-                  <div className="flex items-baseline gap-2 mt-2">
-                    <div className={`text-[32px] font-bold mono leading-none ${h.score >= 80 ? 'text-success' : h.score >= 65 ? 'text-warning' : 'text-danger'}`}>{h.score}</div>
-                    <div className="text-[11px] text-fg-3">/100</div>
-                  </div>
-                  <Progress value={h.score} tone={h.score >= 80 ? 'success' : h.score >= 65 ? 'warning' : 'danger'} className="mt-3" />
+                  {h.score === null ? (
+                    <div className="mt-2">
+                      <div className="text-[14px] text-fg-3">{h.hint ?? '측정 중'}</div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <div className={`text-[32px] font-bold mono leading-none ${h.score >= 80 ? 'text-success' : h.score >= 65 ? 'text-warning' : 'text-danger'}`}>{h.score}</div>
+                        <div className="text-[11px] text-fg-3">/100</div>
+                      </div>
+                      <Progress value={h.score} tone={h.score >= 80 ? 'success' : h.score >= 65 ? 'warning' : 'danger'} className="mt-3" />
+                    </>
+                  )}
                 </div>
               ))}
             </CardBody>
@@ -155,14 +187,33 @@ export function ProgressPage() {
           <Card>
             <CardHeader><CardTitle>주의 필요</CardTitle></CardHeader>
             <CardBody className="space-y-2.5 text-[12.5px]">
-              <div className="rounded-md border border-warning/30 bg-warning-soft p-2.5">
-                <div className="font-semibold text-fg">팀 부하 64점</div>
-                <div className="text-fg-2 mt-0.5">엔지니어링팀 평균 8.4건/인. 재분배 권장.</div>
-              </div>
-              <div className="rounded-md border border-danger/30 bg-danger-soft p-2.5">
-                <div className="font-semibold text-fg">결제 시스템 진척 둔화</div>
-                <div className="text-fg-2 mt-0.5">전주 대비 -8%p. 차단된 태스크 2건.</div>
-              </div>
+              {(() => {
+                const blocked = PROJECTS.filter(p => p.status === 'blocked');
+                const lowProgress = PROJECTS.filter(p => p.status !== 'done' && p.progress < 30);
+                if (blocked.length === 0 && lowProgress.length === 0) {
+                  return (
+                    <div className="text-fg-3 text-[12px] py-2">
+                      현재 주의가 필요한 프로젝트가 없습니다.
+                    </div>
+                  );
+                }
+                return (
+                  <>
+                    {blocked.map(p => (
+                      <div key={p.id} className="rounded-md border border-danger/30 bg-danger-soft p-2.5">
+                        <div className="font-semibold text-fg truncate">{p.name} 차단됨</div>
+                        <div className="text-fg-2 mt-0.5">진척률 {p.progress}% · 즉시 검토 필요.</div>
+                      </div>
+                    ))}
+                    {lowProgress.map(p => (
+                      <div key={p.id} className="rounded-md border border-warning/30 bg-warning-soft p-2.5">
+                        <div className="font-semibold text-fg truncate">{p.name} 진척 부족</div>
+                        <div className="text-fg-2 mt-0.5">진척률 {p.progress}% · 일정 점검 권장.</div>
+                      </div>
+                    ))}
+                  </>
+                );
+              })()}
             </CardBody>
           </Card>
         </Tabs.Content>

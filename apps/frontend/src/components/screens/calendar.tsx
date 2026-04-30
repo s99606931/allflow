@@ -1,58 +1,68 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button } from '@/components/ui/primitives';
-import { TEAM, userById } from '@/lib/fixtures';
-import { ChevronLeft, ChevronRight, Plus, Video, MapPin, Sparkles } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Card, CardBody, Avatar, Button } from '@/components/ui/primitives';
+import { userById } from '@/lib/fixtures';
+import { ChevronLeft, ChevronRight, Plus, Video, Sparkles } from 'lucide-react';
 import { EventCreateDialog } from '@/components/dialogs/event-create-dialog';
 import { EventDetailPopover, type EventLike } from '@/components/dialogs/event-detail-popover';
 import { CalendarLinkCard } from '@/components/dialogs/calendar-link-card';
+import { useEvents } from '@/lib/hooks/use-data';
 
-const EVENTS: { day: number; hour: number; len: number; title: string; type: 'meeting' | 'focus' | 'review' | 'oncall'; attendees: string[] }[] = [
-  { day: 1, hour: 10, len: 1, title: '주간 동기화', type: 'meeting', attendees: ['me', 'u1', 'u2', 'u4'] },
-  { day: 1, hour: 14, len: 2, title: '디자인 리뷰', type: 'review', attendees: ['me', 'u1'] },
-  { day: 2, hour: 11, len: 1, title: '1:1 박서연', type: 'meeting', attendees: ['me', 'u1'] },
-  { day: 2, hour: 15, len: 2, title: '딥워크 - PRD 작성', type: 'focus', attendees: ['me'] },
-  { day: 3, hour: 9, len: 1, title: '스탠드업', type: 'meeting', attendees: ['me', 'u1', 'u2', 'u3', 'u4'] },
-  { day: 3, hour: 14, len: 1, title: 'CEO 보고', type: 'review', attendees: ['me', 'u6'] },
-  { day: 4, hour: 10, len: 3, title: '온보딩 워크숍', type: 'meeting', attendees: ['me', 'u1', 'u2', 'u4', 'u5'] },
-  { day: 5, hour: 13, len: 1, title: 'Q2 회고', type: 'review', attendees: TEAM.map(u => u.id) },
-];
+const TYPE_COLOR_DEFAULT = 'oklch(0.62 0.18 255)';
+const HOURS = Array.from({ length: 11 }, (_, i) => 8 + i);
+const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
-const TYPE_COLOR: Record<string, string> = {
-  meeting: 'oklch(0.62 0.18 255)',
-  focus: 'oklch(0.65 0.16 155)',
-  review: 'oklch(0.7 0.15 70)',
-  oncall: 'oklch(0.62 0.2 25)',
-};
+/** Compute Monday-based 5-day window centered on today. */
+function computeWeekWindow(): { from: string; to: string; days: { label: string; date: string }[] } {
+  const now = new Date();
+  const dow = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((dow + 6) % 7));
+  monday.setHours(0, 0, 0, 0);
+  const days = Array.from({ length: 5 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return { label: DAY_LABELS[d.getDay()]!, date: String(d.getDate()).padStart(2, '0') };
+  });
+  const from = monday.toISOString().slice(0, 10);
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+  friday.setHours(23, 59, 59);
+  return { from, to: friday.toISOString().slice(0, 10), days };
+}
 
 export function CalendarPage() {
   const [view, setView] = useState<'week' | 'month'>('week');
   const [createOpen, setCreateOpen] = useState(false);
   const [detail, setDetail] = useState<EventLike | null>(null);
 
-  // Map fixture events into ISO-shaped objects so the dialog conflict check
-  // can compare them with the new event the user is creating.
-  const baseDate = new Date();
-  baseDate.setHours(0, 0, 0, 0);
-  const isoEvents: EventLike[] = EVENTS.map(ev => {
-    const dayOffset = ev.day - 1; // demo "월=1"
-    const start = new Date(baseDate);
-    start.setDate(start.getDate() + dayOffset);
-    start.setHours(ev.hour, 0, 0, 0);
-    const end = new Date(start);
-    end.setHours(start.getHours() + ev.len);
-    return {
-      title: ev.title,
-      start: start.toISOString().slice(0, 16),
-      end: end.toISOString().slice(0, 16),
-      attendees: ev.attendees,
-      source: 'internal' as const,
-    };
-  });
-  const days = ['월', '화', '수', '목', '금'];
-  const dates = ['28', '29', '30', '01', '02'];
-  const hours = Array.from({ length: 11 }, (_, i) => 8 + i); // 8 ~ 18
+  const [window, setWindow] = useState(() => ({
+    from: '',
+    to: '',
+    days: [] as { label: string; date: string }[],
+  }));
+  useEffect(() => { setWindow(computeWeekWindow()); }, []);
+  const { data: events = [], isLoading, error } = useEvents({ from: window.from, to: window.to });
+
+  const isoEvents: EventLike[] = events.map(e => ({
+    title: e.title,
+    start: e.start.slice(0, 16),
+    end: e.end.slice(0, 16),
+    attendees: e.attendees,
+    source: e.source,
+  }));
+
+  /** Compute grid placement for an event (gridRow + gridColumn + length). */
+  const placed = events.map(e => {
+    const start = new Date(e.start);
+    const end = new Date(e.end);
+    const monday = new Date(window.from + 'T00:00:00');
+    const dayIdx = Math.floor((start.getTime() - monday.getTime()) / (24 * 3600 * 1000));
+    const hour = start.getHours();
+    const len = Math.max(1, Math.round((end.getTime() - start.getTime()) / 3600_000));
+    return { ...e, dayIdx, hour, len };
+  }).filter(p => p.dayIdx >= 0 && p.dayIdx < 5 && p.hour >= 8 && p.hour <= 18);
 
   return (
     <div className="p-6 space-y-4 max-w-[1440px] mx-auto">
@@ -63,7 +73,7 @@ export function CalendarPage() {
           <Button variant="ghost" size="sm"><ChevronLeft size={14} /></Button>
           <Button variant="ghost" size="sm"><ChevronRight size={14} /></Button>
         </div>
-        <h2 className="text-[16px] font-bold text-fg ml-1">2026년 4월 28일 — 5월 2일</h2>
+        <h2 className="text-[16px] font-bold text-fg ml-1">{window.from} — {window.to}</h2>
         <div className="flex-1" />
         <div className="flex items-center gap-1 p-0.5 rounded-md bg-bg-2 border border-border">
           {(['week', 'month'] as const).map(v => (
@@ -86,50 +96,51 @@ export function CalendarPage() {
       <Card className="overflow-hidden">
         <div className="grid grid-cols-[60px_repeat(5,1fr)] border-b border-border">
           <div />
-          {days.map((d, i) => (
-            <div key={d} className="px-3 py-3 text-center border-l border-border">
-              <div className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold">{d}</div>
-              <div className={`text-[20px] font-bold mt-0.5 mono ${i === 0 ? 'text-accent-strong' : 'text-fg'}`}>{dates[i]}</div>
+          {window.days.map((d, i) => (
+            <div key={`${d.label}-${i}`} className="px-3 py-3 text-center border-l border-border">
+              <div className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold">{d.label}</div>
+              <div className="text-[20px] font-bold mt-0.5 mono text-fg">{d.date}</div>
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-[60px_repeat(5,1fr)] relative" style={{ gridTemplateRows: `repeat(${hours.length}, 56px)` }}>
-          {/* Hour column */}
-          {hours.map(h => (
-            <div key={`h-${h}`} className="border-b border-border text-[10.5px] mono text-fg-3 px-2 py-1 text-right" style={{ gridColumn: 1 }}>
-              {h}:00
-            </div>
-          ))}
-          {/* Day cells (background grid) */}
-          {hours.map(h => days.map((_, di) => (
-            <div key={`c-${h}-${di}`} className="border-b border-l border-border" style={{ gridRow: h - 7, gridColumn: di + 2 }} />
-          )))}
-          {/* Events */}
-          {EVENTS.map((ev, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setDetail(isoEvents[i])}
-              aria-label={`${ev.title} ${ev.hour}:00`}
-              className="m-1 rounded-md p-2 cursor-pointer text-white shadow-sm hover:shadow-md transition-shadow text-left"
-              style={{
-                gridRow: `${ev.hour - 7} / span ${ev.len}`,
-                gridColumn: ev.day + 1,
-                background: TYPE_COLOR[ev.type],
-              }}>
-              <div className="text-[11px] font-semibold leading-tight">{ev.title}</div>
-              <div className="text-[10px] opacity-85 mono mt-0.5">{ev.hour}:00 — {ev.hour + ev.len}:00</div>
-              <div className="flex items-center gap-1 mt-1.5">
-                {ev.attendees.slice(0, 3).map(id => {
-                  const u = userById(id);
-                  return u ? <Avatar key={id} user={u} size={14} className="!ring-white/30" /> : null;
-                })}
-                {ev.attendees.length > 3 && <span className="text-[9px] opacity-80">+{ev.attendees.length - 3}</span>}
-                {ev.type === 'meeting' && <Video size={10} className="ml-auto opacity-80" />}
+        {isLoading && <div className="px-4 py-12 text-center text-[12px] text-fg-3">불러오는 중...</div>}
+        {error && <div className="px-4 py-12 text-center text-[12px] text-danger">일정을 불러오지 못했습니다.</div>}
+        {!isLoading && !error && (
+          <div className="grid grid-cols-[60px_repeat(5,1fr)] relative" style={{ gridTemplateRows: `repeat(${HOURS.length}, 56px)` }}>
+            {HOURS.map(h => (
+              <div key={`h-${h}`} className="border-b border-border text-[10.5px] mono text-fg-3 px-2 py-1 text-right" style={{ gridColumn: 1 }}>
+                {h}:00
               </div>
-            </button>
-          ))}
-        </div>
+            ))}
+            {HOURS.map(h => window.days.map((_, di) => (
+              <div key={`c-${h}-${di}`} className="border-b border-l border-border" style={{ gridRow: h - 7, gridColumn: di + 2 }} />
+            )))}
+            {placed.map((ev, i) => (
+              <button
+                key={ev.id}
+                type="button"
+                onClick={() => setDetail(isoEvents[i] ?? null)}
+                aria-label={`${ev.title} ${ev.hour}:00`}
+                className="m-1 rounded-md p-2 cursor-pointer text-white shadow-sm hover:shadow-md transition-shadow text-left"
+                style={{
+                  gridRow: `${ev.hour - 7} / span ${ev.len}`,
+                  gridColumn: ev.dayIdx + 2,
+                  background: TYPE_COLOR_DEFAULT,
+                }}>
+                <div className="text-[11px] font-semibold leading-tight">{ev.title}</div>
+                <div className="text-[10px] opacity-85 mono mt-0.5">{ev.hour}:00 — {ev.hour + ev.len}:00</div>
+                <div className="flex items-center gap-1 mt-1.5">
+                  {ev.attendees.slice(0, 3).map(id => {
+                    const u = userById(id);
+                    return u ? <Avatar key={id} user={u} size={14} className="!ring-white/30" /> : null;
+                  })}
+                  {ev.attendees.length > 3 && <span className="text-[9px] opacity-80">+{ev.attendees.length - 3}</span>}
+                  <Video size={10} className="ml-auto opacity-80" />
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </Card>
 
       {/* AI summary */}

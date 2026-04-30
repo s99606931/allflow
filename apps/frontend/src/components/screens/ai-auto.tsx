@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress } from '@/components/ui/primitives';
 import { AiChatPanel } from '@/components/ai/ai-chat-panel';
-import { PROJECTS, userById } from '@/lib/fixtures';
-import { useAiMutations, useTaskMutations } from '@/lib/hooks/use-data';
+import { useAiMutations, useProjects, useTaskMutations } from '@/lib/hooks/use-data';
+import { userById } from '@/lib/fixtures';
 import type { ExtractedAction } from '@/lib/schemas';
-import { FileText, Mail, Mic, Sparkles, Upload, Database, Wand2, X, Check, ChevronRight, FileAudio } from 'lucide-react';
+import { FileText, Mail, Mic, Sparkles, Upload, Database, Wand2, X, Check, FileAudio } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 type Source = 'meeting' | 'email' | 'voice' | 'notion' | 'csv';
@@ -19,43 +19,34 @@ const SOURCES: { id: Source; label: string; icon: LucideIcon; desc: string }[] =
   { id: 'csv', label: 'CSV / Excel', icon: FileText, desc: '컬럼 매핑 자동 추론' },
 ];
 
-const SAMPLE_TRANSCRIPT = `[2026-04-28 화 10:00 / 모바일 앱 v3.0 주간 동기화]
-참석: 김지우, 박서연, 이도현, 정태훈
-
-지우: 온보딩 인터랙션 프로토타입 진행 어떻게 되어 가나요?
-서연: v2 시안은 오늘 오후 공유드릴게요. 다크모드 검수가 남았습니다.
-도현: 프론트 측에서는 T-1029 (iOS 푸시 카테고리 액션)이 차단 상태예요.
-태훈: APNs 인증서가 만료된 게 원인입니다. 내일까지 갱신할게요.
-지우: 그럼 갱신 후 5/4 마감으로 다시 잡고, 디자인 QA는 5/2까지 마무리하시죠.
-서연: 네, 5/2까지 다크모드 포함 QA 끝낼 수 있어요.
-도현: 회원가입 단계 카피 검토는 누가 담당하나요?
-지우: 한가영 매니저한테 5/3까지 부탁드릴게요.`;
-
-const EXTRACTED = [
-  { id: 1, title: 'APNs 푸시 인증서 갱신', assignee: 'u4', proj: 'p1', due: '내일', priority: 'high', confidence: 0.96, source: '4번째 발화' },
-  { id: 2, title: '디자인 QA + 다크모드 검수 완료', assignee: 'u1', proj: 'p1', due: '5/2', priority: 'high', confidence: 0.92, source: '5-6번째 발화' },
-  { id: 3, title: 'iOS 푸시 알림 카테고리 액션 (T-1029) 재오픈, 마감 5/4', assignee: 'u4', proj: 'p1', due: '5/4', priority: 'high', confidence: 0.89, source: '5번째 발화' },
-  { id: 4, title: '회원가입 단계 카피 검토', assignee: 'u5', proj: 'p1', due: '5/3', priority: 'med', confidence: 0.83, source: '7-8번째 발화' },
-];
-
 type AiItem = ExtractedAction & { id: number; proj: string; source?: string };
 
 export function AIAutoPage() {
+  const projectsQuery = useProjects();
+  const projects = useMemo(() => projectsQuery.data ?? [], [projectsQuery.data]);
+  const firstProjectId = projects[0]?.id ?? '';
+
   const [source, setSource] = useState<Source>('meeting');
-  const [text, setText] = useState(SAMPLE_TRANSCRIPT);
+  const [text, setText] = useState('');
   const [items, setItems] = useState<AiItem[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
-  const [defaultProj, setDefaultProj] = useState(PROJECTS[0]?.id ?? 'p1');
+  const [defaultProjOverride, setDefaultProjOverride] = useState<string | null>(null);
+  const defaultProj = defaultProjOverride ?? firstProjectId;
 
   const ai = useAiMutations();
   const tasks = useTaskMutations();
   const extracting = ai.extractActions.isPending;
   const extracted = items.length > 0;
+  const canExtract = text.trim().length > 0 && Boolean(defaultProj);
 
   async function runExtract() {
+    if (!canExtract) return;
     const result = await ai.extractActions.mutateAsync({ source, content: text, threshold: 0.7 });
     const next: AiItem[] = result.map((r, idx) => ({
-      ...r, id: idx + 1, proj: defaultProj, source: r.sourceQuote ? r.sourceQuote.slice(0, 16) : undefined,
+      ...r,
+      id: idx + 1,
+      proj: defaultProj,
+      source: r.sourceQuote ? r.sourceQuote.slice(0, 16) : undefined,
     }));
     setItems(next);
     setSelected(next.map(i => i.id));
@@ -127,10 +118,11 @@ export function AIAutoPage() {
                   value={text}
                   onChange={e => setText(e.target.value)}
                   rows={14}
+                  placeholder="회의록을 붙여넣거나 파일을 업로드하세요."
                   className="w-full resize-none rounded-md bg-bg-1 border border-border px-3 py-2.5 text-[12.5px] mono leading-relaxed focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
                 />
                 <div className="flex justify-between text-[11px] text-fg-3 mt-1">
-                  <span>{text.length} 글자 · 약 {Math.ceil(text.length / 350)}분 분량</span>
+                  <span>{text.length} 글자 · 약 {Math.ceil(text.length / 350) || 0}분 분량</span>
                   <span>한국어 자동 감지</span>
                 </div>
               </div>
@@ -159,10 +151,14 @@ export function AIAutoPage() {
                 <div className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold mb-1">기본 프로젝트</div>
                 <select
                   value={defaultProj}
-                  onChange={e => setDefaultProj(e.target.value)}
+                  onChange={e => setDefaultProjOverride(e.target.value)}
+                  disabled={projectsQuery.isLoading || projects.length === 0}
                   className="w-full h-8 px-2 rounded-md bg-bg-1 border border-border text-[12.5px] focus:outline-none focus:border-accent"
                 >
-                  {PROJECTS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  {projects.length === 0 && (
+                    <option value="">{projectsQuery.isLoading ? '로딩 중...' : '프로젝트 없음'}</option>
+                  )}
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
               <div className="flex-1">
@@ -173,7 +169,7 @@ export function AIAutoPage() {
                   <option>0.5 이상 (포괄)</option>
                 </select>
               </div>
-              <Button variant="primary" onClick={runExtract} disabled={extracting} className="self-end h-9">
+              <Button variant="primary" onClick={runExtract} disabled={extracting || !canExtract} className="self-end h-9">
                 {extracting ? <><Wand2 size={13} className="animate-pulse" /> 추출 중...</> : <><Sparkles size={13} /> 액션 아이템 추출</>}
               </Button>
             </div>
@@ -181,28 +177,6 @@ export function AIAutoPage() {
         </Card>
 
         <AiChatPanel />
-
-        <Card>
-          <CardHeader><CardTitle>최근 자동 등록</CardTitle></CardHeader>
-          <CardBody className="!p-0">
-            {[
-              { date: '4/27', src: '회의록', extracted: 6, registered: 5, proj: 'p1' },
-              { date: '4/26', src: '이메일 스레드', extracted: 3, registered: 3, proj: 'p3' },
-              { date: '4/25', src: '음성 (45분)', extracted: 12, registered: 9, proj: 'p2' },
-            ].map((r, i) => {
-              const proj = PROJECTS.find(p => p.id === r.proj);
-              return (
-                <div key={i} className="flex items-center gap-3 px-5 py-2.5 border-b border-border last:border-0 text-[12.5px]">
-                  <span className="mono text-fg-3 w-10">{r.date}</span>
-                  <span className="text-fg-1 flex-1">{r.src}</span>
-                  <span className="px-1.5 h-4 rounded text-[10px] mono font-semibold text-white inline-flex items-center" style={{ background: proj?.color }}>{proj?.code}</span>
-                  <span className="mono text-fg-2">{r.registered}/{r.extracted} 등록</span>
-                  <ChevronRight size={14} className="text-fg-3" />
-                </div>
-              );
-            })}
-          </CardBody>
-        </Card>
       </div>
 
       {/* RIGHT — extracted items */}
@@ -230,7 +204,7 @@ export function AIAutoPage() {
               <div className="space-y-2">
                 {items.map(item => {
                   const u = userById(item.assignee);
-                  const proj = PROJECTS.find(p => p.id === item.proj);
+                  const proj = projects.find(p => p.id === item.proj);
                   const sel = selected.includes(item.id);
                   return (
                     <div key={item.id} className={`rounded-lg border p-3 transition-colors ${sel ? 'border-accent bg-accent-soft' : 'border-border bg-bg-1'}`}>
@@ -244,7 +218,7 @@ export function AIAutoPage() {
                         <div className="flex-1 min-w-0">
                           <div className="text-[13px] font-medium text-fg leading-snug">{item.title}</div>
                           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <span className="px-1.5 h-4 rounded text-[10px] mono font-semibold text-white" style={{ background: proj?.color }}>{proj?.code}</span>
+                            {proj && <span className="px-1.5 h-4 rounded text-[10px] mono font-semibold text-white" style={{ background: proj.color }}>{proj.code}</span>}
                             {u && <span className="inline-flex items-center gap-1"><Avatar user={u} size={16} /><span className="text-[11px] text-fg-1">{u.name}</span></span>}
                             <span className="text-[11px] mono text-fg-2">{item.due}</span>
                             {item.priority === 'high' && <Badge tone="danger">높음</Badge>}
@@ -256,7 +230,7 @@ export function AIAutoPage() {
                               <Progress value={item.confidence * 100} className="flex-1 max-w-[80px] !h-1" tone={item.confidence >= 0.9 ? 'success' : 'warning'} />
                               <span className={`text-[10.5px] mono font-semibold ${item.confidence >= 0.9 ? 'text-success' : 'text-warning'}`}>{Math.round(item.confidence * 100)}%</span>
                             </div>
-                            <button className="text-[10.5px] text-accent-strong hover:underline">근거: {item.source}</button>
+                            {item.source && <button className="text-[10.5px] text-accent-strong hover:underline">근거: {item.source}</button>}
                           </div>
                         </div>
                         <button onClick={() => removeItem(item.id)} className="text-fg-3 hover:text-danger" aria-label="제거">

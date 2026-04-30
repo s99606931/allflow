@@ -1,9 +1,9 @@
 import { ME, PROJECTS, userById } from '@/lib/fixtures';
 import {
   ProjectSchema, TaskSchema, IssueSchema, NotificationSchema,
-  ReportSchema, ExtractedActionSchema, UserSchema,
+  ReportSchema, ExtractedActionSchema, UserSchema, HealthSchema,
   type Issue, type Project, type Task, type Notification,
-  type Report, type ExtractedAction, type User,
+  type Report, type ExtractedAction, type User, type Health,
   type ProjectCreate, type ProjectPatch, type TaskCreate, type TaskPatch,
 } from './schemas';
 import { z } from 'zod';
@@ -23,6 +23,12 @@ import { extendedApi } from './api/extended';
  */
 
 const baseApi = {
+  /* Health ----------------------------------------------------------------- */
+  getHealth: async (): Promise<Health> =>
+    USE_MOCK
+      ? (await sleep(), { status: 'ok' as const, uptime: 86400, version: '0.0.0-mock' })
+      : parsed(http.get('health').json(), HealthSchema),
+
   /* Identity --------------------------------------------------------------- */
   me: async (): Promise<User> =>
     USE_MOCK ? (await sleep(), ME) : parsed(http.get('users/me').json(), UserSchema),

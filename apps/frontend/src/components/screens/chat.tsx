@@ -1,42 +1,42 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Avatar, Badge, Button, IconButton } from '@/components/ui/primitives';
-import { TEAM, ME, userById } from '@/lib/fixtures';
+import { userById } from '@/lib/fixtures';
 import { Hash, Lock, Plus, Search, Smile, Paperclip, AtSign, Sparkles, ArrowUp, MessageSquare, Pin, X } from 'lucide-react';
 import { Composer } from '@/components/chat/composer';
 import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel';
 import { MentionPopover } from '@/components/chat/mention-popover';
-import { useTaskMutations } from '@/lib/hooks/use-data';
+import { useChannels, useMe, useTaskMutations } from '@/lib/hooks/use-data';
 import { useTranslation } from '@/lib/i18n';
 
-const CHANNELS = [
-  { id: 'general', name: 'general', type: 'public', unread: 0 },
-  { id: 'eng', name: 'engineering', type: 'public', unread: 3 },
-  { id: 'design', name: 'design', type: 'public', unread: 0 },
-  { id: 'random', name: 'random', type: 'public', unread: 12 },
-  { id: 'leadership', name: 'leadership', type: 'private', unread: 1 },
-];
-
-const DMS = ['u1', 'u2', 'u3', 'u5'];
-
-const MSGS = [
-  { id: 1, who: 'u1', time: '10:24', text: '온보딩 v2 시안 공유드려요. 이번엔 다크모드까지 포함해서 만들었어요!', attached: 'figma-link.png' },
-  { id: 2, who: 'u2', time: '10:31', text: '@박서연 5번째 화면 motion easing 살짝 더 부드럽게 가능할까요? cubic-bezier(0.22, 1, 0.36, 1) 정도가 좋을 것 같아요.' },
-  { id: 3, who: 'u1', time: '10:33', text: '오 좋아요. 적용해서 다시 올려드릴게요 👀' },
-  { id: 4, who: 'me', time: '10:45', text: '두 분 다 감사합니다! 5/2까지 QA 마무리되면 5/4 마감 충분히 가능할 것 같아요.', threads: 4 },
-  { id: 5, who: 'ai', time: '10:46', text: '이 대화에서 액션 아이템 1건이 추출되었습니다.\n• "디자인 QA + 다크모드 검수 완료" — 박서연, 5/2', extracted: true },
-  { id: 6, who: 'u3', time: '11:02', text: '결제 시스템 PG 응답 지연 다시 발생했어요. 백업 라우트 활성화 권한 누가 있나요?' },
-];
+interface LocalMessage {
+  id: number;
+  who: string;
+  time: string;
+  text: string;
+  threads?: number;
+  extracted?: boolean;
+}
 
 export function ChatPage() {
   const { t } = useTranslation();
-  const [active, setActive] = useState('eng');
-  const [messages, setMessages] = useState(MSGS);
+  const { data: me } = useMe();
+  const { data: channels = [], isLoading: channelsLoading, error: channelsError } = useChannels();
+  const [active, setActive] = useState<string>('');
+  const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [openThreadId, setOpenThreadId] = useState<number | null>(null);
   const [mentionOpen, setMentionOpen] = useState(false);
   const [extractedDismissed, setExtractedDismissed] = useState(false);
   const taskMutations = useTaskMutations();
+
+  useEffect(() => {
+    if (!active && channels.length > 0) setActive(channels[0]!.id);
+  }, [active, channels]);
+
+  const publicChannels = channels.filter(c => c.kind === 'public' || c.kind === 'private');
+  const dmChannels = channels.filter(c => c.kind === 'dm');
+  const activeChannel = channels.find(c => c.id === active) ?? null;
 
   const threadParent = useMemo<ThreadMessage | null>(() => {
     const found = messages.find(m => m.id === openThreadId);
@@ -51,7 +51,7 @@ export function ChatPage() {
     await taskMutations.create.mutateAsync({
       title,
       proj: 'PRJ-204',
-      assignee: ME.id,
+      assignee: me?.id ?? '',
     });
     setExtractedDismissed(true);
   };
@@ -61,7 +61,7 @@ export function ChatPage() {
       ...prev,
       {
         id: prev.length + 1,
-        who: ME.id,
+        who: me?.id ?? '',
         time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
         text,
       },
@@ -83,34 +83,37 @@ export function ChatPage() {
             <span className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold">채널</span>
             <button className="text-fg-3 hover:text-fg-1"><Plus size={12} /></button>
           </div>
-          {CHANNELS.map(c => (
+          {channelsLoading && <div className="px-3 py-4 text-[12px] text-fg-3">불러오는 중...</div>}
+          {channelsError && <div className="px-3 py-4 text-[12px] text-danger">채널 로딩 실패</div>}
+          {!channelsLoading && !channelsError && channels.length === 0 && (
+            <div className="px-3 py-4 text-[12px] text-fg-3">채널이 없습니다.</div>
+          )}
+          {publicChannels.map(c => (
             <button key={c.id} onClick={() => setActive(c.id)}
               className={`w-full flex items-center gap-2 px-2 h-7 rounded text-[12.5px] transition-colors ${
                 active === c.id ? 'bg-accent-soft text-accent-strong font-semibold' : 'text-fg-1 hover:bg-hover'
               }`}>
-              {c.type === 'private' ? <Lock size={12} /> : <Hash size={12} />}
+              {c.kind === 'private' ? <Lock size={12} /> : <Hash size={12} />}
               <span className="flex-1 text-left truncate">{c.name}</span>
-              {c.unread > 0 && <span className="text-[10px] mono font-semibold px-1.5 rounded bg-accent text-accent-fg">{c.unread}</span>}
             </button>
           ))}
-          <div className="px-2 pt-4 pb-1 flex items-center justify-between">
-            <span className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold">DM</span>
-            <button className="text-fg-3 hover:text-fg-1"><Plus size={12} /></button>
-          </div>
-          {DMS.map(id => {
-            const u = userById(id);
-            if (!u) return null;
-            return (
-              <button key={id} onClick={() => setActive(`dm-${id}`)}
-                className={`w-full flex items-center gap-2 px-2 h-7 rounded text-[12.5px] transition-colors ${
-                  active === `dm-${id}` ? 'bg-accent-soft text-accent-strong font-semibold' : 'text-fg-1 hover:bg-hover'
-                }`}>
-                <Avatar user={u} size={16} />
-                <span className="flex-1 text-left truncate">{u.name}</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-success" />
-              </button>
-            );
-          })}
+          {dmChannels.length > 0 && (
+            <>
+              <div className="px-2 pt-4 pb-1 flex items-center justify-between">
+                <span className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold">DM</span>
+                <button className="text-fg-3 hover:text-fg-1"><Plus size={12} /></button>
+              </div>
+              {dmChannels.map(c => (
+                <button key={c.id} onClick={() => setActive(c.id)}
+                  className={`w-full flex items-center gap-2 px-2 h-7 rounded text-[12.5px] transition-colors ${
+                    active === c.id ? 'bg-accent-soft text-accent-strong font-semibold' : 'text-fg-1 hover:bg-hover'
+                  }`}>
+                  <Hash size={12} />
+                  <span className="flex-1 text-left truncate">{c.name}</span>
+                </button>
+              ))}
+            </>
+          )}
         </div>
       </div>
 
@@ -118,8 +121,8 @@ export function ChatPage() {
       <div className="flex flex-col bg-bg">
         <header className="h-14 px-5 border-b border-border flex items-center gap-2 shrink-0">
           <Hash size={14} className="text-fg-2" />
-          <h2 className="text-[14px] font-bold text-fg">engineering</h2>
-          <span className="text-[12px] text-fg-3">· 24명</span>
+          <h2 className="text-[14px] font-bold text-fg">{activeChannel?.name ?? '채널 선택'}</h2>
+          {activeChannel && <span className="text-[12px] text-fg-3">· {activeChannel.members.length}명</span>}
           <div className="flex-1" />
           <IconButton size="sm"><Pin size={13} /></IconButton>
           <IconButton size="sm"><Search size={13} /></IconButton>
@@ -229,15 +232,18 @@ export function ChatPage() {
           </div>
         </div>
         <div>
-          <div className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold mb-2">멤버 (24)</div>
+          <div className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold mb-2">멤버 ({activeChannel?.members.length ?? 0})</div>
           <div className="space-y-1.5">
-            {TEAM.slice(0, 6).map(u => (
-              <div key={u.id} className="flex items-center gap-2 text-[12px]">
-                <Avatar user={u} size={20} />
-                <span className="text-fg-1 flex-1 truncate">{u.name}</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-success" />
-              </div>
-            ))}
+            {(activeChannel?.members ?? []).slice(0, 8).map(memberId => {
+              const u = userById(memberId);
+              return (
+                <div key={memberId} className="flex items-center gap-2 text-[12px]">
+                  {u ? <Avatar user={u} size={20} /> : <span className="w-5 h-5 rounded-full bg-bg-2" />}
+                  <span className="text-fg-1 flex-1 truncate">{u?.name ?? memberId}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>}

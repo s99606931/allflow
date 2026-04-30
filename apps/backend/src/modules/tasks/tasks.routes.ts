@@ -45,10 +45,30 @@ const TaskCreateInput = TaskCreateApi.extend({
   path: ['projectId'],
 });
 
+const TaskKindEnum = z.enum(['task', 'milestone', 'summary']);
+const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD 형식이 필요합니다');
+
 const TaskPatchInput = TaskPatchApi.extend({
   assigneeId: z.string().min(1).optional(),
   status: StatusKey.optional(),
-});
+  startDate: IsoDate.nullable().optional(),
+  endDate: IsoDate.nullable().optional(),
+  progress: z.number().int().min(0).max(100).optional(),
+  kind: TaskKindEnum.optional(),
+}).refine(
+  (v) => {
+    if (
+      v.startDate &&
+      v.endDate &&
+      typeof v.startDate === 'string' &&
+      typeof v.endDate === 'string'
+    ) {
+      return v.startDate <= v.endDate;
+    }
+    return true;
+  },
+  { message: 'startDate는 endDate 이전이어야 합니다', path: ['startDate'] },
+);
 
 interface TaskRow {
   id: string;
@@ -57,8 +77,17 @@ interface TaskRow {
   due: string | null;
   priority: 'high' | 'med' | 'low';
   tags: string[];
+  startDate: Date | null;
+  endDate: Date | null;
+  parentTaskId: string | null;
+  kind: 'task' | 'milestone' | 'summary';
+  progress: number;
   project: { name: string };
   assignee: { name: string } | null;
+}
+
+function toIsoDate(d: Date | null): string | null {
+  return d ? d.toISOString().slice(0, 10) : null;
 }
 
 const TASK_INCLUDE = {
@@ -76,6 +105,11 @@ function toApiTask(row: TaskRow): unknown {
     due: row.due ?? '',
     priority: row.priority,
     tags: row.tags,
+    startDate: toIsoDate(row.startDate),
+    endDate: toIsoDate(row.endDate),
+    parentTaskId: row.parentTaskId,
+    kind: row.kind,
+    progress: row.progress,
   });
 }
 
@@ -173,6 +207,14 @@ export async function tasksRoutes(app: FastifyInstance): Promise<void> {
         ...(patch.status !== undefined ? { status: patch.status } : {}),
         ...(patch.due !== undefined ? { due: patch.due } : {}),
         ...(assigneeId !== undefined ? { assigneeId } : {}),
+        ...(patch.startDate !== undefined
+          ? { startDate: patch.startDate ? new Date(patch.startDate) : null }
+          : {}),
+        ...(patch.endDate !== undefined
+          ? { endDate: patch.endDate ? new Date(patch.endDate) : null }
+          : {}),
+        ...(patch.progress !== undefined ? { progress: patch.progress } : {}),
+        ...(patch.kind !== undefined ? { kind: patch.kind } : {}),
       },
       include: TASK_INCLUDE,
     });

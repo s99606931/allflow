@@ -12,7 +12,7 @@ import { Avatar, Button, IconButton } from '@/components/ui/primitives';
 import { Dialog, DialogField, DialogFooter, Select, Textarea } from '@/components/ui/dialog';
 import { ActivityTimeline, type CrmActivity, type CrmStage } from './activity-timeline';
 import { useTranslation } from '@/lib/i18n';
-import { ME } from '@/lib/fixtures';
+import { useMe } from '@/lib/hooks/use-data';
 
 interface Props {
   client: { id: string | number; name: string; code: string; tier: string } | null;
@@ -22,6 +22,7 @@ interface Props {
 const STAGE_OPTIONS: CrmStage[] = ['lead', 'qualified', 'active', 'churned'];
 
 export function ClientDetail({ client, onClose }: Props) {
+  const { data: me } = useMe();
   const { t } = useTranslation();
   const [stage, setStage] = useState<CrmStage>('active');
   const [activities, setActivities] = useState<CrmActivity[]>([
@@ -53,7 +54,7 @@ export function ClientDetail({ client, onClose }: Props) {
         id: `a-${Date.now()}`,
         kind: draftKind,
         at: '방금',
-        by: ME.name,
+        by: me?.name ?? '—',
         text,
       },
       ...prev,
@@ -70,7 +71,7 @@ export function ClientDetail({ client, onClose }: Props) {
         id: `a-${Date.now()}`,
         kind: 'stage',
         at: '방금',
-        by: ME.name,
+        by: me?.name ?? '—',
         text: `단계 변경: ${t(`crm.stage.${stage}`)} → ${t(`crm.stage.${next}`)}`,
         stage: next,
       },

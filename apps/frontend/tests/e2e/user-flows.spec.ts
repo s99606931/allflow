@@ -29,9 +29,10 @@ test.describe('TEST-F3: 핵심 사용자 플로우 (USE_MOCK=true)', () => {
     await page.waitForTimeout(500);
 
     await page.getByRole('tab', { name: /보드/i }).click();
-    await page.waitForTimeout(500);
 
     const statusSelects = page.locator('select[aria-label*="상태 변경"]');
+    // 보드 hydration 완료까지 대기 — 고정 timeout 대신 가시성 판단
+    await expect(statusSelects.first()).toBeVisible({ timeout: 10_000 });
     const count = await statusSelects.count();
     expect(count).toBeGreaterThan(0);
 
@@ -59,10 +60,11 @@ test.describe('TEST-F3: 핵심 사용자 플로우 (USE_MOCK=true)', () => {
     const boardTab = page.getByRole('tab', { name: /보드/i }).first();
     if (await boardTab.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await boardTab.click();
-      await page.waitForTimeout(500);
     }
 
     const issueStatusSelects = page.locator('select[aria-label="상태 변경"]');
+    // 보드 hydration 완료까지 대기 — 고정 timeout 대신 첫 번째 select 가시성으로 판단
+    await expect(issueStatusSelects.first()).toBeVisible({ timeout: 10_000 });
     const selectCount = await issueStatusSelects.count();
     expect(selectCount).toBeGreaterThan(0);
 

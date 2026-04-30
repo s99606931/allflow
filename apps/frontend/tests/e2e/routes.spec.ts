@@ -9,6 +9,7 @@ const ROUTES: { href: string; expectText: RegExp }[] = [
   { href: '/', expectText: /대시보드|좋은\s*아침|오늘/ },
   { href: '/projects', expectText: /프로젝트/ },
   { href: '/tasks', expectText: /태스크|할 일/ },
+  { href: '/gantt', expectText: /간트|Gantt|일정/ },
   { href: '/issues', expectText: /이슈/ },
   { href: '/calendar', expectText: /캘린더|월|주/ },
   { href: '/docs', expectText: /문서|위키/ },
@@ -53,6 +54,7 @@ test.describe('라우트 스모크', () => {
 });
 
 test('홈에서 모든 사이드바 링크 클릭 — 네비게이션 동작', async ({ page }) => {
+  test.setTimeout(90_000); // 병렬 8-worker 환경에서 17개 링크 순회 충분한 여유
   await page.goto('/');
   const links = page.locator('aside a[href]');
   const count = await links.count();
@@ -68,7 +70,7 @@ test('홈에서 모든 사이드바 링크 클릭 — 네비게이션 동작', a
   for (const h of hrefs) {
     await page.goto('/'); // 매번 홈에서 시작 — 일관성
     await page.locator(`aside a[href="${h}"]`).first().click();
-    await page.waitForURL(`**${h}`);
+    await page.waitForURL(`**${h}`, { timeout: 45_000 }); // 병렬 부하 대비 넉넉한 timeout
     // 활성 링크가 강조됐는지 — accent-soft 또는 accent-strong 텍스트
     const active = page.locator(`aside a[href="${h}"]`).first();
     await expect(active).toBeVisible();

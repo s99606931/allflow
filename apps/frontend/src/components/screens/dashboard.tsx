@@ -1,18 +1,36 @@
 'use client';
 
 import { Card, CardBody, CardHeader, CardTitle, Avatar, AvatarStack, Badge, Button, IconButton, Progress, StatusDot } from '@/components/ui/primitives';
-import { ACTIVITY, PROJECTS, TASKS, userById, ME } from '@/lib/fixtures';
-import { CheckCircle2, Circle, MoreHorizontal, Sparkles, TrendingUp, Plus, Paperclip, FileText, GitMerge, MessageSquare } from 'lucide-react';
+import { useMe, useProjects, useTasks } from '@/lib/hooks/use-data';
+import { userById } from '@/lib/fixtures';
+import { CheckCircle2, Circle, MoreHorizontal, Sparkles, Plus, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export function DashboardPage() {
+  const { data: me } = useMe();
+  const { data: projects = [], isLoading: projectsLoading } = useProjects();
+  const { data: tasks = [], isLoading: tasksLoading } = useTasks();
+
+  const todoCount = tasks.filter(t => t.status !== 'done').length;
+  const doneToday = tasks.filter(t => t.status === 'done').length;
+  const doingCount = tasks.filter(t => t.status === 'doing').length;
+  const reviewCount = tasks.filter(t => t.status === 'review').length;
+
+  const greetingName = me?.name ?? '';
+
   return (
     <div className="p-6 space-y-6 max-w-[1440px] mx-auto">
       {/* Hero greeting */}
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-[22px] font-bold text-fg tracking-tight">안녕하세요, 지우님 👋</h2>
-          <p className="text-[13px] text-fg-2 mt-1">오늘 처리할 태스크 <strong className="text-fg">5개</strong>, 회의 <strong className="text-fg">3건</strong>, 검토 대기 <strong className="text-fg">2건</strong>이 있어요.</p>
+          <h2 className="text-[22px] font-bold text-fg tracking-tight">
+            안녕하세요{greetingName ? `, ${greetingName}님` : ''} 👋
+          </h2>
+          <p className="text-[13px] text-fg-2 mt-1">
+            오늘 처리할 태스크 <strong className="text-fg">{todoCount}개</strong>,
+            진행 중 <strong className="text-fg">{doingCount}건</strong>,
+            검토 대기 <strong className="text-fg">{reviewCount}건</strong>이 있어요.
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary"><Plus size={14} /> 태스크 추가</Button>
@@ -23,17 +41,16 @@ export function DashboardPage() {
       {/* Top metrics row */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: '오늘 완료', value: '7', delta: '+3', trend: 'up' },
-          { label: '진행 중', value: '12', delta: '+1', trend: 'up' },
-          { label: '리뷰 대기', value: '4', delta: '-2', trend: 'down' },
-          { label: '이번 주 미팅', value: '14', delta: '+5', trend: 'up' },
+          { label: '오늘 완료', value: String(doneToday) },
+          { label: '진행 중', value: String(doingCount) },
+          { label: '리뷰 대기', value: String(reviewCount) },
+          { label: '전체 프로젝트', value: String(projects.length) },
         ].map(m => (
           <Card key={m.label}>
             <CardBody>
               <div className="text-[12px] text-fg-2">{m.label}</div>
               <div className="flex items-end gap-2 mt-1">
                 <div className="text-[28px] font-bold text-fg leading-none mono">{m.value}</div>
-                <div className={`text-[11px] mono mb-1 ${m.trend === 'up' ? 'text-success' : 'text-fg-3'}`}>{m.delta}</div>
               </div>
             </CardBody>
           </Card>
@@ -49,8 +66,16 @@ export function DashboardPage() {
             <Link href="/tasks" className="text-[12px] text-accent-strong hover:underline">전체 보기 →</Link>
           </CardHeader>
           <CardBody className="!p-0">
-            {TASKS.slice(0, 5).map(t => {
-              const proj = PROJECTS.find(p => p.id === t.proj);
+            {tasksLoading && (
+              <div className="px-5 py-6 flex items-center gap-2 text-fg-3 text-[12.5px]">
+                <Loader2 size={14} className="animate-spin" /> 불러오는 중…
+              </div>
+            )}
+            {!tasksLoading && tasks.length === 0 && (
+              <div className="px-5 py-8 text-center text-fg-3 text-[12.5px]">표시할 태스크가 없습니다.</div>
+            )}
+            {tasks.slice(0, 5).map(t => {
+              const proj = projects.find(p => p.id === t.proj);
               const u = userById(t.assignee);
               return (
                 <div key={t.id} className="flex items-center gap-3 px-5 py-2.5 border-b border-border last:border-0 hover:bg-hover transition-colors">
@@ -60,7 +85,7 @@ export function DashboardPage() {
                     <div className="flex items-center gap-2 mt-0.5 text-[11px] text-fg-3">
                       <span className="inline-flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: proj?.color }} />
-                        {proj?.name}
+                        {proj?.name ?? '—'}
                       </span>
                       <span>·</span>
                       <span className="mono">{t.id}</span>
@@ -95,7 +120,15 @@ export function DashboardPage() {
             <Link href="/projects" className="text-[12px] text-accent-strong hover:underline">전체 보기 →</Link>
           </CardHeader>
           <CardBody className="space-y-4">
-            {PROJECTS.slice(0, 4).map(p => (
+            {projectsLoading && (
+              <div className="flex items-center gap-2 text-fg-3 text-[12.5px]">
+                <Loader2 size={14} className="animate-spin" /> 불러오는 중…
+              </div>
+            )}
+            {!projectsLoading && projects.length === 0 && (
+              <div className="text-center text-fg-3 text-[12.5px] py-4">프로젝트가 없습니다.</div>
+            )}
+            {projects.slice(0, 4).map(p => (
               <div key={p.id} className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
@@ -113,29 +146,38 @@ export function DashboardPage() {
           </CardBody>
         </Card>
 
-        {/* Activity */}
+        {/* Activity — derived from recent tasks */}
         <Card>
           <CardHeader>
             <CardTitle>최근 활동</CardTitle>
           </CardHeader>
           <CardBody className="space-y-3">
-            {ACTIVITY.map((a, i) => {
-              const u = a.who === 'ai' ? null : userById(a.who);
-              const Icon = a.kind === 'attach' ? Paperclip : a.kind === 'doc' ? FileText : a.kind === 'status' ? GitMerge : a.kind === 'ai' ? Sparkles : MessageSquare;
+            {tasksLoading && (
+              <div className="text-fg-3 text-[12px]">불러오는 중…</div>
+            )}
+            {!tasksLoading && tasks.length === 0 && (
+              <div className="text-fg-3 text-[12px] text-center py-4">활동 내역이 없습니다.</div>
+            )}
+            {tasks.slice(0, 5).map(t => {
+              const u = userById(t.assignee);
+              const proj = projects.find(p => p.id === t.proj);
               return (
-                <div key={i} className="flex gap-2.5 text-[12px]">
+                <div key={t.id} className="flex gap-2.5 text-[12px]">
                   {u ? (
                     <Avatar user={u} size={24} />
                   ) : (
-                    <div className="w-6 h-6 rounded-full bg-accent-soft text-accent-strong grid place-items-center"><Sparkles size={12} /></div>
+                    <div className="w-6 h-6 rounded-full bg-bg-2 text-fg-3 grid place-items-center text-[10px]">—</div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="text-fg-1 leading-relaxed">
-                      <strong className="text-fg">{u?.name ?? 'AI'}</strong>님이 {a.what} <em className="not-italic font-medium text-fg">{a.target}</em>{a.verb}
+                    <div className="text-fg-1 leading-relaxed truncate">
+                      <strong className="text-fg">{u?.name ?? t.assignee}</strong>님이{' '}
+                      <em className="not-italic font-medium text-fg">{t.title}</em> 작업 중
                     </div>
                     <div className="flex items-center gap-1.5 text-fg-3 text-[11px] mt-0.5">
-                      <Icon size={11} />
-                      <span>{a.time}</span>
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: proj?.color }} />
+                      <span>{proj?.code ?? '—'}</span>
+                      <span>·</span>
+                      <span className="mono">{t.due}</span>
                     </div>
                   </div>
                 </div>

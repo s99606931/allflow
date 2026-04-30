@@ -51,6 +51,9 @@ export const ProjectPatch = z.object({
 });
 export type ProjectPatch = z.infer<typeof ProjectPatch>;
 
+export const TaskKind = z.enum(["task", "milestone", "summary"]);
+export type TaskKind = z.infer<typeof TaskKind>;
+
 export const Task = z.object({
   "id": z.string(),
   "title": z.string(),
@@ -59,7 +62,12 @@ export const Task = z.object({
   "assignee": z.string(),
   "due": z.string(),
   "priority": z.enum(["high", "med", "low"]),
-  "tags": z.array(z.string())
+  "tags": z.array(z.string()),
+  "startDate": z.unknown().optional(),
+  "endDate": z.unknown().optional(),
+  "parentTaskId": z.unknown().optional(),
+  "kind": TaskKind.optional(),
+  "progress": z.number().int().min(0).max(100).optional()
 });
 export type Task = z.infer<typeof Task>;
 
@@ -76,9 +84,61 @@ export const TaskPatch = z.object({
   "title": z.string().optional(),
   "status": StatusKey.optional(),
   "assignee": z.string().optional(),
-  "due": z.string().optional()
+  "due": z.string().optional(),
+  "startDate": z.unknown().optional(),
+  "endDate": z.unknown().optional(),
+  "kind": TaskKind.optional(),
+  "progress": z.number().int().min(0).max(100).optional()
 });
 export type TaskPatch = z.infer<typeof TaskPatch>;
+
+export const DependencyType = z.enum(["FS", "SS", "FF", "SF"]);
+export type DependencyType = z.infer<typeof DependencyType>;
+
+export const TaskDependency = z.object({
+  "id": z.string(),
+  "predecessorId": z.string(),
+  "successorId": z.string(),
+  "type": DependencyType,
+  "lagDays": z.number().int(),
+  "createdAt": z.string().optional()
+});
+export type TaskDependency = z.infer<typeof TaskDependency>;
+
+export const GanttTask = z.object({
+  "id": z.string(),
+  "title": z.string(),
+  "kind": TaskKind,
+  "projectId": z.string(),
+  "projectColor": z.string().optional(),
+  "assigneeId": z.unknown().optional(),
+  "startDate": z.unknown().optional(),
+  "endDate": z.unknown().optional(),
+  "progress": z.number().int().min(0).max(100),
+  "status": StatusKey,
+  "priority": z.enum(["high", "med", "low"])
+});
+export type GanttTask = z.infer<typeof GanttTask>;
+
+export const GanttResponse = z.object({
+  "range": z.object({
+  "from": z.string().optional(),
+  "to": z.string().optional()
+}).optional(),
+  "tasks": z.array(GanttTask),
+  "dependencies": z.array(TaskDependency)
+});
+export type GanttResponse = z.infer<typeof GanttResponse>;
+
+export const GanttByAssignee = z.object({
+  "groups": z.array(z.object({
+  "assigneeId": z.unknown(),
+  "assigneeName": z.unknown().optional(),
+  "tasks": z.array(GanttTask),
+  "conflictCount": z.number().int().min(0).optional()
+}))
+});
+export type GanttByAssignee = z.infer<typeof GanttByAssignee>;
 
 export const IssueSev = z.enum(["critical", "high", "med", "low"]);
 export type IssueSev = z.infer<typeof IssueSev>;
@@ -144,6 +204,32 @@ export const ExtractedAction = z.object({
   "sourceQuote": z.string().optional()
 });
 export type ExtractedAction = z.infer<typeof ExtractedAction>;
+
+export const LlmKind = z.enum(["lmstudio", "ollama", "openai", "anthropic", "custom_openai_compat"]);
+export type LlmKind = z.infer<typeof LlmKind>;
+
+export const LlmConnection = z.object({
+  "id": z.string(),
+  "name": z.string(),
+  "kind": LlmKind,
+  "baseUrl": z.string(),
+  "model": z.string(),
+  "hasApiKey": z.boolean(),
+  "isActive": z.boolean(),
+  "isDefault": z.boolean(),
+  "createdAt": z.string(),
+  "updatedAt": z.string()
+});
+export type LlmConnection = z.infer<typeof LlmConnection>;
+
+export const LlmConnectionInput = z.object({
+  "name": z.string(),
+  "kind": LlmKind,
+  "baseUrl": z.string(),
+  "model": z.string(),
+  "apiKey": z.string().optional()
+});
+export type LlmConnectionInput = z.infer<typeof LlmConnectionInput>;
 
 export const Notification = z.object({
   "id": z.string(),

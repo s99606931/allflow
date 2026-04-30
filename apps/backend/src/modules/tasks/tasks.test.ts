@@ -384,4 +384,154 @@ describe('modules/tasks', () => {
     expect(r.statusCode).toBe(404);
     await app.close();
   });
+
+  it('PATCH /tasks/:id → startDate + endDate 업데이트 후 ISO 직렬화 응답', async () => {
+    let updatedData: Record<string, unknown> = {};
+    const app = await buildTestApp({
+      task: {
+        findMany: async () => [],
+        findFirst: async () => ({
+          id: 't1',
+          projectId: 'p1',
+          project: { members: [{ userId: 'u1' }] },
+        }),
+        create: async () => ({}),
+        update: async (args: AnyArgs) => {
+          updatedData = args.data as Record<string, unknown>;
+          return {
+            ...SAMPLE_TASK,
+            startDate: new Date('2026-04-30'),
+            endDate: new Date('2026-05-05'),
+            kind: 'task' as const,
+            progress: 0,
+            parentTaskId: null,
+          };
+        },
+      },
+      project: { findFirst: async () => null },
+      user: { findFirst: async () => null },
+      projectMember: { findUnique: async () => null },
+    });
+
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/tasks/t1',
+      headers: { authorization: `Bearer ${await token()}` },
+      payload: { startDate: '2026-04-30', endDate: '2026-05-05' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(updatedData.startDate).toBeInstanceOf(Date);
+    expect(updatedData.endDate).toBeInstanceOf(Date);
+    const body = r.json() as { startDate: string | null; endDate: string | null };
+    expect(body.startDate).toBe('2026-04-30');
+    expect(body.endDate).toBe('2026-05-05');
+    await app.close();
+  });
+
+  it('PATCH /tasks/:id → progress 업데이트', async () => {
+    let updatedData: Record<string, unknown> = {};
+    const app = await buildTestApp({
+      task: {
+        findMany: async () => [],
+        findFirst: async () => ({
+          id: 't1',
+          projectId: 'p1',
+          project: { members: [{ userId: 'u1' }] },
+        }),
+        create: async () => ({}),
+        update: async (args: AnyArgs) => {
+          updatedData = args.data as Record<string, unknown>;
+          return {
+            ...SAMPLE_TASK,
+            startDate: null,
+            endDate: null,
+            kind: 'task' as const,
+            progress: 75,
+            parentTaskId: null,
+          };
+        },
+      },
+      project: { findFirst: async () => null },
+      user: { findFirst: async () => null },
+      projectMember: { findUnique: async () => null },
+    });
+
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/tasks/t1',
+      headers: { authorization: `Bearer ${await token()}` },
+      payload: { progress: 75 },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(updatedData.progress).toBe(75);
+    expect((r.json() as { progress: number }).progress).toBe(75);
+    await app.close();
+  });
+
+  it('PATCH /tasks/:id → startDate > endDate 면 400', async () => {
+    const app = await buildTestApp({
+      task: {
+        findMany: async () => [],
+        findFirst: async () => ({
+          id: 't1',
+          projectId: 'p1',
+          project: { members: [{ userId: 'u1' }] },
+        }),
+        create: async () => ({}),
+        update: async () => ({}),
+      },
+      project: { findFirst: async () => null },
+      user: { findFirst: async () => null },
+      projectMember: { findUnique: async () => null },
+    });
+
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/tasks/t1',
+      headers: { authorization: `Bearer ${await token()}` },
+      payload: { startDate: '2026-05-10', endDate: '2026-05-05' },
+    });
+    expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('PATCH /tasks/:id → kind=milestone 으로 변경', async () => {
+    let updatedData: Record<string, unknown> = {};
+    const app = await buildTestApp({
+      task: {
+        findMany: async () => [],
+        findFirst: async () => ({
+          id: 't1',
+          projectId: 'p1',
+          project: { members: [{ userId: 'u1' }] },
+        }),
+        create: async () => ({}),
+        update: async (args: AnyArgs) => {
+          updatedData = args.data as Record<string, unknown>;
+          return {
+            ...SAMPLE_TASK,
+            startDate: null,
+            endDate: new Date('2026-05-15'),
+            kind: 'milestone' as const,
+            progress: 0,
+            parentTaskId: null,
+          };
+        },
+      },
+      project: { findFirst: async () => null },
+      user: { findFirst: async () => null },
+      projectMember: { findUnique: async () => null },
+    });
+
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/tasks/t1',
+      headers: { authorization: `Bearer ${await token()}` },
+      payload: { kind: 'milestone', endDate: '2026-05-15' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(updatedData.kind).toBe('milestone');
+    expect((r.json() as { kind: string }).kind).toBe('milestone');
+    await app.close();
+  });
 });
