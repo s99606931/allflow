@@ -35,7 +35,7 @@ export function ReportMonthlyPage() {
   return (
     <div className="p-6 max-w-[1100px] mx-auto space-y-5">
       <div className="flex items-center gap-2">
-        <h2 className="text-[16px] font-bold text-fg flex-1">월간 보고 — {period.label}</h2>
+        <h2 className="text-[16px] font-bold text-fg flex-1" suppressHydrationWarning>월간 보고 — {period.label}</h2>
         <Button
           variant="primary"
           size="sm"

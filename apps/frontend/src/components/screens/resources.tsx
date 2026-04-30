@@ -40,7 +40,7 @@ export function ResourcesPage() {
     <div className="p-6 max-w-[1440px] mx-auto space-y-5">
       <div className="flex items-center gap-2">
         <h2 className="text-[18px] font-bold text-fg">회의실 / 리소스 예약</h2>
-        <span className="text-[12px] text-fg-3">{new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}</span>
+        <span className="text-[12px] text-fg-3" suppressHydrationWarning>{new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}</span>
         <div className="flex-1" />
         <IconButton size="sm"><ChevronLeft size={14} /></IconButton>
         <Button size="sm" variant="secondary">오늘</Button>

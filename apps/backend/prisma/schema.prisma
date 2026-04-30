@@ -607,3 +607,72 @@ model Booking {
   @@index([resourceId, start])
   @@map("bookings")
 }
+
+// =====================================================================
+// AI Thread / Message / Attachment / MCP Connection
+// =====================================================================
+
+enum AiMessageRole {
+  user
+  assistant
+  tool
+}
+
+model AiThread {
+  id        String      @id @default(cuid())
+  title     String
+  userId    String      @map("user_id")
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  deletedAt DateTime?   @map("deleted_at")
+
+  messages  AiMessage[]
+
+  @@index([userId])
+  @@index([deletedAt])
+  @@map("ai_threads")
+}
+
+model AiMessage {
+  id         String        @id @default(cuid())
+  threadId   String        @map("thread_id")
+  role       AiMessageRole
+  content    String
+  toolCalls  Json?         @map("tool_calls")
+  citations  Json?
+  model      String?
+  usage      Json?
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  thread      AiThread      @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  attachments AiAttachment[]
+
+  @@index([threadId, createdAt])
+  @@map("ai_messages")
+}
+
+model AiAttachment {
+  id         String    @id @default(cuid())
+  messageId  String    @map("message_id")
+  filename   String
+  mimeType   String    @map("mime_type")
+  sizeBytes  Int       @map("size_bytes")
+  storageKey String    @map("storage_key")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  message    AiMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("ai_attachments")
+}
+
+model McpConnection {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  transport String
+  config    Json
+  isEnabled Boolean  @default(true) @map("is_enabled")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("mcp_connections")
+}

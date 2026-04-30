@@ -314,7 +314,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
         url: '/api/v1/resources/book',
         headers: { authorization: `Bearer ${t}` },
         payload: {
-          resourceId: items[0]!.id,
+          resourceId: items[0]?.id,
           start: '2026-05-04T01:00:00Z',
           end: '2026-05-04T02:00:00Z',
         },
@@ -354,7 +354,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
       expect(publicChannel).toBeDefined();
       const send = await app.inject({
         method: 'POST',
-        url: `/api/v1/channels/${publicChannel!.id}/messages`,
+        url: `/api/v1/channels/${publicChannel?.id}/messages`,
         headers: { authorization: `Bearer ${t}` },
         payload: { text: '안녕하세요' },
       });
@@ -379,7 +379,7 @@ describe.skipIf(SKIP)('integration: TEST-B1/B2/B4 (postgres + redis)', () => {
         headers: { authorization: `Bearer ${t}` },
         payload: {
           email: 'newhire@example.com',
-          orgUnitId: units[0]!.id,
+          orgUnitId: units[0]?.id,
           role: 'member',
         },
       });

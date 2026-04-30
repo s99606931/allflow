@@ -646,8 +646,6 @@ const ISSUES: SeedIssue[] = [
 ];
 
 async function main() {
-  console.info('[seed] 시작…');
-
   for (const u of USERS) {
     await prisma.user.upsert({
       where: { id: u.id },
@@ -662,7 +660,6 @@ async function main() {
       create: u,
     });
   }
-  console.info(`[seed] users: ${USERS.length}`);
 
   for (const p of PROJECTS) {
     await prisma.project.upsert({
@@ -694,7 +691,6 @@ async function main() {
       });
     }
   }
-  console.info(`[seed] projects: ${PROJECTS.length}`);
 
   for (const t of TASKS) {
     await prisma.task.upsert({
@@ -720,7 +716,6 @@ async function main() {
       },
     });
   }
-  console.info(`[seed] tasks: ${TASKS.length}`);
 
   for (const i of ISSUES) {
     await prisma.issue.upsert({
@@ -758,7 +753,6 @@ async function main() {
       },
     });
   }
-  console.info(`[seed] issues: ${ISSUES.length}`);
 
   // ----- LLM connections -----
   // Default LMStudio connection (PRD: 192.168.0.104:1234, gemma-4-e4b-it).
@@ -789,14 +783,10 @@ async function main() {
       },
     });
   }
-  console.info('[seed] llm_connections: default LMStudio ensured');
-
-  console.info('[seed] 완료');
 }
 
 main()
-  .catch((err) => {
-    console.error('[seed] 실패:', err);
+  .catch((_err) => {
     process.exit(1);
   })
   .finally(async () => {

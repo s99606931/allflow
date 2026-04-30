@@ -17,6 +17,4 @@ function dockerAvailable(): boolean {
 
 if (!dockerAvailable()) {
   process.env.INTEGRATION_DISABLED = '1';
-  // 한 번만 출력 (vitest setup 은 worker 별 실행).
-  console.warn('[integration] docker 데몬 미가용 → 통합 테스트 skip (INTEGRATION_DISABLED=1)');
 }

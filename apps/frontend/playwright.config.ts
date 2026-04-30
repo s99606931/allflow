@@ -7,8 +7,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  // 로컬 dev 모드: 동시 컴파일 경합 방지를 위해 workers 4 상한.
-  workers: process.env.CI ? 2 : 4,
+  // 로컬 dev 모드: Next.js dev 동시 렌더링 부하 방지 (직렬). CI: 2.
+  workers: process.env.CI ? 2 : 1,
   // dev 모드 warm 라우트 기준 60s (cold 시 globalSetup warmup이 선처리).
   timeout: 60_000,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',

@@ -117,7 +117,7 @@ export class InMemoryAIAdapter implements AIAdapter {
 export class OpenAIAdapter implements AIAdapter {
   readonly name = 'openai';
 
-  constructor(private readonly opts: { apiKey: string; baseUrl?: string; defaultModel?: string }) {
+  constructor(readonly opts: { apiKey: string; baseUrl?: string; defaultModel?: string }) {
     if (!opts.apiKey) throw new AIAdapterError('OPENAI_API_KEY가 비어있습니다');
   }
 

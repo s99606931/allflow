@@ -32,7 +32,7 @@ test.describe("menu/gantt — non-CRUD scenarios", () => {
 
 	test("줌 단위 토글 — 일/주/월", async ({ page }) => {
 		await page.goto("/gantt");
-		for (const label of [/일/, /주/, /월/]) {
+		for (const label of [/^일$/, /^주$/, /^월$/]) {
 			const btn = page.getByRole("button", { name: label }).first();
 			if (await btn.isVisible({ timeout: 2_000 }).catch(() => false)) {
 				await btn.click();
