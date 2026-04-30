@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type SpeechRecognitionResultList = {
   length: number;
@@ -30,10 +30,13 @@ declare global {
 
 export function useVoiceInput(onTranscript: (text: string) => void) {
   const [listening, setListening] = useState(false);
+  // Start as false (SSR-safe). Set to true after mount if the browser API exists.
+  const [supported, setSupported] = useState(false);
   const recRef = useRef<SpeechRecognitionInstance | null>(null);
-  const supported =
-    typeof window !== 'undefined' &&
-    !!(window.SpeechRecognition ?? window.webkitSpeechRecognition);
+
+  useEffect(() => {
+    setSupported(!!(window.SpeechRecognition ?? window.webkitSpeechRecognition));
+  }, []);
 
   const start = useCallback(() => {
     const Ctor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
