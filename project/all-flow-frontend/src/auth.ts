@@ -66,8 +66,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     authorized({ auth, request }) {
-      // E2E 모드에서만 라우트 게이트 우회.
-      if (process.env.NEXT_PUBLIC_E2E === 'true') return true;
+      // E2E 모드에서만 라우트 게이트 우회 (non-production 빌드에서만 유효).
+      if (process.env.NEXT_PUBLIC_E2E === 'true' && process.env.NODE_ENV !== 'production') return true;
       const { pathname } = request.nextUrl;
       // 미인증 허용: 로그인 UI, next-auth handler, BE 로그인 엔드포인트만.
       // /api/v1/* 의 나머지는 catch-all proxy → BE 401로 자연 차단.

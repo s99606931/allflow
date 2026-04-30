@@ -56,39 +56,35 @@ export async function semanticSearch(
 
   const results: SemanticHit[] = [];
 
-  if (targets.includes('tasks')) {
-    const rows = await prisma.$queryRawUnsafe<
-      Array<{ id: string; title: string; project_id: string; score: number }>
-    >(
-      `SELECT id, title, project_id, 1 - (embedding <=> $1::vector) AS score
-       FROM tasks
-       WHERE embedding IS NOT NULL AND deleted_at IS NULL
-       ${opts.projectId ? `AND project_id = '${opts.projectId}'` : ''}
-       ORDER BY embedding <=> $1::vector
-       LIMIT $2`,
-      vec,
-      limit,
-    );
+  for (const table of ['tasks', 'issues'] as const) {
+    if (!targets.includes(table)) continue;
+    const kind = table === 'tasks' ? 'task' : 'issue';
+    const rows = await (opts.projectId
+      ? prisma.$queryRawUnsafe<
+          Array<{ id: string; title: string; project_id: string; score: number }>
+        >(
+          `SELECT id, title, project_id, 1 - (embedding <=> $1::vector) AS score
+           FROM ${table}
+           WHERE embedding IS NOT NULL AND deleted_at IS NULL AND project_id = $3
+           ORDER BY embedding <=> $1::vector
+           LIMIT $2`,
+          vec,
+          limit,
+          opts.projectId,
+        )
+      : prisma.$queryRawUnsafe<
+          Array<{ id: string; title: string; project_id: string; score: number }>
+        >(
+          `SELECT id, title, project_id, 1 - (embedding <=> $1::vector) AS score
+           FROM ${table}
+           WHERE embedding IS NOT NULL AND deleted_at IS NULL
+           ORDER BY embedding <=> $1::vector
+           LIMIT $2`,
+          vec,
+          limit,
+        ));
     for (const r of rows) {
-      results.push({ id: r.id, title: r.title, kind: 'task', score: r.score, projectId: r.project_id });
-    }
-  }
-
-  if (targets.includes('issues')) {
-    const rows = await prisma.$queryRawUnsafe<
-      Array<{ id: string; title: string; project_id: string; score: number }>
-    >(
-      `SELECT id, title, project_id, 1 - (embedding <=> $1::vector) AS score
-       FROM issues
-       WHERE embedding IS NOT NULL AND deleted_at IS NULL
-       ${opts.projectId ? `AND project_id = '${opts.projectId}'` : ''}
-       ORDER BY embedding <=> $1::vector
-       LIMIT $2`,
-      vec,
-      limit,
-    );
-    for (const r of rows) {
-      results.push({ id: r.id, title: r.title, kind: 'issue', score: r.score, projectId: r.project_id });
+      results.push({ id: r.id, title: r.title, kind, score: r.score, projectId: r.project_id });
     }
   }
 

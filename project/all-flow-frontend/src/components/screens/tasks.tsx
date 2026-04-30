@@ -45,13 +45,15 @@ export function TasksPage() {
       {/* Filter chips */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-1 p-0.5 rounded-md bg-bg-2 border border-border">
-          {[
-            { id: 'all', label: '전체' },
-            { id: 'mine', label: '내 태스크' },
-            { id: 'today', label: '오늘' },
-            { id: 'overdue', label: '⏰ 지연' },
-          ].map(c => (
-            <button key={c.id} onClick={() => setFilter(c.id as any)}
+          {(
+            [
+              { id: 'all', label: '전체' },
+              { id: 'mine', label: '내 태스크' },
+              { id: 'today', label: '오늘' },
+              { id: 'overdue', label: '⏰ 지연' },
+            ] satisfies { id: typeof filter; label: string }[]
+          ).map(c => (
+            <button key={c.id} onClick={() => setFilter(c.id)}
               className={`px-2.5 h-7 rounded text-[12px] font-medium transition-colors ${
                 filter === c.id ? 'bg-bg-elev text-fg shadow-sm' : 'text-fg-2 hover:text-fg-1'
               }`}>{c.label}</button>
@@ -179,7 +181,7 @@ function CalendarMini({ onTask }: { onTask: (id: string) => void }) {
       <div className="grid grid-cols-7">
         {cells.map(c => {
           const day = c < 1 ? '' : c > 30 ? '' : c;
-          const taskHere = day && (TASKS as any[]).find((t, i) => i % 5 === c % 5 && c > 5 && c < 25 && i < 5);
+          const taskHere = day ? TASKS.find((t, i) => i % 5 === c % 5 && c > 5 && c < 25 && i < 5) : undefined;
           return (
             <div key={c} className="min-h-[90px] border-b border-r border-border p-1.5 last:border-r-0">
               <div className="text-[11px] mono text-fg-2">{day}</div>

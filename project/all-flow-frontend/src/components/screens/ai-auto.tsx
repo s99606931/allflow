@@ -7,10 +7,11 @@ import { PROJECTS, userById } from '@/lib/fixtures';
 import { useAiMutations, useTaskMutations } from '@/lib/hooks/use-data';
 import type { ExtractedAction } from '@/lib/schemas';
 import { FileText, Mail, Mic, Sparkles, Upload, Database, Wand2, X, Check, ChevronRight, FileAudio } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 type Source = 'meeting' | 'email' | 'voice' | 'notion' | 'csv';
 
-const SOURCES: { id: Source; label: string; icon: any; desc: string }[] = [
+const SOURCES: { id: Source; label: string; icon: LucideIcon; desc: string }[] = [
   { id: 'meeting', label: '회의록', icon: FileText, desc: '.md / .docx / Google Docs' },
   { id: 'email', label: '이메일', icon: Mail, desc: 'Gmail · Outlook 스레드' },
   { id: 'voice', label: '음성', icon: Mic, desc: 'mp3 · m4a · 실시간 녹음' },

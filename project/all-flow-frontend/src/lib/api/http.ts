@@ -18,13 +18,19 @@ export const http = ky.create({
 
 export const sleep = (ms = 250) => new Promise((r) => setTimeout(r, ms));
 
+export class ApiSchemaError extends Error {
+  constructor(public readonly issues: z.ZodIssue[]) {
+    super(`API schema mismatch: ${issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ')}`);
+    this.name = 'ApiSchemaError';
+  }
+}
+
 /** Validate an API response with Zod and return typed data. */
 export async function parsed<T>(promise: Promise<unknown>, schema: z.ZodType<T>): Promise<T> {
   const raw = await promise;
   const result = schema.safeParse(raw);
   if (!result.success) {
-    // Production-safe: do not crash on schema drift; let upstream toast handle.
-    return raw as T;
+    throw new ApiSchemaError(result.error.issues);
   }
   return result.data;
 }

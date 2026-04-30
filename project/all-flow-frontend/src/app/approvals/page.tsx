@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { AppShell } from '@/components/shell/app-shell';
 import { Card, CardHeader, CardTitle, CardBody, Badge, Button, Avatar, AvatarStack, Progress } from '@/components/ui/primitives';
+import { ApprovalForm } from '@/components/dialogs/approval-form';
 import { TEAM, ME, userById } from '@/lib/fixtures';
 import {
   Inbox, Send, Archive, FileCheck2, Filter, Search, Plus, ChevronRight, Paperclip,
@@ -130,6 +131,8 @@ const TABS = [
 export default function ApprovalsPage() {
   const [tab, setTab] = useState<typeof TABS[number]['id']>('inbox');
   const [active, setActive] = useState<ApprovalDoc>(APPROVALS[0]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const filtered = APPROVALS.filter(a => {
     if (tab === 'inbox')    return a.myStep === 0 || a.myStep === 1;
@@ -151,7 +154,13 @@ export default function ApprovalsPage() {
       title="결재함"
       subtitle="전자결재 · 휴가 · 경비 · 구매 · 출장 · 문서"
       actions={
-        <Button size="sm" variant="primary"><Plus size={14} /> 새 기안</Button>
+        <>
+          <Button size="sm" variant="primary" onClick={() => { setCreateOpen(true); setSubmitted(false); }}>
+            <Plus size={14} /> 새 결재
+          </Button>
+          <ApprovalForm open={createOpen} onOpenChange={setCreateOpen} onSuccess={() => setSubmitted(true)} />
+          {submitted && <span className="text-[12px] text-success ml-2">상신 완료</span>}
+        </>
       }
     >
       <div className="p-6 space-y-5">

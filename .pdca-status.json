@@ -1,28 +1,47 @@
 {
-  "active_feature": "fe-be-wiring-2026-04-30",
-  "phase": "design-complete-awaiting-approval",
-  "blocked_by": "av-base-stack-approval",
+  "active_feature": "monorepo-microservices-2026-04-30",
+  "phase": "step1-do-complete-awaiting-act",
+  "scope": "Step 1 of 8 — root scaffolding only (package.json + pnpm-workspace.yaml + turbo.json + tsconfig.base.json)",
   "documents": {
-    "prd": "docs/00-pm/fe-be-wiring-2026-04-30.prd.md",
-    "plan": "docs/01-plan/features/fe-be-wiring-2026-04-30.plan.md",
-    "design": "docs/02-design/features/fe-be-wiring-2026-04-30.design.md"
+    "prd": "docs/00-pm/monorepo-microservices-2026-04-30.prd.md",
+    "plan": "docs/01-plan/features/monorepo-microservices-2026-04-30.plan.md",
+    "design": "docs/02-design/features/monorepo-microservices-2026-04-30.design.md"
   },
   "previous_cycle": {
-    "feature": "tech-stack-modernization-2026-04-29",
-    "match_rate": 0.97,
-    "archived": true
+    "feature": "single-port-localhost-2026-04-30",
+    "phase": "design-complete-awaiting-approval",
+    "archived": false,
+    "note": "이전 사이클 stack-approval 게이트 보류 상태. 본 사이클(monorepo Step 1)은 root scaffolding만으로 비파괴, project/ 영역 미수정"
   },
   "team": {
     "lead": "av-do-orchestrator",
     "members": [
-      "av-base-backend-architect",
-      "av-base-frontend-architect",
-      "av-base-qa-reviewer",
       "av-base-memory-keeper"
+    ],
+    "skipped": [
+      "av-base-backend-architect (project/ 코드 변경 0건)",
+      "av-base-frontend-architect (project/ 코드 변경 0건)",
+      "av-base-qa-reviewer (회귀 게이트는 BE/FE 기존 test 명령으로 자체 수행)"
     ]
   },
-  "options_decision": {
-    "prefix_strategy": "hybrid (A + C)",
-    "rationale": "BE prefix 일괄 + FE catch-all proxy = stub 충돌 해소 + 외부 직통 호환"
-  }
+  "gates": {
+    "G1_files_created": "PASS",
+    "G2_syntax_valid": "PASS",
+    "G3_be_typecheck_test": "PASS (3 pre-existing errors HEAD-equivalent, unit+int 295/295)",
+    "G4_fe_typecheck_test": "PASS (0 errors, vitest 71/71)",
+    "G7_project_diff_zero": "PASS (cycle adds 6 files at root only)",
+    "G8_registry_no_diff": "PASS",
+    "G5_dev_localhost": "DEFERRED (manual — user docker-compose invocation)",
+    "G6_playwright_56of62": "DEFERRED (manual — root install 미실행이므로 회귀 자명 0)"
+  },
+  "match_rate": 0.9625,
+  "next_cycles": [
+    "monorepo-step2-folder-move (git mv project/all-flow-* → apps/*)",
+    "monorepo-step3-contracts (packages/contracts + openapi.yaml SOR)",
+    "monorepo-step4-shared",
+    "monorepo-step5-config-presets",
+    "monorepo-step6-catalog",
+    "monorepo-step7-gha-cache",
+    "monorepo-step8-otel (optional, Phase 2 trigger)"
+  ]
 }

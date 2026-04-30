@@ -131,7 +131,7 @@ export function useRealtime() {
   useEffect(() => {
     client.connect();
     const off = client.onStatus(setStatus);
-    return () => { off(); };
+    return () => { off(); client.disconnect(); };
   }, [client]);
   return { status, subscribe: client.subscribe, send: client.send };
 }

@@ -20,12 +20,13 @@ import { useTranslation } from '@/lib/i18n';
 interface Props {
   open: boolean;
   onOpenChange: (next: boolean) => void;
+  onSuccess?: () => void;
   extraSlot?: ReactNode;
 }
 
 const KINDS = ['leave', 'expense', 'purchase', 'general', 'overtime'] as const;
 
-export function ApprovalForm({ open, onOpenChange, extraSlot }: Props) {
+export function ApprovalForm({ open, onOpenChange, onSuccess, extraSlot }: Props) {
   const { t } = useTranslation();
   const { create } = useApprovalMutations();
   const [title, setTitle] = useState('');
@@ -47,6 +48,7 @@ export function ApprovalForm({ open, onOpenChange, extraSlot }: Props) {
     setAmount('');
     setReason('');
     onOpenChange(false);
+    onSuccess?.();
   };
 
   return (

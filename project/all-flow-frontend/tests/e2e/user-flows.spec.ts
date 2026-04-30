@@ -174,7 +174,7 @@ test.describe('TEST-F3: API CRUD 응답 검증', () => {
   test('태스크 POST → 201 + id 반환', async ({ page }) => {
     await page.goto('/');
     const res = await page.request.post('/api/v1/tasks', {
-      data: { title: 'E2E 태스크', proj: 'p1', assignee: 'me', priority: 'med' },
+      data: { title: 'E2E 태스크', projectId: 'p1', assigneeId: 'me', priority: 'med' },
     });
     expect(res.status()).toBe(201);
     const body = await res.json();

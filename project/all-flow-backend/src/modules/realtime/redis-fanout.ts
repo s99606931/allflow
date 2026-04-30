@@ -74,9 +74,14 @@ export async function attachRedisFanout(
 
 function parseWire(raw: string): WirePayload | null {
   try {
-    const parsed = JSON.parse(raw) as Partial<WirePayload>;
-    if (!parsed || typeof parsed !== 'object' || !parsed.event) return null;
-    return parsed as WirePayload;
+    const obj: unknown = JSON.parse(raw);
+    if (!obj || typeof obj !== 'object') return null;
+    const candidate = obj as Record<string, unknown>;
+    if (!candidate.event || typeof candidate.event !== 'object') return null;
+    return {
+      event: candidate.event as RealtimeEvent,
+      ...(typeof candidate.userId === 'string' ? { userId: candidate.userId } : {}),
+    };
   } catch {
     return null;
   }

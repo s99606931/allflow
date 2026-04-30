@@ -367,7 +367,7 @@ function BookingModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-[80] grid place-items-center bg-[oklch(0_0_0/0.5)] backdrop-blur-sm p-4" onClick={onClose}>
       <div className="w-full max-w-[520px] rounded-xl bg-bg-elev border border-border shadow-pop" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 h-12 border-b border-border">
-          <div className="text-[14px] font-semibold text-fg">새 회의실 예약</div>
+          <h3 className="text-[14px] font-semibold text-fg">리소스 예약</h3>
           <button onClick={onClose} className="text-fg-3 hover:text-fg-1"><X size={15} /></button>
         </div>
         <div className="p-5 space-y-3">

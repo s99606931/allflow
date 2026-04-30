@@ -1,0 +1,1 @@
+- [FE↔BE 실배선 정합 종결](learning_fe_be_wiring_2026_04_30_complete.md) — 2026-04-30: docker dev=prod 패리티 + /api/v1 prefix + USE_MOCK off + next-auth↔BE wiring, match_rate 0.98 / G1~G6 6/6 / Playwright 56/62. 10 패턴(Fastify single-wrapper / health 이중등록 / catch-all proxy / archive _접두사 / USE_MOCK 반전 / next-auth BE 위임 / e2e globalSetup 호환 / dev-only login / target 이름 정합).
