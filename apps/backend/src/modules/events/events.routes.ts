@@ -1,32 +1,18 @@
 import { ValidationError } from '@all-flow/shared/errors';
 /**
- * events 모듈 — 일정 도메인 (BE-N3).
+ * events 모듈 — 일정 도메인 (T1: Prisma 영속화).
  *
  * 라우트:
  *   GET  /events?from&to   — 기간 필터 일정 목록 (start asc)
  *   POST /events           — 일정 생성
  *
- * 현재 구현: in-memory store + audit log (`events.create`).
- * 영속화 + RRULE/외부 캘린더 연동은 follow-up.
- *
  * 검증:
  *  - start/end 는 ISO 8601 (Date.parse 검증)
- *  - end > start 강제 (잘못된 범위 400)
+ *  - end > start 강제
  *  - from/to 는 YYYY-MM-DD 또는 ISO. 양쪽 누락 시 전체 반환.
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-
-interface EventRow {
-  id: string;
-  title: string;
-  start: string;
-  end: string;
-  location?: string;
-  attendees: string[];
-  resourceId?: string;
-  source: 'internal' | 'google' | 'outlook';
-}
 
 const isoDateTime = (value: string): boolean => Number.isFinite(Date.parse(value));
 
@@ -41,32 +27,46 @@ const EventCreate = z
   })
   .strict();
 
-const store = new Map<string, EventRow>();
-let seq = 0;
-
-export function __resetEventsForTests(): void {
-  store.clear();
-  seq = 0;
+interface EventRow {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  location: string | null;
+  attendees: string[];
+  resourceId: string | null;
+  source: 'internal' | 'google' | 'outlook';
 }
 
-const newId = (): string => {
-  seq += 1;
-  return `evt-${seq.toString(36)}-${Date.now().toString(36)}`;
-};
+const serialize = (row: EventRow) => ({
+  id: row.id,
+  title: row.title,
+  start: row.start.toISOString(),
+  end: row.end.toISOString(),
+  ...(row.location !== null ? { location: row.location } : {}),
+  attendees: row.attendees,
+  ...(row.resourceId !== null ? { resourceId: row.resourceId } : {}),
+  source: row.source,
+});
 
 export async function eventsRoutes(app: FastifyInstance): Promise<void> {
   app.get('/events', { preHandler: [app.authenticate] }, async (req) => {
     const q = req.query as { from?: string; to?: string };
-    const fromMs = q.from && isoDateTime(q.from) ? Date.parse(q.from) : null;
-    const toMs = q.to && isoDateTime(q.to) ? Date.parse(q.to) : null;
+    const fromDate = q.from && isoDateTime(q.from) ? new Date(q.from) : null;
+    const toDate = q.to && isoDateTime(q.to) ? new Date(q.to) : null;
 
-    const all = Array.from(store.values()).sort((a, b) => a.start.localeCompare(b.start));
-    return all.filter((e) => {
-      const s = Date.parse(e.start);
-      if (fromMs !== null && s < fromMs) return false;
-      if (toMs !== null && s > toMs) return false;
-      return true;
+    const where: { start?: { gte?: Date; lte?: Date } } = {};
+    if (fromDate || toDate) {
+      where.start = {};
+      if (fromDate) where.start.gte = fromDate;
+      if (toDate) where.start.lte = toDate;
+    }
+
+    const rows = await app.prisma.event.findMany({
+      where,
+      orderBy: { start: 'asc' },
     });
+    return rows.map(serialize);
   });
 
   app.post('/events', { preHandler: [app.authenticate] }, async (req, reply) => {
@@ -78,29 +78,30 @@ export async function eventsRoutes(app: FastifyInstance): Promise<void> {
     // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
     const userId = req.user!.id;
 
-    const row: EventRow = {
-      id: newId(),
-      title: parsed.data.title,
-      start: parsed.data.start,
-      end: parsed.data.end,
-      ...(parsed.data.location ? { location: parsed.data.location } : {}),
-      attendees: parsed.data.attendees,
-      ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
-      source: 'internal',
-    };
-    store.set(row.id, row);
+    const row = await app.prisma.event.create({
+      data: {
+        title: parsed.data.title,
+        start: new Date(parsed.data.start),
+        end: new Date(parsed.data.end),
+        location: parsed.data.location ?? null,
+        attendees: parsed.data.attendees,
+        resourceId: parsed.data.resourceId ?? null,
+        source: 'internal',
+        createdById: userId,
+      },
+    });
 
     app.log.info(
       {
         action: 'events.create',
         actorId: userId,
         eventId: row.id,
-        start: row.start,
-        end: row.end,
+        start: row.start.toISOString(),
+        end: row.end.toISOString(),
       },
       'event created',
     );
 
-    return reply.code(201).send(row);
+    return reply.code(201).send(serialize(row));
   });
 }

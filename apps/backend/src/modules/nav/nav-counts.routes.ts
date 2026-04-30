@@ -7,20 +7,18 @@
  *   - projects:      내가 멤버인 활성(done 아님) 프로젝트 수
  *   - tasks:         내 미완료 태스크 수 (assignee = me, status != done)
  *   - issues:        미해결 이슈 수 (status != resolved, 전체)
- *   - approvals:     pending 결재 수 (in-memory store)
- *   - clients:       고객사 전체 수 (in-memory store)
+ *   - approvals:     pending 결재 수 (Prisma Approval)
+ *   - clients:       고객사 전체 수 (Prisma Client, 미삭제)
  *   - notifications: 읽지 않은 알림 수 (userId = me, read = false)
  */
 import type { FastifyInstance } from 'fastify';
-import { getPendingApprovalsCount } from '../approvals/approvals.routes.js';
-import { getClientsCount } from '../clients/clients.routes.js';
 
 export async function navCountsRoutes(app: FastifyInstance): Promise<void> {
   app.get('/nav-counts', { preHandler: [app.authenticate] }, async (req) => {
     // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
     const userId = req.user!.id;
 
-    const [projects, tasks, issues, notifications] = await Promise.all([
+    const [projects, tasks, issues, approvals, clients, notifications] = await Promise.all([
       app.prisma.projectMember.count({
         where: { userId, project: { status: { not: 'done' } } },
       }),
@@ -34,6 +32,12 @@ export async function navCountsRoutes(app: FastifyInstance): Promise<void> {
       app.prisma.issue.count({
         where: { status: { not: 'resolved' } },
       }),
+      app.prisma.approval.count({
+        where: { status: 'pending' },
+      }),
+      app.prisma.client.count({
+        where: { deletedAt: null },
+      }),
       app.prisma.notification.count({
         where: { userId, read: false },
       }),
@@ -43,8 +47,8 @@ export async function navCountsRoutes(app: FastifyInstance): Promise<void> {
       projects,
       tasks,
       issues,
-      approvals: getPendingApprovalsCount(),
-      clients: getClientsCount(),
+      approvals,
+      clients,
       notifications,
     };
   });

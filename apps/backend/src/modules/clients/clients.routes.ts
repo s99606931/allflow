@@ -1,27 +1,13 @@
 import { ValidationError } from '@all-flow/shared/errors';
 /**
- * clients 모듈 — CRM 고객 도메인 (BE-N2).
+ * clients 모듈 — CRM 고객 도메인 (T1: Prisma 영속화).
  *
  * 라우트:
- *   GET  /clients   — 고객 목록
- *   POST /clients   — 고객 생성
- *
- * 현재 구현: in-memory store + audit log (`clients.create`).
- * 영속화는 follow-up (Prisma Client 모델). ownerId 는 생성자(req.user.id)로 자동 세팅.
+ *   GET  /clients   — 고객 목록 (createdAt desc, soft-delete 제외)
+ *   POST /clients   — 고객 생성 (ownerId = req.user.id 자동 세팅)
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-
-interface ClientRow {
-  id: string;
-  name: string;
-  contact?: string;
-  email?: string;
-  phone?: string;
-  industry?: string;
-  ownerId?: string;
-  createdAt: string;
-}
 
 const ClientCreate = z
   .object({
@@ -33,26 +19,35 @@ const ClientCreate = z
   })
   .strict();
 
-const store = new Map<string, ClientRow>();
-let seq = 0;
-
-export function __resetClientsForTests(): void {
-  store.clear();
-  seq = 0;
+interface ClientRow {
+  id: string;
+  name: string;
+  contact: string | null;
+  email: string | null;
+  phone: string | null;
+  industry: string | null;
+  ownerId: string | null;
+  createdAt: Date;
 }
 
-export function getClientsCount(): number {
-  return store.size;
-}
-
-const newId = (): string => {
-  seq += 1;
-  return `cli-${seq.toString(36)}-${Date.now().toString(36)}`;
-};
+const serialize = (row: ClientRow) => ({
+  id: row.id,
+  name: row.name,
+  ...(row.contact !== null ? { contact: row.contact } : {}),
+  ...(row.email !== null ? { email: row.email } : {}),
+  ...(row.phone !== null ? { phone: row.phone } : {}),
+  ...(row.industry !== null ? { industry: row.industry } : {}),
+  ...(row.ownerId !== null ? { ownerId: row.ownerId } : {}),
+  createdAt: row.createdAt.toISOString(),
+});
 
 export async function clientsRoutes(app: FastifyInstance): Promise<void> {
   app.get('/clients', { preHandler: [app.authenticate] }, async () => {
-    return Array.from(store.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const rows = await app.prisma.client.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+    return rows.map(serialize);
   });
 
   app.post('/clients', { preHandler: [app.authenticate] }, async (req, reply) => {
@@ -61,17 +56,16 @@ export async function clientsRoutes(app: FastifyInstance): Promise<void> {
     // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
     const userId = req.user!.id;
 
-    const row: ClientRow = {
-      id: newId(),
-      name: parsed.data.name,
-      ...(parsed.data.contact ? { contact: parsed.data.contact } : {}),
-      ...(parsed.data.email ? { email: parsed.data.email } : {}),
-      ...(parsed.data.phone ? { phone: parsed.data.phone } : {}),
-      ...(parsed.data.industry ? { industry: parsed.data.industry } : {}),
-      ownerId: userId,
-      createdAt: new Date().toISOString(),
-    };
-    store.set(row.id, row);
+    const row = await app.prisma.client.create({
+      data: {
+        name: parsed.data.name,
+        contact: parsed.data.contact ?? null,
+        email: parsed.data.email ?? null,
+        phone: parsed.data.phone ?? null,
+        industry: parsed.data.industry ?? null,
+        ownerId: userId,
+      },
+    });
 
     app.log.info(
       {
@@ -83,6 +77,6 @@ export async function clientsRoutes(app: FastifyInstance): Promise<void> {
       'client created',
     );
 
-    return reply.code(201).send(row);
+    return reply.code(201).send(serialize(row));
   });
 }

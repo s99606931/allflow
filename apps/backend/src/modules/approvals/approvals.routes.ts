@@ -1,36 +1,17 @@
 import { ForbiddenError, NotFoundError, ValidationError } from '@all-flow/shared/errors';
 /**
- * approvals 모듈 — 결재 도메인 (BE-N1).
+ * approvals 모듈 — 결재 도메인 (T1: Prisma 영속화).
  *
  * 라우트:
- *   GET  /approvals                  — 목록 (status 필터 가능)
+ *   GET  /approvals                  — 목록 (status 필터 가능, createdAt desc)
  *   POST /approvals                  — 결재 요청 생성
  *   POST /approvals/:id/decision     — 결재 의사 결정 (approved | rejected)
  *
- * 현재 구현(BE-N1 1차):
- *  - in-memory store (모듈 스코프 Map). 영속화는 follow-up (Prisma Approval 모델).
- *  - 모든 변경에 audit log (`approvals.create`, `approvals.decide`).
- *  - RBAC: 결재 의사 결정은 approver === req.user.id 만 허용.
- *  - 멱등성: 동일 결정 재호출 시 200 + 동일 본문 (이미 처리된 결재는 ValidationError로 거절).
- *
- * 컨트랙트(openapi)·FE 와이어링은 본 stub 단계에서 정합. 영속화/이력은 후속.
+ * RBAC: 결재 의사 결정은 approverId === req.user.id 만 허용.
+ * 멱등성: 이미 처리된 결재는 ValidationError 로 거절 (재호출 불가).
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-
-type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
-
-interface ApprovalRow {
-  id: string;
-  title: string;
-  requester: string;
-  approver: string;
-  status: ApprovalStatus;
-  amount?: number;
-  reason?: string;
-  decidedAt?: string;
-  createdAt: string;
-}
 
 const ApprovalCreate = z
   .object({
@@ -50,36 +31,48 @@ const ApprovalDecision = z
 
 const StatusFilter = z.enum(['pending', 'approved', 'rejected', 'cancelled']);
 
-const store = new Map<string, ApprovalRow>();
-let seq = 0;
+type ApprovalStatus = z.infer<typeof StatusFilter>;
 
-export function __resetApprovalsForTests(): void {
-  store.clear();
-  seq = 0;
+interface ApprovalRow {
+  id: string;
+  title: string;
+  requesterId: string;
+  approverId: string;
+  status: ApprovalStatus;
+  amount: number | null;
+  reason: string | null;
+  decidedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export function getPendingApprovalsCount(): number {
-  return Array.from(store.values()).filter((r) => r.status === 'pending').length;
-}
+const serialize = (row: ApprovalRow) => ({
+  id: row.id,
+  title: row.title,
+  requester: row.requesterId,
+  approver: row.approverId,
+  status: row.status,
+  ...(row.amount !== null ? { amount: row.amount } : {}),
+  ...(row.reason !== null ? { reason: row.reason } : {}),
+  ...(row.decidedAt !== null ? { decidedAt: row.decidedAt.toISOString() } : {}),
+  createdAt: row.createdAt.toISOString(),
+});
 
-const newId = (): string => {
-  seq += 1;
-  return `apr-${seq.toString(36)}-${Date.now().toString(36)}`;
-};
+export async function getPendingApprovalsCount(app: FastifyInstance): Promise<number> {
+  return app.prisma.approval.count({ where: { status: 'pending' } });
+}
 
 export async function approvalsRoutes(app: FastifyInstance): Promise<void> {
   app.get('/approvals', { preHandler: [app.authenticate] }, async (req) => {
-    const status =
-      typeof (req.query as { status?: string })?.status === 'string'
-        ? StatusFilter.safeParse((req.query as { status?: string }).status)
-        : null;
+    const raw = (req.query as { status?: string })?.status;
+    const status = typeof raw === 'string' ? StatusFilter.safeParse(raw) : null;
 
-    const all: ApprovalRow[] = Array.from(store.values()).sort((a, b) =>
-      b.createdAt.localeCompare(a.createdAt),
-    );
-
-    if (status?.success) return all.filter((row) => row.status === status.data);
-    return all;
+    const where = status?.success ? { status: status.data } : {};
+    const rows = await app.prisma.approval.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+    return rows.map(serialize);
   });
 
   app.post('/approvals', { preHandler: [app.authenticate] }, async (req, reply) => {
@@ -88,55 +81,55 @@ export async function approvalsRoutes(app: FastifyInstance): Promise<void> {
     // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
     const userId = req.user!.id;
 
-    const row: ApprovalRow = {
-      id: newId(),
-      title: parsed.data.title,
-      requester: userId,
-      approver: parsed.data.approver,
-      status: 'pending',
-      ...(parsed.data.amount !== undefined ? { amount: parsed.data.amount } : {}),
-      ...(parsed.data.reason ? { reason: parsed.data.reason } : {}),
-      createdAt: new Date().toISOString(),
-    };
-    store.set(row.id, row);
+    const row = await app.prisma.approval.create({
+      data: {
+        title: parsed.data.title,
+        requesterId: userId,
+        approverId: parsed.data.approver,
+        amount: parsed.data.amount ?? null,
+        reason: parsed.data.reason ?? null,
+      },
+    });
 
     app.log.info(
       {
         action: 'approvals.create',
         actorId: userId,
         approvalId: row.id,
-        approver: row.approver,
+        approver: row.approverId,
         title: row.title,
       },
       'approval created',
     );
 
-    return reply.code(201).send(row);
+    return reply.code(201).send(serialize(row));
   });
 
   app.post('/approvals/:id/decision', { preHandler: [app.authenticate] }, async (req) => {
     const { id } = req.params as { id: string };
     const parsed = ApprovalDecision.safeParse(req.body);
     if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
-    const existing = store.get(id);
+
+    const existing = await app.prisma.approval.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError('Approval', id);
 
     // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
     const userId = req.user!.id;
-    if (existing.approver !== userId) {
+    if (existing.approverId !== userId) {
       throw new ForbiddenError('지정된 결재자만 결정할 수 있습니다');
     }
     if (existing.status !== 'pending') {
       throw new ValidationError(`이미 ${existing.status} 상태인 결재입니다`);
     }
 
-    const updated: ApprovalRow = {
-      ...existing,
-      status: parsed.data.decision,
-      decidedAt: new Date().toISOString(),
-      ...(parsed.data.comment ? { reason: parsed.data.comment } : {}),
-    };
-    store.set(id, updated);
+    const updated = await app.prisma.approval.update({
+      where: { id },
+      data: {
+        status: parsed.data.decision,
+        decidedAt: new Date(),
+        ...(parsed.data.comment ? { reason: parsed.data.comment } : {}),
+      },
+    });
 
     app.log.info(
       {
@@ -148,6 +141,6 @@ export async function approvalsRoutes(app: FastifyInstance): Promise<void> {
       'approval decided',
     );
 
-    return updated;
+    return serialize(updated);
   });
 }

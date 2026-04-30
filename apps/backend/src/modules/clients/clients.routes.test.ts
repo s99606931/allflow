@@ -1,16 +1,64 @@
 import { SignJWT } from 'jose';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
 import { resetEnvForTests } from '../../config/env.js';
 import { authPlugin } from '../../plugins/auth.js';
-import { __resetClientsForTests, clientsRoutes } from './clients.routes.js';
+import { clientsRoutes } from './clients.routes.js';
 
 const TEST_AUTH = 'a'.repeat(16) + 'b'.repeat(16);
+
+// biome-ignore lint/suspicious/noExplicitAny: 테스트 mock prisma 시그니처 신뢰.
+type AnyArgs = any;
+
+interface ClientRow {
+  id: string;
+  name: string;
+  contact: string | null;
+  email: string | null;
+  phone: string | null;
+  industry: string | null;
+  ownerId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+}
+
+function makeStore() {
+  const rows = new Map<string, ClientRow>();
+  let seq = 0;
+  return {
+    findMany: async (_args: AnyArgs) => {
+      return Array.from(rows.values())
+        .filter((r) => r.deletedAt === null)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    },
+    create: async (args: AnyArgs) => {
+      seq += 1;
+      const now = new Date(Date.now() + seq);
+      const row: ClientRow = {
+        id: `cli-${seq}`,
+        name: args.data.name,
+        contact: args.data.contact ?? null,
+        email: args.data.email ?? null,
+        phone: args.data.phone ?? null,
+        industry: args.data.industry ?? null,
+        ownerId: args.data.ownerId ?? null,
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: null,
+      };
+      rows.set(row.id, row);
+      return row;
+    },
+  };
+}
 
 async function buildTestApp() {
   resetEnvForTests();
   process.env.AUTH_SECRET = TEST_AUTH;
   const app = await buildApp({ logger: false });
+  const store = makeStore();
+  app.decorate('prisma', { client: store } as never);
   await app.register(authPlugin);
   await app.register(clientsRoutes);
   return app;
@@ -24,16 +72,13 @@ async function makeJws(sub: string): Promise<string> {
     .sign(new TextEncoder().encode(TEST_AUTH));
 }
 
-describe('modules/clients — BE-N2', () => {
+describe('modules/clients — T1 Prisma', () => {
   beforeAll(() => {
     process.env.AUTH_SECRET = TEST_AUTH;
   });
   afterAll(() => {
     process.env.AUTH_SECRET = undefined;
     resetEnvForTests();
-  });
-  afterEach(() => {
-    __resetClientsForTests();
   });
 
   it('인증 없으면 401 (GET)', async () => {
@@ -121,7 +166,6 @@ describe('modules/clients — BE-N2', () => {
       headers: { authorization: `Bearer ${token}` },
       payload: { name: 'A' },
     });
-    // 1ms gap to keep ordering deterministic
     await new Promise((r) => setTimeout(r, 5));
     await app.inject({
       method: 'POST',

@@ -1,16 +1,88 @@
 import { SignJWT } from 'jose';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
 import { resetEnvForTests } from '../../config/env.js';
 import { authPlugin } from '../../plugins/auth.js';
-import { __resetApprovalsForTests, approvalsRoutes } from './approvals.routes.js';
+import { approvalsRoutes } from './approvals.routes.js';
 
 const TEST_AUTH = 'a'.repeat(16) + 'b'.repeat(16);
+
+// biome-ignore lint/suspicious/noExplicitAny: 테스트 mock 의 prisma 시그니처는 호출부 모양을 신뢰한다.
+type AnyArgs = any;
+
+interface ApprovalRow {
+  id: string;
+  title: string;
+  requesterId: string;
+  approverId: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  amount: number | null;
+  reason: string | null;
+  decidedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+function makeStore() {
+  const rows = new Map<string, ApprovalRow>();
+  let seq = 0;
+  return {
+    rows,
+    findMany: async (args: AnyArgs) => {
+      const status = args?.where?.status;
+      let list = Array.from(rows.values());
+      if (status) list = list.filter((r) => r.status === status);
+      return list.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    },
+    findUnique: async (args: AnyArgs) => rows.get(args.where.id) ?? null,
+    create: async (args: AnyArgs) => {
+      seq += 1;
+      const now = new Date(Date.now() + seq);
+      const row: ApprovalRow = {
+        id: `apr-${seq}`,
+        title: args.data.title,
+        requesterId: args.data.requesterId,
+        approverId: args.data.approverId,
+        status: args.data.status ?? 'pending',
+        amount: args.data.amount ?? null,
+        reason: args.data.reason ?? null,
+        decidedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      rows.set(row.id, row);
+      return row;
+    },
+    update: async (args: AnyArgs) => {
+      const cur = rows.get(args.where.id);
+      if (!cur) throw new Error('not found');
+      const updated: ApprovalRow = {
+        ...cur,
+        ...args.data,
+        updatedAt: new Date(),
+      };
+      rows.set(cur.id, updated);
+      return updated;
+    },
+  };
+}
 
 async function buildTestApp() {
   resetEnvForTests();
   process.env.AUTH_SECRET = TEST_AUTH;
   const app = await buildApp({ logger: false });
+  const store = makeStore();
+  app.decorate(
+    'prisma',
+    {
+      approval: {
+        findMany: store.findMany,
+        findUnique: store.findUnique,
+        create: store.create,
+        update: store.update,
+      },
+    } as never,
+  );
   await app.register(authPlugin);
   await app.register(approvalsRoutes);
   return app;
@@ -24,16 +96,13 @@ async function makeJws(sub: string): Promise<string> {
     .sign(new TextEncoder().encode(TEST_AUTH));
 }
 
-describe('modules/approvals — BE-N1', () => {
+describe('modules/approvals — T1 Prisma', () => {
   beforeAll(() => {
     process.env.AUTH_SECRET = TEST_AUTH;
   });
   afterAll(() => {
     process.env.AUTH_SECRET = undefined;
     resetEnvForTests();
-  });
-  afterEach(() => {
-    __resetApprovalsForTests();
   });
 
   it('인증 없으면 401 (GET)', async () => {

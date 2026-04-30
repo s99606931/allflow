@@ -499,3 +499,111 @@ model NotionConnection {
   @@index([createdById])
   @@map("notion_connections")
 }
+
+// =====================================================================
+// Approval / Client / Event / Resource (T1: in-memory → Prisma)
+// =====================================================================
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+  cancelled
+}
+
+model Approval {
+  id          String         @id @default(cuid())
+  title       String
+  requesterId String         @map("requester_id")
+  approverId  String         @map("approver_id")
+  status      ApprovalStatus @default(pending)
+  amount      Float?
+  reason      String?
+  decidedAt   DateTime?      @map("decided_at")
+
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([approverId, status])
+  @@index([requesterId])
+  @@map("approvals")
+}
+
+model Client {
+  id        String    @id @default(cuid())
+  name      String
+  contact   String?
+  email     String?
+  phone     String?
+  industry  String?
+  ownerId   String?   @map("owner_id")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([ownerId])
+  @@index([deletedAt])
+  @@map("clients")
+}
+
+enum EventSource {
+  internal
+  google
+  outlook
+}
+
+model Event {
+  id         String      @id @default(cuid())
+  title      String
+  start      DateTime
+  end        DateTime
+  location   String?
+  attendees  String[]    @default([])
+  resourceId String?     @map("resource_id")
+  source     EventSource @default(internal)
+  createdById String?    @map("created_by_id")
+
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  @@index([start])
+  @@index([resourceId])
+  @@map("events")
+}
+
+enum ResourceKind {
+  room
+  equipment
+}
+
+model Resource {
+  id        String       @id
+  name      String
+  kind      ResourceKind
+  capacity  Int?
+  location  String?
+
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  bookings  Booking[]
+
+  @@map("resources")
+}
+
+model Booking {
+  id         String   @id @default(cuid())
+  resourceId String   @map("resource_id")
+  start      DateTime
+  end        DateTime
+  bookedBy   String   @map("booked_by")
+
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId, start])
+  @@map("bookings")
+}

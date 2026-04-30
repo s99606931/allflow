@@ -1,16 +1,76 @@
 import { SignJWT } from 'jose';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
 import { resetEnvForTests } from '../../config/env.js';
 import { authPlugin } from '../../plugins/auth.js';
-import { __resetEventsForTests, eventsRoutes } from './events.routes.js';
+import { eventsRoutes } from './events.routes.js';
 
 const TEST_AUTH = 'a'.repeat(16) + 'b'.repeat(16);
+
+// biome-ignore lint/suspicious/noExplicitAny: 테스트 mock prisma 시그니처 신뢰.
+type AnyArgs = any;
+
+interface EventRow {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  location: string | null;
+  attendees: string[];
+  resourceId: string | null;
+  source: 'internal' | 'google' | 'outlook';
+  createdById: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+function makeStore() {
+  const rows = new Map<string, EventRow>();
+  let seq = 0;
+  return {
+    findMany: async (args: AnyArgs) => {
+      const startFilter = args?.where?.start as
+        | { gte?: Date; lte?: Date }
+        | undefined;
+      let list = Array.from(rows.values());
+      if (startFilter?.gte) {
+        const gte = startFilter.gte;
+        list = list.filter((r) => r.start.getTime() >= gte.getTime());
+      }
+      if (startFilter?.lte) {
+        const lte = startFilter.lte;
+        list = list.filter((r) => r.start.getTime() <= lte.getTime());
+      }
+      return list.sort((a, b) => a.start.getTime() - b.start.getTime());
+    },
+    create: async (args: AnyArgs) => {
+      seq += 1;
+      const now = new Date(Date.now() + seq);
+      const row: EventRow = {
+        id: `evt-${seq}`,
+        title: args.data.title,
+        start: args.data.start,
+        end: args.data.end,
+        location: args.data.location ?? null,
+        attendees: args.data.attendees ?? [],
+        resourceId: args.data.resourceId ?? null,
+        source: args.data.source ?? 'internal',
+        createdById: args.data.createdById ?? null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      rows.set(row.id, row);
+      return row;
+    },
+  };
+}
 
 async function buildTestApp() {
   resetEnvForTests();
   process.env.AUTH_SECRET = TEST_AUTH;
   const app = await buildApp({ logger: false });
+  const store = makeStore();
+  app.decorate('prisma', { event: store } as never);
   await app.register(authPlugin);
   await app.register(eventsRoutes);
   return app;
@@ -24,16 +84,13 @@ async function makeJws(sub: string): Promise<string> {
     .sign(new TextEncoder().encode(TEST_AUTH));
 }
 
-describe('modules/events — BE-N3', () => {
+describe('modules/events — T1 Prisma', () => {
   beforeAll(() => {
     process.env.AUTH_SECRET = TEST_AUTH;
   });
   afterAll(() => {
     process.env.AUTH_SECRET = undefined;
     resetEnvForTests();
-  });
-  afterEach(() => {
-    __resetEventsForTests();
   });
 
   it('인증 없으면 401 (GET, POST)', async () => {
@@ -70,8 +127,8 @@ describe('modules/events — BE-N3', () => {
     const created = post.json();
     expect(created).toMatchObject({
       title: '주간 동기화',
-      start: '2026-05-04T01:00:00Z',
-      end: '2026-05-04T02:00:00Z',
+      start: '2026-05-04T01:00:00.000Z',
+      end: '2026-05-04T02:00:00.000Z',
       attendees: ['u2', 'u3'],
       source: 'internal',
     });
