@@ -37,6 +37,15 @@ export function useHealth() {
   });
 }
 
+export function useNavCounts() {
+  return useQuery({
+    queryKey: keys.navCounts.get(),
+    queryFn: () => api.getNavCounts(),
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+}
+
 export function useMe() {
   return useQuery({ queryKey: keys.me(), queryFn: () => api.me() });
 }

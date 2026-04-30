@@ -338,6 +338,7 @@ export type ProjectPatch = z.infer<typeof ProjectPatchSchema>;
 export type Task = z.infer<typeof TaskSchema>;
 export type TaskCreate = z.infer<typeof TaskCreateSchema>;
 export type TaskPatch = z.infer<typeof TaskPatchSchema>;
+export type Priority = z.infer<typeof PrioritySchema>;
 export type Issue = z.infer<typeof IssueSchema>;
 export type IssueSev = z.infer<typeof IssueSevSchema>;
 export type IssuePrio = z.infer<typeof IssuePrioSchema>;
@@ -369,3 +370,14 @@ export type IssueCreate = z.infer<typeof IssueCreateSchema>;
 export type IssueTransition = z.infer<typeof IssueTransitionSchema>;
 export type Comment = z.infer<typeof CommentSchema>;
 export type CommentCreate = z.infer<typeof CommentCreateSchema>;
+
+
+export const NavCountsSchema = z.object({
+  projects: z.number().int().nonnegative(),
+  tasks: z.number().int().nonnegative(),
+  issues: z.number().int().nonnegative(),
+  approvals: z.number().int().nonnegative(),
+  clients: z.number().int().nonnegative(),
+  notifications: z.number().int().nonnegative(),
+});
+export type NavCounts = z.infer<typeof NavCountsSchema>;

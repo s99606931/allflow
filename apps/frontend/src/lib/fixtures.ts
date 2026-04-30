@@ -53,18 +53,18 @@ export const ACTIVITY: Activity[] = [
 export const NAV: NavSection[] = [
   { sect: '워크스페이스', items: [
     { id: 'home', label: '대시보드', icon: 'LayoutDashboard', href: '/' },
-    { id: 'projects', label: '프로젝트', icon: 'FolderKanban', count: 5, href: '/projects' },
-    { id: 'tasks', label: '내 태스크', icon: 'CheckSquare', count: 12, href: '/tasks' },
+    { id: 'projects', label: '프로젝트', icon: 'FolderKanban', href: '/projects' },
+    { id: 'tasks', label: '내 태스크', icon: 'CheckSquare', href: '/tasks' },
     { id: 'gantt', label: '간트차트', icon: 'GanttChart', href: '/gantt' },
-    { id: 'issues', label: '이슈 관리', icon: 'AlertCircle', count: 9, href: '/issues' },
-    { id: 'approvals', label: '결재함', icon: 'FileCheck2', count: 4, href: '/approvals' },
+    { id: 'issues', label: '이슈 관리', icon: 'AlertCircle', href: '/issues' },
+    { id: 'approvals', label: '결재함', icon: 'FileCheck2', href: '/approvals' },
     { id: 'calendar', label: '캘린더', icon: 'Calendar', href: '/calendar' },
     { id: 'docs', label: '문서 / 위키', icon: 'FileText', href: '/docs' },
-    { id: 'chat', label: '팀 채팅', icon: 'MessageSquare', count: 3, href: '/chat' },
+    { id: 'chat', label: '팀 채팅', icon: 'MessageSquare', href: '/chat' },
   ]},
   { sect: '영업 / 고객사', items: [
     { id: 'progress', label: '진행률 관리', icon: 'TrendingUp', href: '/progress' },
-    { id: 'clients', label: '고객사 (CRM)', icon: 'Building2', count: 8, href: '/clients' },
+    { id: 'clients', label: '고객사 (CRM)', icon: 'Building2', href: '/clients' },
   ]},
   { sect: 'AI', items: [
     { id: 'ai-auto', label: 'AI 자동 등록', icon: 'Sparkles', href: '/ai-auto' },
@@ -80,7 +80,7 @@ export const NAV: NavSection[] = [
     { id: 'hr', label: '인사 / HR', icon: 'BadgeCheck', href: '/hr' },
     { id: 'resources', label: '회의실 · 리소스', icon: 'CalendarRange', href: '/resources' },
     { id: 'admin', label: '관리자 콘솔', icon: 'Shield', href: '/admin' },
-    { id: 'notif', label: '알림 센터', icon: 'Bell', count: 8, href: '/notifications' },
+    { id: 'notif', label: '알림 센터', icon: 'Bell', href: '/notifications' },
     { id: 'settings', label: '개인 설정', icon: 'Settings', href: '/settings' },
   ]},
 ];

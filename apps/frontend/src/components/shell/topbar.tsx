@@ -11,20 +11,14 @@ import {
 	BookOpen,
 	HelpCircle,
 	Info,
-	Keyboard,
 	LogOut,
 	MessageSquare,
-	Moon,
-	Palette,
 	Settings,
 	Sparkles,
-	Sun,
-	UserCircle,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ShortcutsModal } from "./shortcuts-modal";
 
 // ── 알림 데이터 ─────────────────────────────────────────────────────────────
 
@@ -261,6 +255,7 @@ function NotificationMenu() {
 function HelpMenu() {
 	const [open, setOpen] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
+	const router = useRouter();
 
 	useEffect(() => {
 		if (!open) return;
@@ -322,6 +317,10 @@ function HelpMenu() {
 						</div>
 						<button
 							type="button"
+							onClick={() => {
+								setOpen(false);
+								router.push("/docs");
+							}}
 							className="w-full flex items-center gap-2.5 px-3 py-1.5 hover:bg-bg-2 text-left transition-colors"
 						>
 							<BookOpen size={13} className="text-fg-3" />
@@ -329,6 +328,10 @@ function HelpMenu() {
 						</button>
 						<button
 							type="button"
+							onClick={() => {
+								setOpen(false);
+								window.open("mailto:support@allflow.app", "_blank");
+							}}
 							className="w-full flex items-center gap-2.5 px-3 py-1.5 hover:bg-bg-2 text-left transition-colors"
 						>
 							<MessageSquare size={13} className="text-fg-3" />
@@ -359,9 +362,6 @@ interface UserMenuUser {
 
 function UserMenu({ user }: { user: UserMenuUser }) {
 	const [open, setOpen] = useState(false);
-	const [shortcutsOpen, setShortcutsOpen] = useState(false);
-	const theme = useUIStore((s) => s.theme);
-	const setTheme = useUIStore((s) => s.setTheme);
 	const ref = useRef<HTMLDivElement>(null);
 	const router = useRouter();
 
@@ -419,70 +419,11 @@ function UserMenu({ user }: { user: UserMenuUser }) {
 					{/* 계정 액션 */}
 					<div className="py-1">
 						<MenuButton
-							icon={<UserCircle size={14} />}
-							label="프로필 편집"
-							onClick={() => {
-								setOpen(false);
-								router.push("/settings");
-							}}
-						/>
-						<MenuButton
 							icon={<Settings size={14} />}
 							label="계정 설정"
 							onClick={() => {
 								setOpen(false);
-								router.push("/settings#security");
-							}}
-						/>
-
-						{/* 테마 인라인 토글 */}
-						<div className="flex items-center justify-between px-3 py-1.5 hover:bg-bg-2">
-							<div className="flex items-center gap-2">
-								<Palette size={14} className="text-fg-3" />
-								<span className="text-fg-1">테마</span>
-							</div>
-							<div className="flex items-center gap-0.5 p-0.5 rounded-md bg-bg-2 border border-border">
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										setTheme("light");
-									}}
-									className={cn(
-										"p-1 rounded transition-colors",
-										theme === "light"
-											? "bg-bg text-fg shadow-sm"
-											: "text-fg-3 hover:text-fg-2",
-									)}
-									title="라이트 모드"
-								>
-									<Sun size={11} />
-								</button>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										setTheme("dark");
-									}}
-									className={cn(
-										"p-1 rounded transition-colors",
-										theme === "dark"
-											? "bg-bg text-fg shadow-sm"
-											: "text-fg-3 hover:text-fg-2",
-									)}
-									title="다크 모드"
-								>
-									<Moon size={11} />
-								</button>
-							</div>
-						</div>
-
-						<MenuButton
-							icon={<Keyboard size={14} />}
-							label="단축키"
-							onClick={() => {
-								setOpen(false);
-								setShortcutsOpen(true);
+								router.push("/settings");
 							}}
 						/>
 					</div>
@@ -496,9 +437,6 @@ function UserMenu({ user }: { user: UserMenuUser }) {
 						/>
 					</div>
 				</div>
-			)}
-			{shortcutsOpen && (
-				<ShortcutsModal onClose={() => setShortcutsOpen(false)} />
 			)}
 		</div>
 	);

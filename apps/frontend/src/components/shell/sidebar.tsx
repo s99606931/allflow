@@ -1,5 +1,13 @@
 "use client";
 
+import { DocCreateDialog } from "@/components/dialogs/doc-create-dialog";
+import { EventCreateDialog } from "@/components/dialogs/event-create-dialog";
+import { IssueCreateDialog } from "@/components/dialogs/issue-create-dialog";
+import { TaskCreateDialog } from "@/components/dialogs/task-create-dialog";
+import {
+	QuickCreateMenu,
+	type QuickCreateKind,
+} from "@/components/shell/quick-create-menu";
 import { NAV } from "@/lib/fixtures";
 import { useResizeDrag } from "@/lib/hooks/use-resize-drag";
 import { cn } from "@/lib/utils";
@@ -25,7 +33,6 @@ import {
 	type LucideIcon,
 	MessageSquare,
 	Network,
-	Plus,
 	Search,
 	Settings,
 	Shield,
@@ -33,8 +40,11 @@ import {
 	TrendingUp,
 	Users,
 } from "lucide-react";
+import { useNavCounts } from "@/lib/hooks/use-data";
+import type { NavCounts } from "@/lib/schemas";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const ICONS: Record<string, LucideIcon> = {
 	LayoutDashboard,
@@ -61,12 +71,22 @@ const ICONS: Record<string, LucideIcon> = {
 	GanttChart,
 };
 
+const NAV_COUNT_KEY: Partial<Record<string, keyof NavCounts>> = {
+	projects: 'projects',
+	tasks: 'tasks',
+	issues: 'issues',
+	approvals: 'approvals',
+	clients: 'clients',
+	notif: 'notifications',
+};
+
 export function Sidebar() {
 	const pathname = usePathname();
 	const collapsed = useUIStore((s) => s.sidebarCollapsed);
 	const toggle = useUIStore((s) => s.toggleSidebar);
 	const sidebarWidth = useUIStore((s) => s.sidebarWidth);
 	const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
+	const { data: navCounts } = useNavCounts();
 
 	const { isResizing, startResize } = useResizeDrag({
 		minWidth: SIDEBAR_MIN,
@@ -74,6 +94,21 @@ export function Sidebar() {
 		direction: "right",
 		onResize: setSidebarWidth,
 	});
+
+	// Quick create — shared by sidebar button + command palette `allflow:action`.
+	const [openDialog, setOpenDialog] = useState<QuickCreateKind | null>(null);
+
+	useEffect(() => {
+		const onAction = (e: Event) => {
+			const detail = (e as CustomEvent<string>).detail;
+			if (detail === "new-task") setOpenDialog("task");
+			else if (detail === "new-issue") setOpenDialog("issue");
+			else if (detail === "new-doc") setOpenDialog("doc");
+			else if (detail === "new-event") setOpenDialog("event");
+		};
+		window.addEventListener("allflow:action", onAction);
+		return () => window.removeEventListener("allflow:action", onAction);
+	}, []);
 
 	return (
 		<aside
@@ -115,7 +150,7 @@ export function Sidebar() {
 			</div>
 
 			{/* Search + new */}
-			{!collapsed && (
+			{!collapsed ? (
 				<div className="p-3 space-y-2">
 					<button
 						type="button"
@@ -130,13 +165,11 @@ export function Sidebar() {
 							⌘K
 						</kbd>
 					</button>
-					<button
-						type="button"
-						className="w-full h-9 px-2.5 rounded-md bg-accent text-accent-fg text-[12.5px] font-medium flex items-center gap-1.5 hover:bg-accent-strong transition-colors"
-					>
-						<Plus size={14} />
-						<span>새로 만들기</span>
-					</button>
+					<QuickCreateMenu showLabel onSelect={(k) => setOpenDialog(k)} />
+				</div>
+			) : (
+				<div className="px-1.5 py-3">
+					<QuickCreateMenu showLabel={false} onSelect={(k) => setOpenDialog(k)} />
 				</div>
 			)}
 
@@ -171,18 +204,22 @@ export function Sidebar() {
 									{!collapsed && (
 										<>
 											<span className="flex-1 truncate">{it.label}</span>
-											{it.count !== undefined && it.count > 0 && (
-												<span
-													className={cn(
-														"text-[10.5px] mono font-semibold px-1.5 rounded",
-														active
-															? "bg-accent text-accent-fg"
-															: "bg-bg-2 text-fg-2",
-													)}
-												>
-													{it.count}
-												</span>
-											)}
+											{(() => {
+												const countKey = NAV_COUNT_KEY[it.id];
+												const count = countKey ? (navCounts?.[countKey] ?? 0) : 0;
+												return count > 0 ? (
+													<span
+														className={cn(
+															"text-[10.5px] mono font-semibold px-1.5 rounded",
+															active
+																? "bg-accent text-accent-fg"
+																: "bg-bg-2 text-fg-2",
+														)}
+													>
+														{count}
+													</span>
+												) : null;
+											})()}
 										</>
 									)}
 								</Link>
@@ -203,6 +240,24 @@ export function Sidebar() {
 					title="드래그하여 너비 조절"
 				/>
 			)}
+
+			{/* Quick create dialogs — shared by 사이드바 + 명령 팔레트 */}
+			<TaskCreateDialog
+				open={openDialog === "task"}
+				onOpenChange={(o) => setOpenDialog(o ? "task" : null)}
+			/>
+			<EventCreateDialog
+				open={openDialog === "event"}
+				onOpenChange={(o) => setOpenDialog(o ? "event" : null)}
+			/>
+			<DocCreateDialog
+				open={openDialog === "doc"}
+				onOpenChange={(o) => setOpenDialog(o ? "doc" : null)}
+			/>
+			<IssueCreateDialog
+				open={openDialog === "issue"}
+				onOpenChange={(o) => setOpenDialog(o ? "issue" : null)}
+			/>
 		</aside>
 	);
 }

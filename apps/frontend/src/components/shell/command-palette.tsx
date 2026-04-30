@@ -34,6 +34,8 @@ function pushRecent(id: string) {
 
 const ACTIONS: Hit[] = [
   { kind: 'action', id: 'new-task',     title: '새 태스크 만들기',  hint: 'N',         icon: 'CheckSquare' },
+  { kind: 'action', id: 'new-event',    title: '새 이벤트 / 일정',   hint: '⇧ ⌘ E',     icon: 'Calendar' },
+  { kind: 'action', id: 'new-doc',      title: '새 문서',           hint: '⇧ ⌘ O',     icon: 'FileText' },
   { kind: 'action', id: 'new-project',  title: '새 프로젝트',       hint: '⇧ ⌘ P',     icon: 'FolderKanban' },
   { kind: 'action', id: 'new-issue',    title: '새 이슈 등록',      hint: '⇧ ⌘ I',     icon: 'AlertCircle' },
   { kind: 'action', id: 'new-leave',    title: '휴가 신청',         hint: '⇧ ⌘ L',     icon: 'Sparkles' },

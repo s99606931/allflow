@@ -105,4 +105,9 @@ export const keys = {
     all: () => root('health'),
     status: () => list('health'),
   },
+
+  navCounts: {
+    all: () => root('navCounts'),
+    get: () => list('navCounts'),
+  },
 } as const;

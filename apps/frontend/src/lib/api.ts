@@ -2,8 +2,9 @@ import { ME, PROJECTS, userById } from '@/lib/fixtures';
 import {
   ProjectSchema, TaskSchema, IssueSchema, NotificationSchema,
   ReportSchema, ExtractedActionSchema, UserSchema, HealthSchema,
+  NavCountsSchema,
   type Issue, type Project, type Task, type Notification,
-  type Report, type ExtractedAction, type User, type Health,
+  type Report, type ExtractedAction, type User, type Health, type NavCounts,
   type ProjectCreate, type ProjectPatch, type TaskCreate, type TaskPatch,
 } from './schemas';
 import { z } from 'zod';
@@ -199,6 +200,15 @@ const baseApi = {
       http.post('ai/extract-actions', { json: input }).json(),
       z.array(ExtractedActionSchema),
     );
+  },
+
+  /* Nav counts ------------------------------------------------------------- */
+  getNavCounts: async (): Promise<NavCounts> => {
+    if (USE_MOCK) {
+      await sleep();
+      return { projects: 5, tasks: 12, issues: 9, approvals: 4, clients: 8, notifications: 8 };
+    }
+    return parsed(http.get('nav-counts').json(), NavCountsSchema);
   },
 };
 
