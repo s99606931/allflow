@@ -1,15 +1,18 @@
 #!/usr/bin/env node
 /**
- * openapi-drift.mjs — frontend openapi.yaml과 백엔드가 사용하는 스키마 사이의 drift 검출.
+ * openapi-drift.mjs — packages/contracts/openapi.yaml(SOR)과 백엔드가 사용하는
+ * 스키마 사이의 drift 검출.
  *
  * 동작:
- *  1) frontend openapi.yaml을 읽어 components.schemas 키 목록과 SHA-256 해시 산출
+ *  1) packages/contracts/openapi.yaml(SOR)을 읽어 components.schemas 키 목록과 SHA-256 해시 산출
  *  2) src/shared/schemas/api.generated.ts 의 첫 줄에 박힌 source-hash 주석과 비교
  *  3) 다르면 exit(1) — CI는 `pnpm openapi:gen` 후 커밋을 강제
  *
  * 사용:
- *   pnpm openapi:gen     → 재생성 + source-hash 갱신
+ *   pnpm openapi:gen     → @all-flow/contracts gen:zod 위임 + source-hash 갱신
  *   pnpm openapi:check   → drift 검사
+ *
+ * Step 3 (2026-04-30): SRC 경로가 frontend → packages/contracts로 이동.
  */
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
@@ -18,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const SRC = resolve(ROOT, '..', 'all-flow-frontend', 'openapi.yaml');
+const SRC = resolve(ROOT, '..', '..', 'packages', 'contracts', 'openapi.yaml');
 const GEN = resolve(ROOT, 'src', 'shared', 'schemas', 'api.generated.ts');
 const HASH_FILE = resolve(ROOT, 'src', 'shared', 'schemas', '.openapi.hash');
 

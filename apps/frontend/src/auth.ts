@@ -69,12 +69,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // E2E 모드에서만 라우트 게이트 우회 (non-production 빌드에서만 유효).
       if (process.env.NEXT_PUBLIC_E2E === 'true' && process.env.NODE_ENV !== 'production') return true;
       const { pathname } = request.nextUrl;
-      // 미인증 허용: 로그인 UI, next-auth handler, BE 로그인 엔드포인트만.
+      // 미인증 허용: 로그인 UI, next-auth handler, BE 로그인 엔드포인트, 헬스체크.
       // /api/v1/* 의 나머지는 catch-all proxy → BE 401로 자연 차단.
       if (
         pathname.startsWith('/login') ||
         pathname.startsWith('/api/auth') ||
-        pathname === '/api/v1/auth/login'
+        pathname === '/api/v1/auth/login' ||
+        pathname === '/api/v1/health'
       ) return true;
       return !!auth?.user;
     },

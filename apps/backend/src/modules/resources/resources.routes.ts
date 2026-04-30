@@ -1,3 +1,4 @@
+import { ConflictError, ValidationError } from '@all-flow/shared/errors';
 /**
  * resources 모듈 — 리소스(회의실/장비) 도메인 (BE-N4).
  *
@@ -13,7 +14,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ConflictError, ValidationError } from '../../shared/errors.js';
 
 interface ResourceRow {
   id: string;

@@ -1,3 +1,4 @@
+import { ValidationError } from '@all-flow/shared/errors';
 /**
  * clients 모듈 — CRM 고객 도메인 (BE-N2).
  *
@@ -10,7 +11,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ValidationError } from '../../shared/errors.js';
 
 interface ClientRow {
   id: string;

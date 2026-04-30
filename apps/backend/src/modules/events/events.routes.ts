@@ -1,3 +1,4 @@
+import { ValidationError } from '@all-flow/shared/errors';
 /**
  * events 모듈 — 일정 도메인 (BE-N3).
  *
@@ -15,7 +16,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ValidationError } from '../../shared/errors.js';
 
 interface EventRow {
   id: string;

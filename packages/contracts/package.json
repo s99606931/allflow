@@ -1,0 +1,46 @@
+{
+  "name": "@all-flow/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ALL-Flow OpenAPI 3.1 SOR + generated Zod (BE) and TS types (FE).",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./openapi.yaml": "./openapi.yaml",
+    "./zod": {
+      "types": "./dist/zod/index.d.ts",
+      "import": "./dist/zod/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "openapi.yaml",
+    "src"
+  ],
+  "scripts": {
+    "gen:zod": "node scripts/openapi-to-zod.mjs",
+    "gen:types": "node scripts/openapi-to-types.mjs",
+    "gen": "pnpm gen:zod && pnpm gen:types",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo '(no lint configured for contracts yet)'"
+  },
+  "devDependencies": {
+    "@all-flow/config-tsconfig": "workspace:*",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "yaml": "^2.8.3"
+  },
+  "peerDependencies": {
+    "zod": "^4.0.0"
+  }
+}

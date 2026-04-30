@@ -1,3 +1,4 @@
+import { ForbiddenError, ValidationError } from '@all-flow/shared/errors';
 /**
  * channels 모듈 — 채팅 채널/메시지 도메인 (BE-N6).
  *
@@ -11,7 +12,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ForbiddenError, ValidationError } from '../../shared/errors.js';
 
 interface ChannelRow {
   id: string;

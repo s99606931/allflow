@@ -1,6 +1,10 @@
 # ALL-Flow - dev override
 # Activates: bind-mount source, hot reload, expose DB/Redis ports.
 # Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.dev up -d
+#
+# Step 7 (monorepo-microservices-2026-04-30 PRD §5.1 #7):
+#   packages/ bind-mount added — pnpm workspace symlinks resolve in containers
+#   and tsup-built packages/*/dist propagate to BE/FE dev (G6 carry-over).
 
 services:
   postgres:
@@ -17,8 +21,28 @@ services:
       context: ../backend
       dockerfile: Dockerfile
       target: dev
-    command: ["pnpm", "dev"]
+    # Step 7 (monorepo G6 carry-over): startup installs workspace deps from
+    # monorepo root so @all-flow/{shared,contracts} resolve, then runs dev.
+    # Trade-off: ~5-15s startup cold-install on volume reset; warm cache after.
+    working_dir: /workspace/apps/backend
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        cd /workspace
+        if [ ! -L /workspace/apps/backend/node_modules/@all-flow/shared ]; then
+          echo "[step7-dev-init] installing workspace deps (monorepo root)..."
+          pnpm install --frozen-lockfile
+        fi
+        if [ ! -d /workspace/apps/backend/node_modules/.prisma/client ]; then
+          echo "[step7-dev-init] prisma generate..."
+          pnpm --filter @all-flow/backend prisma:generate
+        fi
+        exec pnpm --filter @all-flow/backend dev
     environment:
+      # CI=true → pnpm install non-interactive (no TTY).
+      CI: "true"
       NODE_ENV: development
       LOG_LEVEL: debug
       CHOKIDAR_USEPOLLING: "true"
@@ -28,8 +52,11 @@ services:
       # Prisma DATABASE_URL (compose-internal).
       DATABASE_URL: postgresql://${POSTGRES_USER:-allflow}:${POSTGRES_PASSWORD:-allflow_dev_pw}@postgres:5432/${POSTGRES_DB:-allflow}?schema=public
     volumes:
-      - ../backend:/app
-      - backend-node-modules:/app/node_modules
+      # Step 7 (monorepo G6 carry-over): bind monorepo root so pnpm workspace
+      # install resolves @all-flow/{shared,contracts,...}. Backend code stays
+      # at /workspace/apps/backend (working_dir overridden above).
+      - ../..:/workspace
+      - backend-node-modules:/workspace/apps/backend/node_modules
     ports:
       - "${BACKEND_PORT:-8080}:8080"
 
@@ -39,8 +66,21 @@ services:
       context: ../frontend
       dockerfile: Dockerfile
       target: dev
-    command: ["pnpm", "dev"]
+    # Step 7 (monorepo G6 carry-over): same pattern as backend.
+    working_dir: /workspace/apps/frontend
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        cd /workspace
+        if [ ! -L /workspace/apps/frontend/node_modules/@all-flow/contracts ]; then
+          echo "[step7-dev-init] installing workspace deps (monorepo root)..."
+          pnpm install --frozen-lockfile --ignore-scripts
+        fi
+        exec pnpm --filter ./apps/frontend dev
     environment:
+      CI: "true"
       NODE_ENV: development
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
@@ -52,11 +92,47 @@ services:
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/api/v1}
       NEXT_PUBLIC_USE_MOCK: ${NEXT_PUBLIC_USE_MOCK:-false}
     volumes:
-      - ../frontend:/app
-      - frontend-node-modules:/app/node_modules
-      - frontend-next-cache:/app/.next
+      - ../..:/workspace
+      - frontend-node-modules:/workspace/apps/frontend/node_modules
+      - frontend-next-cache:/workspace/apps/frontend/.next
     ports:
       - "${FRONTEND_PORT:-80}:3000"
+
+  # Step 8 (monorepo-microservices-2026-04-30 PRD §5.1 #8) — Observability profile.
+  # Default 가동 시 미실행. 활성화:
+  #   docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.dev \
+  #     --profile observability up -d
+  # BE 활성화: OTEL_ENABLED=true OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+  otel-collector:
+    profiles: ["observability"]
+    image: otel/opentelemetry-collector-contrib:0.121.0
+    container_name: allflow-otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./docker/otel-collector/config.yaml:/etc/otelcol/config.yaml:ro
+    networks:
+      - allflow-net
+    ports:
+      - "${OTEL_COLLECTOR_HTTP_PORT:-4318}:4318"
+      - "${OTEL_COLLECTOR_GRPC_PORT:-4317}:4317"
+    depends_on:
+      - tempo
+
+  tempo:
+    profiles: ["observability"]
+    image: grafana/tempo:2.7.0
+    container_name: allflow-tempo
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./docker/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    networks:
+      - allflow-net
+    ports:
+      - "${TEMPO_HTTP_PORT:-3200}:3200"
+
 
 volumes:
   backend-node-modules:
@@ -65,3 +141,5 @@ volumes:
     name: allflow-frontend-node-modules-dev
   frontend-next-cache:
     name: allflow-frontend-next-cache-dev
+  tempo-data:
+    name: allflow-tempo-data-dev

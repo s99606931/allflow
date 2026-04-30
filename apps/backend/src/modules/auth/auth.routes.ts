@@ -1,3 +1,4 @@
+import { ValidationError } from '@all-flow/shared/errors';
 /**
  * auth 모듈 — 토큰 라이프사이클.
  *
@@ -15,7 +16,6 @@ import type { FastifyInstance } from 'fastify';
 import { SignJWT } from 'jose';
 import { z } from 'zod';
 import { getEnv } from '../../config/env.js';
-import { ValidationError } from '../../shared/errors.js';
 
 const RevokeRequest = z
   .object({

@@ -13,11 +13,11 @@
  */
 import { hkdf } from 'node:crypto';
 import { promisify } from 'node:util';
+import { AuthError } from '@all-flow/shared/errors';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 import { jwtDecrypt, jwtVerify } from 'jose';
 import { getEnv } from '../config/env.js';
-import { AuthError } from '../shared/errors.js';
 
 const hkdfAsync = promisify(hkdf);
 

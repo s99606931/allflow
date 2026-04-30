@@ -1,3 +1,4 @@
+import { ForbiddenError, NotFoundError, ValidationError } from '@all-flow/shared/errors';
 /**
  * issues 모듈 — `GET /issues` (필터: status, prio) + `POST /issues` (생성) + `POST /issues/:id/transition` (상태 전이).
  *
@@ -9,7 +10,7 @@
  *
  * 동일 상태로의 전이는 멱등 허용 (no-op 200). 정의되지 않은 전이는 400.
  *
- * 응답은 frontend openapi.yaml `Issue` 스키마와 동일.
+ * 응답은 @all-flow/contracts `Issue` 스키마(packages/contracts/openapi.yaml)와 동일.
  *  - assignee/reporter: User.name 으로 직렬화 (없으면 빈 문자열)
  *  - comments: 활성 코멘트 카운트
  *
@@ -17,7 +18,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ForbiddenError, NotFoundError, ValidationError } from '../../shared/errors.js';
 import {
   IssuePrio,
   Issue as IssueSchema,

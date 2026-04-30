@@ -37,6 +37,7 @@ ehthumbs.db
 
 # ─── 의존성 ────────────────────────────────────────────────────────────────
 node_modules/
+.pnpm-store/
 .pnp
 .pnp.js
 .yarn/cache
@@ -98,6 +99,9 @@ tmp/
 *.db
 *.sqlite
 *.sqlite3
+
+# ─── Playwright ─────────────────────────────────────────────────────────────
+apps/frontend/playwright/.auth/
 
 # ─── Harness 결과 (로컬 전용) ───────────────────────────────────────────────
 .githooks-report/

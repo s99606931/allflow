@@ -1,20 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "compilerOptions": {
-    "target": "ES2023",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "lib": ["ES2023"],
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "exactOptionalPropertyTypes": false,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "isolatedModules": true,
-    "resolveJsonModule": true,
-    "verbatimModuleSyntax": false,
-    "allowSyntheticDefaultImports": true
-  }
+  "_comment": "Backward-compat shim. Step 5 (2026-04-30) absorbed this preset into @all-flow/config-tsconfig/base.json. New code should `extends` the package directly. This file remains until Step 6 catalog wave so any external tooling/IDE that still references repo-root tsconfig.base.json continues to work.",
+  "extends": "./packages/config-tsconfig/base.json"
 }

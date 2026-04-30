@@ -1,10 +1,19 @@
+import { AuthError, NotFoundError, ValidationError } from '@all-flow/shared/errors';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { buildApp } from '../app.js';
-import { AuthError, NotFoundError, ValidationError } from '../shared/errors.js';
 
 async function appUnderTest() {
-  const app = await buildApp({ logger: false, env: { NODE_ENV: 'test', HOST: '0', PORT: 1 } });
+  const app = await buildApp({
+    logger: false,
+    env: {
+      NODE_ENV: 'test',
+      HOST: '0',
+      PORT: 1,
+      OTEL_ENABLED: false,
+      OTEL_SERVICE_NAME: 'all-flow-backend',
+    },
+  });
 
   app.get('/__zod', async () => {
     z.object({ x: z.number() }).parse({ x: 'no' });

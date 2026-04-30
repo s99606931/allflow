@@ -1,3 +1,4 @@
+import { AuthError, ForbiddenError, NotFoundError } from '@all-flow/shared/errors';
 /**
  * RBAC 가드 — Owner/Admin/Member + project-level membership 검증.
  *
@@ -19,7 +20,6 @@
  */
 import type { FastifyInstance, FastifyRequest, preHandlerHookHandler } from 'fastify';
 import fp from 'fastify-plugin';
-import { AuthError, ForbiddenError, NotFoundError } from '../shared/errors.js';
 
 export type ProjectRole = 'owner' | 'admin' | 'member';
 

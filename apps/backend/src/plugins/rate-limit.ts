@@ -1,3 +1,4 @@
+import { RateLimitError } from '@all-flow/shared/errors';
 /**
  * Rate-limit + 보안 헤더(helmet/cors lite) 플러그인.
  *
@@ -11,7 +12,6 @@
  */
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
-import { AppError } from '../shared/errors.js';
 
 export interface RateLimitOptions {
   /** 시간 창 (ms). 기본 60_000 (1분). */
@@ -24,18 +24,6 @@ export interface RateLimitOptions {
   skipPathPrefixes?: string[];
   /** CORS 허용 origin. '*' 또는 정확한 origin 리스트. 기본 '*'. */
   corsOrigins?: '*' | string[];
-}
-
-class RateLimitError extends AppError {
-  constructor(retryAfterSec: number) {
-    super({
-      code: 'RATE_LIMITED',
-      message: `요청이 너무 많습니다. ${retryAfterSec}초 후 다시 시도하세요.`,
-      statusCode: 429,
-      details: { retryAfterSec },
-    });
-    this.name = 'RateLimitError';
-  }
 }
 
 interface Bucket {
@@ -127,7 +115,9 @@ async function plugin(app: FastifyInstance, opts: RateLimitOptions): Promise<voi
     if (!r.ok) {
       const retryAfterSec = Math.max(1, Math.ceil((r.resetAt - Date.now()) / 1000));
       reply.header('Retry-After', String(retryAfterSec));
-      throw new RateLimitError(retryAfterSec);
+      throw new RateLimitError(`요청이 너무 많습니다. ${retryAfterSec}초 후 다시 시도하세요.`, {
+        retryAfterSec,
+      });
     }
   });
 

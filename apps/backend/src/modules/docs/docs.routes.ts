@@ -1,3 +1,4 @@
+import { ValidationError } from '@all-flow/shared/errors';
 /**
  * docs 모듈 — 문서 도메인 (BE-N5).
  *
@@ -10,7 +11,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ValidationError } from '../../shared/errors.js';
 
 interface DocRow {
   id: string;

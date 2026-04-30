@@ -1,3 +1,4 @@
+import { ValidationError } from '@all-flow/shared/errors';
 /**
  * org 모듈 — 조직 단위 + 구성원 초대 도메인 (BE-N7).
  *
@@ -15,7 +16,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ValidationError } from '../../shared/errors.js';
 
 interface OrgUnitRow {
   id: string;

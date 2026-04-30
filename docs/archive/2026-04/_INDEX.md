@@ -2,11 +2,23 @@
 
 | Feature | Match Rate | Period | Status | Path |
 |---------|----------:|--------|:------:|------|
+| `monorepo-microservices-2026-04-30` (pnpm+Turbo 모놀레포 + MSA 분리 트리거 가이드) | 0.97 (cycle avg) | 2026-04-30 | ✅ archived | [monorepo-microservices-2026-04-30/](./monorepo-microservices-2026-04-30/) |
 | `tech-stack-modernization-2026-04-29` (스택 거버넌스 + M3 P0 채택) | 0.97 | 2026-04-29 | ✅ archived | [tech-stack-modernization-2026-04-29/](./tech-stack-modernization-2026-04-29/) |
 | `be-fe-mapping-fix-2026-04-29` (FE↔BE 미연결 44 EP 수렴) | BE 0.98 / FE 0.98 | 2026-04-29 | ✅ archived | [be-fe-mapping-fix-2026-04-29/](./be-fe-mapping-fix-2026-04-29/) |
 | `.claude` (AutoVibe OSS 분업화) | 96.20% → ~99.2% | 2026-04-29 | ✅ archived | [dotclaude/](./dotclaude/) |
 | `all-flow-fullstack-2026-04-29` (BE×FE 풀스택 종결) | 0.984 / code 100 | 2026-04-28~29 | ✅ archived | [all-flow-fullstack-2026-04-29/](./all-flow-fullstack-2026-04-29/) |
 | `all-flow-infra-2026-04-28` (Docker Compose 풀스택 인프라) | 100% (자체 평가) | 2026-04-28 | ✅ archived | [all-flow-infra-2026-04-28/](./all-flow-infra-2026-04-28/) |
+
+## monorepo-microservices-2026-04-30 요약
+
+- **작업**: 8 Step + 1 verification 사이클 — pnpm 10 workspaces + Turborepo 2.x + packages/{contracts, shared, config-tsconfig, config-eslint} + pnpm catalog + GHA matrix + dev compose monorepo 정합 + OpenTelemetry default-off + MSA 분리 트리거 결정문서
+- **결과**: cycle avg match_rate 0.97 (Step 1: 0.96, Step 2~8: 0.97~0.99), 411/411 vitest, BE 295 + FE 71 + shared 45 + contracts PASS, Playwright 58-59/62 (baseline 56-60 범위 내, 회귀 0)
+- **MSA 결정**: Phase 3 풀분해 명시적 비추천 — 2026 CNCF Q1 (42% MSA→Modulith 회귀) + Amazon Prime Video 90% 비용 감소 사례 인용. Modular Monolith 유지 + OTel 측정 데이터 기반 분리 트리거 가이드(`docs/02-design/decision-records/msa-split-triggers.md`, archive 미이관 — active 유지) 제공
+- **R1 Critical**: single-port localhost dev 환경 회귀 0건 (Playwright + curl http://localhost 게이트). 직전 single-port-localhost-2026-04-30 §4 학습이 Step 7 health endpoint 회귀를 사전 예측 → 1줄 hotfix(auth.ts authorized 콜백 화이트리스트)
+- **종결 패턴**: 1 사이클 = 1 Step 분할 / R100 git mv 유지 / catalog dedup 1버전 / config-as-package / OTel default-off lazy import / 메모리 계층 회귀 예측
+- **학습 적재**: `learning_monorepo_step{1,2,3,4,5,6,7,8}_*.md`, `learning_step7_verification_2026_04_30.md`, `learning_monorepo_microservices_2026_04_30_complete.md`
+- **active 유지**: `docs/02-design/decision-records/msa-split-triggers.md` (Phase 2 트리거 측정 시 참조)
+- **후속 백로그**: Vercel TURBO_TOKEN 등록 + CI 80% cache hit 실측 / `--profile observability up` 실측 / be-test-tracks.test.ts 3 carry-over typecheck / Phase 2 트리거 모니터링 (별도 사이클)
 
 ## tech-stack-modernization-2026-04-29 요약
 

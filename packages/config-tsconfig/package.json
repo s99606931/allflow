@@ -1,0 +1,21 @@
+{
+  "name": "@all-flow/config-tsconfig",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ALL-Flow shared tsconfig presets — base / node22 / nextjs. Extended by apps and packages.",
+  "type": "module",
+  "files": [
+    "base.json",
+    "node22.json",
+    "nextjs.json",
+    "README.md"
+  ],
+  "exports": {
+    "./base.json": "./base.json",
+    "./node22.json": "./node22.json",
+    "./nextjs.json": "./nextjs.json"
+  },
+  "scripts": {
+    "lint": "echo '(no lint configured for config-tsconfig — JSON only)'"
+  }
+}

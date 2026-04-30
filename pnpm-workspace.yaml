@@ -1,7 +1,18 @@
 # ALL-Flow monorepo workspaces
 # Step 2 (2026-04-30): folder migrated to apps/. infra has no package.json (Makefile-driven, excluded).
-# Step 3+ will activate packages/* (contracts, shared, config-*).
+# Step 3 (2026-04-30): packages/* activated — @all-flow/contracts (OpenAPI SOR + codegen).
+# Step 4 (2026-04-30): @all-flow/shared (envelope/errors/IDs/zod helpers).
+# Step 5 (2026-04-30): @all-flow/config-tsconfig + @all-flow/config-eslint.
+# Step 6 (2026-04-30): catalog 도입 — 6 dep 단일 버전 수렴 (zod/typescript/vitest/@types/node/tsup/biome).
 packages:
   - 'apps/backend'
   - 'apps/frontend'
-  # - 'packages/*'   # Step 3+ (contracts, shared, config-*)
+  - 'packages/*'
+
+catalog:
+  zod: ^4.3.6
+  typescript: ^5.7.3
+  vitest: ^2.1.9
+  '@types/node': ^22.13.4
+  tsup: ^8.3.5
+  '@biomejs/biome': 1.9.4

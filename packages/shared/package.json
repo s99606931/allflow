@@ -1,0 +1,62 @@
+{
+  "name": "@all-flow/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ALL-Flow isomorphic shared utilities (errors, pagination, env getter, log redaction, zod helpers, date utils). Node-only and Browser-only code is forbidden.",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "import": "./dist/errors/index.js"
+    },
+    "./pagination": {
+      "types": "./dist/pagination/index.d.ts",
+      "import": "./dist/pagination/index.js"
+    },
+    "./env": {
+      "types": "./dist/env/index.d.ts",
+      "import": "./dist/env/index.js"
+    },
+    "./redact": {
+      "types": "./dist/redact/index.d.ts",
+      "import": "./dist/redact/index.js"
+    },
+    "./zod": {
+      "types": "./dist/zod/index.d.ts",
+      "import": "./dist/zod/index.js"
+    },
+    "./date": {
+      "types": "./dist/date/index.d.ts",
+      "import": "./dist/date/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo '(no lint configured for shared yet)'",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "@all-flow/config-tsconfig": "workspace:*",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  },
+  "peerDependencies": {
+    "zod": "^4.0.0"
+  }
+}

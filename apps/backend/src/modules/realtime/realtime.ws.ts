@@ -1,3 +1,4 @@
+import { AuthError } from '@all-flow/shared/errors';
 /**
  * WebSocket 엔드포인트 — `GET /realtime/ws`.
  *
@@ -19,7 +20,6 @@ import type { FastifyInstance } from 'fastify';
 import type { WebSocket } from 'ws';
 import { getEnv } from '../../config/env.js';
 import { verifyToken } from '../../plugins/auth.js';
-import { AuthError } from '../../shared/errors.js';
 import { realtimeBus } from './realtime-bus.js';
 
 const KEEPALIVE_INTERVAL_MS = 30_000;

@@ -11,7 +11,7 @@
  *  - 1개의 기본 구현체(OpenAIAdapter) 골격 (실제 fetch 호출은 T-402)
  *  - 테스트용 InMemoryAdapter (결정론적 응답)
  */
-import { AppError } from '../../shared/errors.js';
+import { AppError } from '@all-flow/shared/errors';
 
 export type AIRole = 'system' | 'user' | 'assistant';
 

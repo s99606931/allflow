@@ -1,14 +1,15 @@
 /**
- * BE-R4 — Frontend OpenAPI ↔ backend contract mirror (regression guard).
+ * BE-R4 — @all-flow/contracts ↔ backend contract mirror (regression guard).
  *
- * 본 테스트는 frontend `openapi.yaml` 이 PDCA-01 에서 추가한 21개 엔드포인트를
- * 계속 노출하는지 정적으로 검증한다. 백엔드의 실제 구현 여부와 무관하게
+ * 본 테스트는 SOR `packages/contracts/openapi.yaml` 이 PDCA-01 에서 추가한 21개
+ * 엔드포인트를 계속 노출하는지 정적으로 검증한다. 백엔드의 실제 구현 여부와 무관하게
  * 컨트랙트가 우발적으로 제거/리네임되는 것을 막는 회귀 가드.
  *
  * Phase 7에서 backend 가 각 엔드포인트를 구현하면
  * `frontend-contract.test.ts` 의 라이브 호출 케이스가 추가되어 본 가드를 졸업한다.
  *
- * Source: apps/frontend/openapi.yaml
+ * Step 3 (2026-04-30): SPEC 경로가 frontend → packages/contracts로 이동.
+ * Source: packages/contracts/openapi.yaml
  */
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -16,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SPEC = resolve(__dirname, '..', '..', '..', 'frontend', 'openapi.yaml');
+const SPEC = resolve(__dirname, '..', '..', '..', '..', 'packages', 'contracts', 'openapi.yaml');
 const yaml = readFileSync(SPEC, 'utf8');
 
 // 단순 토큰 매칭 — `paths:` 블록 안의 `<method>:` 행을 path 별로 수집.
@@ -96,10 +97,10 @@ const TEST_B3_ENDPOINTS = [
   'POST /reports/{id}/send',
 ];
 
-describe('BE-R4 contract mirror — frontend openapi.yaml exposes all PDCA-01 endpoints', () => {
+describe('BE-R4 contract mirror — @all-flow/contracts openapi.yaml exposes all PDCA-01 endpoints', () => {
   for (const ep of PDCA_01_ENDPOINTS) {
     it(`exposes ${ep}`, () => {
-      expect(ops, `missing ${ep} in frontend openapi.yaml`).toContain(ep);
+      expect(ops, `missing ${ep} in @all-flow/contracts openapi.yaml`).toContain(ep);
     });
   }
 
@@ -111,7 +112,7 @@ describe('BE-R4 contract mirror — frontend openapi.yaml exposes all PDCA-01 en
 describe('TEST-B3 contract mirror — comments / notifications / ai / reports', () => {
   for (const ep of TEST_B3_ENDPOINTS) {
     it(`exposes ${ep}`, () => {
-      expect(ops, `missing ${ep} in frontend openapi.yaml`).toContain(ep);
+      expect(ops, `missing ${ep} in @all-flow/contracts openapi.yaml`).toContain(ep);
     });
   }
 });

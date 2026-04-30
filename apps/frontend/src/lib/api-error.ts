@@ -7,6 +7,7 @@
  *
  * Reference: PDCA-01 (foundation/api-contract).
  */
+import type { ErrorResponse } from '@all-flow/shared/errors';
 import { HTTPError, TimeoutError } from 'ky';
 import { ZodError } from 'zod';
 
@@ -75,4 +76,21 @@ export function toApiError(error: unknown): ApiError {
 
 export function toastMessage(error: unknown): string {
   return toApiError(error).message;
+}
+
+/**
+ * Type guard for the BE error envelope shared via `@all-flow/shared`.
+ * Lets FE narrow `unknown` JSON payloads into the wire shape before
+ * surfacing details to UI components.
+ */
+export function isErrorResponseEnvelope(value: unknown): value is ErrorResponse {
+  if (typeof value !== 'object' || value === null) return false;
+  const e = (value as { error?: unknown }).error;
+  if (typeof e !== 'object' || e === null) return false;
+  const obj = e as { code?: unknown; message?: unknown; traceId?: unknown };
+  return (
+    typeof obj.code === 'string' &&
+    typeof obj.message === 'string' &&
+    typeof obj.traceId === 'string'
+  );
 }

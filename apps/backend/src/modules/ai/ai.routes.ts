@@ -1,3 +1,4 @@
+import { ValidationError } from '@all-flow/shared/errors';
 /**
  * AI 라우트 — T-402: `POST /ai/complete` (non-stream + SSE).
  *
@@ -17,7 +18,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ValidationError } from '../../shared/errors.js';
 import { recordAICall } from '../reports/ai-observability.js';
 import type { AIAdapter, AIAdapterRegistry, AIMessage, AIUsage } from './ai-adapter.js';
 import { DEFAULT_THRESHOLD, SOURCES, extractActions } from './extract-actions.js';

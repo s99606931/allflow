@@ -1,10 +1,11 @@
+import { NotFoundError, ValidationError } from '@all-flow/shared/errors';
 /**
  * identity 모듈 — `GET /users/me`, `PATCH /users/me`.
  *
  * GET 동작:
  *  1) `app.authenticate` preHandler가 JWT를 검증하고 `req.user.id`를 주입한다.
  *  2) Prisma에서 사용자 단건을 조회 → soft-delete 제외.
- *  3) frontend openapi.yaml `User` 스키마와 동일한 형태로 직렬화.
+ *  3) @all-flow/contracts `User` 스키마(packages/contracts/openapi.yaml)와 동일한 형태로 직렬화.
  *
  * PATCH 동작:
  *  1) 본인 식별 후 ProfilePatch 입력을 부분 적용한다.
@@ -15,7 +16,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { NotFoundError, ValidationError } from '../../shared/errors.js';
 import { User as UserSchema } from '../../shared/schemas/index.js';
 
 const ProfilePatch = z

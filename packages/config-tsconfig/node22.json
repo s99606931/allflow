@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_comment": "Node.js 22 LTS preset for backend / scripts / pure-Node packages. NodeNext module + ES2022 target. Use for Fastify backend, contracts/shared packages.",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "types": ["node"]
+  }
+}

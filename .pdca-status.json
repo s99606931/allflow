@@ -1,54 +1,30 @@
 {
-  "active_feature": "monorepo-step2-folder-move-2026-04-30",
-  "phase": "step2-do-complete-awaiting-report",
-  "scope": "Step 2 of 8 — git mv project/all-flow-{backend,frontend,infra} → apps/{backend,frontend,infra} + 6 path-edit files (workspace yaml + 2 compose + browser-tester + 2 BE comments/strings)",
-  "documents": {
-    "prd": "docs/00-pm/monorepo-microservices-2026-04-30.prd.md",
-    "plan": "docs/01-plan/features/monorepo-step2-folder-move-2026-04-30.plan.md",
-    "design": "docs/02-design/features/monorepo-step2-folder-move-2026-04-30.design.md"
-  },
-  "previous_cycle": {
-    "feature": "monorepo-microservices-step1-2026-04-30",
-    "phase": "step1-act-complete",
-    "archived": false,
-    "note": "Step 1 root scaffolding (package.json + pnpm-workspace.yaml + turbo.json + tsconfig.base.json) — match_rate 0.9625"
-  },
-  "team": {
-    "lead": "av-do-orchestrator",
-    "members": [
-      "av-base-memory-keeper"
-    ],
-    "skipped": [
-      "av-base-backend-architect (path-only refactor)",
-      "av-base-frontend-architect (path-only refactor)",
-      "av-base-qa-reviewer (게이트 G6/G7/G8 자체 수행)"
-    ]
-  },
-  "rollback": {
-    "baseline_sha": "3437668",
-    "baseline_message": "chore(monorepo): baseline before Step 2 folder move",
-    "step2_sha": "6150d89",
-    "rollback_command": "git reset --hard 3437668 && (cd apps/infra && make down ENV=dev || true)"
-  },
-  "gates": {
-    "G1_dirs_moved": "PASS (apps/{backend,frontend,infra} exists, project/ removed)",
-    "G2_workspaces_yaml": "PASS (apps/backend + apps/frontend registered)",
-    "G3_compose_config": "PASS (docker compose config -q exit 0 for dev + prod)",
-    "G4_dev_healthy": "PASS (4 services healthy after fresh make down/up: postgres+redis+backend+frontend)",
-    "G5_localhost_health": "PASS (curl http://localhost:8080/health = 200, http://localhost/ = 307 → /login per single-port pattern, http://localhost/login = 200)",
-    "G6_playwright_R1_critical": "PASS (full e2e 59-60/62, baseline 56/62 — IMPROVED by 3-4)",
-    "G7_be_typecheck_test": "PASS (3 pre-existing errors HEAD-equivalent, 295/295 unit+integration)",
-    "G8_fe_typecheck_test": "PASS (0 errors, vitest 71/71)",
-    "G9_history_preserved": "PASS (git rename detection, R100 for most files, R99 for seed.ts)",
-    "G10_prisma_unchanged": "PASS (schema.prisma R100 pure rename, content diff empty)"
-  },
-  "match_rate_target": 0.90,
-  "next_cycles": [
-    "monorepo-step3-contracts (packages/contracts + openapi.yaml SOR + codemod)",
-    "monorepo-step4-shared (envelope/errors/IDs)",
-    "monorepo-step5-config-presets (config-eslint + config-tsconfig)",
-    "monorepo-step6-catalog (zod/types/typescript/vitest catalog)",
-    "monorepo-step7-gha-cache (turbo cache + --filter)",
-    "monorepo-step8-otel (optional, Phase 2 trigger)"
-  ]
+  "active_feature": null,
+  "phase": "idle",
+  "archived_features": {
+    "monorepo-microservices-2026-04-30": {
+      "phase": "archived",
+      "matchRate": 0.97,
+      "matchRateNote": "cycle average over 8 Steps + 1 verification (Step 1: 0.96, Step 2~8: 0.97~0.99)",
+      "iterationCount": 9,
+      "startedAt": "2026-04-30T11:00:00+09:00",
+      "archivedAt": "2026-04-30T15:30:00+09:00",
+      "archivedTo": "docs/archive/2026-04/monorepo-microservices-2026-04-30/",
+      "summary": "pnpm 10 workspaces + Turborepo 2.x monorepo + packages/{contracts, shared, config-tsconfig, config-eslint} + pnpm catalog + GHA CI matrix + dev compose monorepo 정합 + OpenTelemetry default-off + MSA 분리 트리거 결정문서. Modular Monolith 유지 (Phase 3 비추천). dev parity 무회귀.",
+      "highlights": {
+        "tests": "BE 295/295 + FE 71/71 + shared 45/45 + contracts PASS = 411/411 vitest",
+        "playwright": "58-59/62 (baseline 56-60 범위 내, 회귀 0)",
+        "prisma_changes": 0,
+        "single_port_localhost_regression": 0,
+        "new_packages": ["@all-flow/contracts", "@all-flow/shared", "@all-flow/config-eslint", "@all-flow/config-tsconfig"],
+        "catalog_unified_deps": ["zod", "typescript", "vitest", "@types/node", "tsup", "@biomejs/biome"],
+        "active_followups": [
+          "docs/02-design/decision-records/msa-split-triggers.md (Phase 2 트리거 가이드, archive 미이관)",
+          "Vercel TURBO_TOKEN 등록 + CI cache hit 80% 실측",
+          "--profile observability up 실측 (otel-collector + tempo)",
+          "be-test-tracks.test.ts 3 carry-over typecheck 해소"
+        ]
+      }
+    }
+  }
 }

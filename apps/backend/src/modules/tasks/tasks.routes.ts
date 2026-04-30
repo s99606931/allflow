@@ -1,7 +1,8 @@
+import { ForbiddenError, NotFoundError, ValidationError } from '@all-flow/shared/errors';
 /**
  * tasks 모듈 — `GET/POST /tasks` + `PATCH /tasks/:id` + `DELETE /tasks/:id`.
  *
- * OpenAPI 컨트랙트(frontend openapi.yaml `Task`):
+ * OpenAPI 컨트랙트(@all-flow/contracts `Task`, packages/contracts/openapi.yaml):
  *   - 응답: { id, title, status, proj, assignee, due, priority, tags }
  *     - `proj`     = project.name
  *     - `assignee` = assignee.name (없으면 빈 문자열)
@@ -17,7 +18,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ForbiddenError, NotFoundError, ValidationError } from '../../shared/errors.js';
 import {
   StatusKey,
   TaskCreate as TaskCreateApi,

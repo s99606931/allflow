@@ -1,3 +1,4 @@
+import { AppError, type ErrorResponse } from '@all-flow/shared/errors';
 /**
  * Fastify 글로벌 에러 핸들러 + 404 핸들러.
  *
@@ -12,7 +13,6 @@
 import type { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 import { ZodError } from 'zod';
-import { AppError, type ErrorResponse } from '../shared/errors.js';
 
 function buildResponse(args: {
   code: string;

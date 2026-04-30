@@ -1,3 +1,4 @@
+import { NotFoundError } from '@all-flow/shared/errors';
 /**
  * notifications 모듈 — `/notifications` REST.
  *
@@ -14,7 +15,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { NotFoundError } from '../../shared/errors.js';
 import { Notification as NotificationSchema } from '../../shared/schemas/index.js';
 
 const ListQuery = z.object({

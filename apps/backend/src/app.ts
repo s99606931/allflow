@@ -16,6 +16,7 @@ import { identityRoutes } from './modules/identity/identity.routes.js';
 import { issuesRoutes } from './modules/issues/issues.routes.js';
 import { notificationsRoutes } from './modules/notifications/notifications.routes.js';
 import { orgRoutes } from './modules/org/org.routes.js';
+import { otelRoutes } from './modules/otel/otel.routes.js';
 import { projectsRoutes } from './modules/projects/projects.routes.js';
 import { realtimeBus } from './modules/realtime/realtime-bus.js';
 import { realtimeRoutes } from './modules/realtime/realtime.routes.js';
@@ -47,6 +48,8 @@ export interface BuildAppOptions {
   env?: Env;
   registerDb?: boolean;
   registerRoutes?: boolean;
+  // OTel 상태 — server.ts 에서 initOtel() 결과를 주입. 미지정 시 disabled 표시.
+  otelState?: { enabled: boolean; serviceName: string; endpoint: string | null };
 }
 
 export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyInstance> {
@@ -78,6 +81,19 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   // health는 prefix 없이(외부 healthcheck용) + /api/v1 prefix(FE catch-all 통과용) 이중 등록.
   await app.register(healthRoutes);
   await app.register(healthRoutes, { prefix: '/api/v1' });
+
+  // OTel 진단 endpoint — DB/Auth 없이도 동작 (Step 8 default off 검증용).
+  const otelState = options.otelState ?? {
+    enabled: false,
+    serviceName: env.OTEL_SERVICE_NAME ?? 'all-flow-backend',
+    endpoint: null,
+  };
+  await app.register(
+    async (api) => {
+      await api.register(otelRoutes, { state: otelState });
+    },
+    { prefix: '/api/v1' },
+  );
 
   if (registerDb && registerRoutes) {
     const aiRegistry = buildDefaultAIRegistry({ OPENAI_API_KEY: env.OPENAI_API_KEY });

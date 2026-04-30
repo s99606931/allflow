@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * openapi-contract-check.mjs — frontend openapi.yaml ↔ backend 라우트 커버리지 검증 (T-601).
+ * openapi-contract-check.mjs — @all-flow/contracts(packages/contracts/openapi.yaml) ↔
+ * backend 라우트 커버리지 검증 (T-601).
  *
  * 동작:
- *   1) frontend openapi.yaml 의 paths × method 모음을 추출 (소스 컨트랙트).
+ *   1) packages/contracts/openapi.yaml(SOR) 의 paths × method 모음을 추출.
  *   2) 백엔드 src/modules/**\/*.routes.ts 정적 스캔 → app.get/post/patch/delete 경로 추출.
  *   3) 컨트랙트에 있으나 백엔드에 없는 라우트(미구현) / 백엔드에만 있는 라우트(외부 비공개)
  *      를 분리해 출력.
@@ -12,6 +13,8 @@
  * 사용:
  *   node scripts/openapi-contract-check.mjs           # 리포트만
  *   node scripts/openapi-contract-check.mjs --strict  # 미구현 시 실패
+ *
+ * Step 3 (2026-04-30): SPEC 경로가 frontend → packages/contracts로 이동.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -19,7 +22,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const SPEC = resolve(ROOT, '..', 'all-flow-frontend', 'openapi.yaml');
+const SPEC = resolve(ROOT, '..', '..', 'packages', 'contracts', 'openapi.yaml');
 const MODULES = resolve(ROOT, 'src', 'modules');
 
 const STRICT = process.argv.includes('--strict');
@@ -32,7 +35,7 @@ function fail(msg) {
 if (!existsSync(SPEC)) fail(`openapi.yaml not found: ${SPEC}`);
 if (!existsSync(MODULES)) fail(`modules dir not found: ${MODULES}`);
 
-// ---------- 1) frontend openapi.yaml 의 paths × method 추출 ----------
+// ---------- 1) packages/contracts/openapi.yaml 의 paths × method 추출 ----------
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
 
 function extractContract(text) {
@@ -80,7 +83,8 @@ function walk(dir) {
   return out;
 }
 
-const ROUTE_RE = /app\.(get|post|put|patch|delete)\(\s*['"]([^'"]+)['"]/g;
+// Step 3 (2026-04-30): allow generic type args, e.g. app.post<{ Params: ... }>('/path', ...).
+const ROUTE_RE = /app\.(get|post|put|patch|delete)(?:<[^>]*>)?\(\s*['"]([^'"]+)['"]/g;
 
 const backend = new Set();
 for (const file of walk(MODULES)) {

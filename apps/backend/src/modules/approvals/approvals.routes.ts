@@ -1,3 +1,4 @@
+import { ForbiddenError, NotFoundError, ValidationError } from '@all-flow/shared/errors';
 /**
  * approvals 모듈 — 결재 도메인 (BE-N1).
  *
@@ -16,7 +17,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ForbiddenError, NotFoundError, ValidationError } from '../../shared/errors.js';
 
 type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 

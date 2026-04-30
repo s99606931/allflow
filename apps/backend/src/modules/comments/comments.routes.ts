@@ -1,3 +1,4 @@
+import { ForbiddenError, NotFoundError, ValidationError } from '@all-flow/shared/errors';
 /**
  * comments 서브리소스 — task / issue 공통.
  *
@@ -18,7 +19,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ForbiddenError, NotFoundError, ValidationError } from '../../shared/errors.js';
 
 const CommentCreate = z.object({
   body: z.string().min(1).max(4000),

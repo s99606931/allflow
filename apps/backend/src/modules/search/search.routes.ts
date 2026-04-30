@@ -1,3 +1,4 @@
+import { ForbiddenError } from '@all-flow/shared/errors';
 /**
  * search 모듈 — POST /search/semantic
  *
@@ -8,7 +9,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ForbiddenError } from '../../shared/errors.js';
 import { type SemanticHit, semanticSearch } from './search.service.js';
 
 const SearchBody = z.object({

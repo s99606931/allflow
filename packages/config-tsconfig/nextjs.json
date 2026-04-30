@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_comment": "Next.js 16 preset for frontend. Bundler module resolution + DOM lib + JSX. Excludes noUncheckedIndexedAccess to match current frontend authoring style; tighten in a follow-up cycle.",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["dom", "dom.iterable", "ESNext"],
+    "jsx": "preserve",
+    "allowJs": true,
+    "noEmit": true,
+    "incremental": true,
+    "noUncheckedIndexedAccess": false
+  }
+}

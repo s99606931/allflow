@@ -1,5 +1,21 @@
-# Owner: av-oss-test-engineer
+# Owner: av-oss-test-engineer (Step 7 — monorepo-microservices-2026-04-30)
 # CI matrix workflow — runs on every PR + main push
+#
+# Pipeline:
+#   lint-docs              : OSS file presence + markdown lint (best-effort)
+#   validate-claude-config : .claude/registry/components.json integrity
+#   actionlint             : workflow yaml syntactic validation
+#   monorepo               : matrix [lint|typecheck|build|test] x Node 22, turbo --affected
+#   ci-status              : aggregates all gates (branch-protection target)
+#
+# Cache layers:
+#   - pnpm store (action-setup + setup-node cache: 'pnpm')
+#   - .turbo/   (actions/cache@v4, key includes pnpm-lock.yaml + turbo.json hash)
+#   - apps/frontend/.next/cache
+#
+# Remote cache (optional; auto-falls-back to GHA local cache when secrets unset):
+#   TURBO_TOKEN, TURBO_TEAM  → Vercel Remote Cache (default)
+#   TURBO_API                → self-hosted (e.g. ducktors/turborepo-remote-cache)
 name: CI
 
 on:
@@ -10,6 +26,15 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  TURBO_REMOTE_CACHE_TIMEOUT: "60"
 
 jobs:
   lint-docs:
@@ -51,3 +76,108 @@ jobs:
               sys.exit(1)
           print("registry OK")
           PY
+
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: actionlint
+        uses: raven-actions/actionlint@v2
+        with:
+          files: ".github/workflows/*.yml"
+
+  monorepo:
+    name: turbo ${{ matrix.task }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ["22"]
+        task: [lint, typecheck, build, test]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "10.33.0"
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+
+      - name: Restore turbo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .turbo
+            apps/frontend/.next/cache
+          key: turbo-${{ runner.os }}-${{ matrix.task }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}
+          restore-keys: |
+            turbo-${{ runner.os }}-${{ matrix.task }}-
+            turbo-${{ runner.os }}-
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Prisma generate
+        if: matrix.task == 'build' || matrix.task == 'typecheck' || matrix.task == 'test'
+        run: pnpm --filter @all-flow/backend prisma:generate
+
+      - name: Determine base ref
+        id: baseref
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "ref=origin/${{ github.base_ref }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=HEAD~1" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: turbo run ${{ matrix.task }} --affected
+        env:
+          TURBO_RUN_SUMMARY: "true"
+        run: |
+          pnpm exec turbo run ${{ matrix.task }} \
+            --affected \
+            --remote-cache-timeout="${TURBO_REMOTE_CACHE_TIMEOUT}" \
+            --summarize
+
+      - name: Upload turbo summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: turbo-summary-${{ matrix.task }}
+          path: .turbo/runs/*.json
+          if-no-files-found: ignore
+
+  ci-status:
+    name: CI status
+    runs-on: ubuntu-latest
+    needs: [lint-docs, validate-claude-config, actionlint, monorepo]
+    if: always()
+    steps:
+      - name: Aggregate gate results
+        run: |
+          fail=0
+          for j in lint-docs validate-claude-config actionlint monorepo; do
+            r=""
+            case "$j" in
+              lint-docs)              r="${{ needs.lint-docs.result }}";;
+              validate-claude-config) r="${{ needs.validate-claude-config.result }}";;
+              actionlint)             r="${{ needs.actionlint.result }}";;
+              monorepo)               r="${{ needs.monorepo.result }}";;
+            esac
+            echo "$j: $r"
+            if [ "$r" != "success" ]; then
+              fail=1
+            fi
+          done
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::One or more required CI gates failed"
+            exit 1
+          fi
+          echo "All gates PASS"

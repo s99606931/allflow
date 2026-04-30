@@ -1,20 +1,7 @@
 {
+  "extends": "@all-flow/config-tsconfig/node22.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "lib": ["ES2022"],
-    "types": ["node"],
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": false,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -26,7 +13,6 @@
     "paths": {
       "@/*": ["src/*"]
     },
-    "isolatedModules": true,
     "verbatimModuleSyntax": true
   },
   "include": ["src/**/*"],

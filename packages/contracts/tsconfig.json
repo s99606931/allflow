@@ -1,0 +1,13 @@
+{
+  "extends": "@all-flow/config-tsconfig/base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "target": "ES2022",
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "scripts"]
+}

@@ -1,7 +1,8 @@
+import { ConflictError, NotFoundError, ValidationError } from '@all-flow/shared/errors';
 /**
  * projects 모듈 — `GET/POST /projects`, `GET/PATCH /projects/:id`.
  *
- * OpenAPI 컨트랙트: frontend openapi.yaml `Project` 형태 그대로 응답.
+ * OpenAPI 컨트랙트: @all-flow/contracts `Project` 형태 그대로 응답 (packages/contracts/openapi.yaml).
  *  - members: ProjectMember[].userId 목록
  *  - tasks: { total, done } 집계
  *
@@ -13,7 +14,6 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ConflictError, NotFoundError, ValidationError } from '../../shared/errors.js';
 import {
   ProjectCreate,
   ProjectPatch,

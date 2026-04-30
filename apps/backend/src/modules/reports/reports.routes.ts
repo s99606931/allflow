@@ -1,8 +1,9 @@
+import { ForbiddenError, ValidationError } from '@all-flow/shared/errors';
 import type { Prisma } from '@prisma/client';
 /**
  * Reports 라우트 — T-404 (POST /reports/weekly), T-405 (POST /reports/monthly).
  *
- * 컨트랙트(frontend openapi.yaml `Report`):
+ * 컨트랙트(@all-flow/contracts `Report`, packages/contracts/openapi.yaml):
  *   - 응답: { id, kind, periodStart, periodEnd, generatedAt, tldr, kpis[], sections[] }
  *   - kpis: ≥ 3, sections: ≥ 3 (acceptance criteria)
  *
@@ -16,7 +17,6 @@ import type { Prisma } from '@prisma/client';
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ForbiddenError, ValidationError } from '../../shared/errors.js';
 import type { AIAdapterRegistry } from '../ai/ai-adapter.js';
 import { recordAICall } from './ai-observability.js';
 import { type BuildReportOutput, type ReportPrismaClient, buildReport } from './report-builder.js';

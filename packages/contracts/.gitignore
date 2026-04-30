@@ -1,0 +1,5 @@
+dist/
+src/zod/*.generated.*
+src/types/*.generated.*
+.tsbuildinfo
+node_modules/
