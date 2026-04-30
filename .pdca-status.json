@@ -1,17 +1,17 @@
 {
-  "active_feature": "monorepo-microservices-2026-04-30",
-  "phase": "step1-do-complete-awaiting-act",
-  "scope": "Step 1 of 8 — root scaffolding only (package.json + pnpm-workspace.yaml + turbo.json + tsconfig.base.json)",
+  "active_feature": "monorepo-step2-folder-move-2026-04-30",
+  "phase": "step2-do-complete-awaiting-report",
+  "scope": "Step 2 of 8 — git mv project/all-flow-{backend,frontend,infra} → apps/{backend,frontend,infra} + 6 path-edit files (workspace yaml + 2 compose + browser-tester + 2 BE comments/strings)",
   "documents": {
     "prd": "docs/00-pm/monorepo-microservices-2026-04-30.prd.md",
-    "plan": "docs/01-plan/features/monorepo-microservices-2026-04-30.plan.md",
-    "design": "docs/02-design/features/monorepo-microservices-2026-04-30.design.md"
+    "plan": "docs/01-plan/features/monorepo-step2-folder-move-2026-04-30.plan.md",
+    "design": "docs/02-design/features/monorepo-step2-folder-move-2026-04-30.design.md"
   },
   "previous_cycle": {
-    "feature": "single-port-localhost-2026-04-30",
-    "phase": "design-complete-awaiting-approval",
+    "feature": "monorepo-microservices-step1-2026-04-30",
+    "phase": "step1-act-complete",
     "archived": false,
-    "note": "이전 사이클 stack-approval 게이트 보류 상태. 본 사이클(monorepo Step 1)은 root scaffolding만으로 비파괴, project/ 영역 미수정"
+    "note": "Step 1 root scaffolding (package.json + pnpm-workspace.yaml + turbo.json + tsconfig.base.json) — match_rate 0.9625"
   },
   "team": {
     "lead": "av-do-orchestrator",
@@ -19,29 +19,36 @@
       "av-base-memory-keeper"
     ],
     "skipped": [
-      "av-base-backend-architect (project/ 코드 변경 0건)",
-      "av-base-frontend-architect (project/ 코드 변경 0건)",
-      "av-base-qa-reviewer (회귀 게이트는 BE/FE 기존 test 명령으로 자체 수행)"
+      "av-base-backend-architect (path-only refactor)",
+      "av-base-frontend-architect (path-only refactor)",
+      "av-base-qa-reviewer (게이트 G6/G7/G8 자체 수행)"
     ]
   },
-  "gates": {
-    "G1_files_created": "PASS",
-    "G2_syntax_valid": "PASS",
-    "G3_be_typecheck_test": "PASS (3 pre-existing errors HEAD-equivalent, unit+int 295/295)",
-    "G4_fe_typecheck_test": "PASS (0 errors, vitest 71/71)",
-    "G7_project_diff_zero": "PASS (cycle adds 6 files at root only)",
-    "G8_registry_no_diff": "PASS",
-    "G5_dev_localhost": "DEFERRED (manual — user docker-compose invocation)",
-    "G6_playwright_56of62": "DEFERRED (manual — root install 미실행이므로 회귀 자명 0)"
+  "rollback": {
+    "baseline_sha": "3437668",
+    "baseline_message": "chore(monorepo): baseline before Step 2 folder move",
+    "step2_sha": "6150d89",
+    "rollback_command": "git reset --hard 3437668 && (cd apps/infra && make down ENV=dev || true)"
   },
-  "match_rate": 0.9625,
+  "gates": {
+    "G1_dirs_moved": "PASS (apps/{backend,frontend,infra} exists, project/ removed)",
+    "G2_workspaces_yaml": "PASS (apps/backend + apps/frontend registered)",
+    "G3_compose_config": "PASS (docker compose config -q exit 0 for dev + prod)",
+    "G4_dev_healthy": "PASS (4 services healthy after fresh make down/up: postgres+redis+backend+frontend)",
+    "G5_localhost_health": "PASS (curl http://localhost:8080/health = 200, http://localhost/ = 307 → /login per single-port pattern, http://localhost/login = 200)",
+    "G6_playwright_R1_critical": "PASS (full e2e 59-60/62, baseline 56/62 — IMPROVED by 3-4)",
+    "G7_be_typecheck_test": "PASS (3 pre-existing errors HEAD-equivalent, 295/295 unit+integration)",
+    "G8_fe_typecheck_test": "PASS (0 errors, vitest 71/71)",
+    "G9_history_preserved": "PASS (git rename detection, R100 for most files, R99 for seed.ts)",
+    "G10_prisma_unchanged": "PASS (schema.prisma R100 pure rename, content diff empty)"
+  },
+  "match_rate_target": 0.90,
   "next_cycles": [
-    "monorepo-step2-folder-move (git mv project/all-flow-* → apps/*)",
-    "monorepo-step3-contracts (packages/contracts + openapi.yaml SOR)",
-    "monorepo-step4-shared",
-    "monorepo-step5-config-presets",
-    "monorepo-step6-catalog",
-    "monorepo-step7-gha-cache",
+    "monorepo-step3-contracts (packages/contracts + openapi.yaml SOR + codemod)",
+    "monorepo-step4-shared (envelope/errors/IDs)",
+    "monorepo-step5-config-presets (config-eslint + config-tsconfig)",
+    "monorepo-step6-catalog (zod/types/typescript/vitest catalog)",
+    "monorepo-step7-gha-cache (turbo cache + --filter)",
     "monorepo-step8-otel (optional, Phase 2 trigger)"
   ]
 }
