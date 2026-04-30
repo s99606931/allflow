@@ -6,7 +6,7 @@
  */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Calendar, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/primitives';
 import { useTranslation } from '@/lib/i18n';
@@ -20,21 +20,16 @@ const STORAGE_KEY = 'allflow.calendarLink';
 
 export function CalendarLinkCard() {
   const { t } = useTranslation();
-  const [state, setState] = useState<LinkState>({});
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      setState(JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '{}'));
-    } catch {
-      setState({});
-    }
-  }, []);
+  const [state] = useState<LinkState>(() => {
+    if (typeof window === 'undefined') return {};
+    try { return JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '{}'); }
+    catch { return {}; }
+  });
 
   const start = (provider: 'google' | 'outlook') => {
     // Mock OAuth: in production we'd `window.location.href = '/api/auth/<provider>'`.
     // For now we send the user straight to the success callback.
-    window.location.href = `/oauth-callback?provider=${provider}&status=success`;
+    window.location.assign(`/oauth-callback?provider=${provider}&status=success`);
   };
 
   return (

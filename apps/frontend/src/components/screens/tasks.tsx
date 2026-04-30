@@ -22,7 +22,7 @@ export function TasksPage() {
   const [openTask, setOpenTask] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'mine' | 'today' | 'overdue'>('all');
   const [search, setSearch] = useState('');
-  const { data: tasks = [], isLoading } = useTasks();
+  const { data: tasks = [] } = useTasks();
   const { data: projects = [] } = useProjects();
   const { update, create } = useTaskMutations();
 
@@ -90,7 +90,6 @@ export function TasksPage() {
           <Card>
             {filtered.map(t => {
               const u = userById(t.assignee);
-              const proj = projects.find(p => p.id === t.proj);
               return (
                 <button key={t.id} onClick={() => setOpenTask(t.id)}
                   className="w-full grid grid-cols-[20px_80px_1fr_120px_70px_100px_24px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors text-left">

@@ -431,7 +431,7 @@ function UserMenu({ user }: { user: UserMenuUser }) {
 							label="계정 설정"
 							onClick={() => {
 								setOpen(false);
-								router.push("/settings#account");
+								router.push("/settings#security");
 							}}
 						/>
 

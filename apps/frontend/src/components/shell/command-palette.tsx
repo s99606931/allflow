@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TEAM, PROJECTS, TASKS, ISSUES, NAV } from '@/lib/fixtures';
-import { Avatar, Badge } from '@/components/ui/primitives';
+import { Avatar } from '@/components/ui/primitives';
 import {
   Search, ArrowRight, Sparkles, X, Hash, FolderKanban, CheckSquare,
-  AlertCircle, User as UserIcon, FileText, Settings as SettingsIcon, ChevronRight,
+  AlertCircle, User as UserIcon, FileText,
 } from 'lucide-react';
 
 interface Hit {
@@ -69,6 +69,7 @@ export function CommandPalette() {
     return () => window.removeEventListener('allflow:cmdk', onTrigger);
   }, []);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (open) {
       setQ('');
@@ -76,6 +77,7 @@ export function CommandPalette() {
       requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const hits = useMemo(() => buildHits(q), [q]);
 
@@ -83,6 +85,7 @@ export function CommandPalette() {
   const groups = useMemo(() => groupHits(hits), [hits]);
   const flat = useMemo(() => groups.flatMap(g => g.items), [groups]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setActiveIdx(0); }, [q]);
 
   const go = (h: Hit) => {
@@ -97,7 +100,7 @@ export function CommandPalette() {
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, flat.length - 1)); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); }
-    else if (e.key === 'Enter')  { e.preventDefault(); flat[activeIdx] && go(flat[activeIdx]); }
+    else if (e.key === 'Enter')  { e.preventDefault(); if (flat[activeIdx]) go(flat[activeIdx]!); }
   };
 
   if (!open) return null;

@@ -10,7 +10,7 @@
 
 import { useMemo, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/primitives';
-import { Dialog, DialogField, DialogFooter, Select, TextInput, Textarea } from '@/components/ui/dialog';
+import { Dialog, DialogField, DialogFooter, TextInput, Textarea } from '@/components/ui/dialog';
 import { useEventMutations } from '@/lib/hooks/use-data';
 import { TEAM } from '@/lib/fixtures';
 import { useTranslation } from '@/lib/i18n';

@@ -61,7 +61,6 @@ export function t(key: string, vars?: Record<string, string | number>): string {
   const dict = MESSAGES[_locale] ?? {};
   const raw = dict[key] ?? MESSAGES.ko[key] ?? key;
   if (raw === key && process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line no-console
     console.warn(`[i18n] missing key: "${key}"`);
   }
   if (!vars) return raw;

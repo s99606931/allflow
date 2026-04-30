@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Avatar, Button, IconButton } from '@/components/ui/primitives';
 import { userById } from '@/lib/fixtures';
 import { FileText, Plus, Search, Sparkles, Star, ChevronRight, Hash, Clock } from 'lucide-react';
@@ -9,12 +9,9 @@ import { useDocs } from '@/lib/hooks/use-data';
 
 export function DocsPage() {
   const { data: docs = [], isLoading, error } = useDocs();
-  const [active, setActive] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const active = selectedId ?? docs[0]?.id ?? null;
   const [createOpen, setCreateOpen] = useState(false);
-
-  useEffect(() => {
-    if (!active && docs.length > 0) setActive(docs[0]!.id);
-  }, [active, docs]);
 
   const activeDoc = docs.find(d => d.id === active) ?? null;
 
@@ -42,7 +39,7 @@ export function DocsPage() {
               {docs.map(d => {
                 const u = userById(d.ownerId);
                 return (
-                  <button key={d.id} onClick={() => setActive(d.id)}
+                  <button key={d.id} onClick={() => setSelectedId(d.id)}
                     className={`w-full flex items-center gap-2 px-2 h-8 rounded text-[12.5px] transition-colors ${active === d.id ? 'bg-accent-soft text-accent-strong font-semibold' : 'text-fg-1 hover:bg-hover'}`}>
                     <FileText size={12} className="shrink-0" />
                     <span className="flex-1 text-left truncate">{d.title}</span>

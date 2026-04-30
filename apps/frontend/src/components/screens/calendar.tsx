@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Card, CardBody, Avatar, Button } from '@/components/ui/primitives';
 import { userById } from '@/lib/fixtures';
 import { ChevronLeft, ChevronRight, Plus, Video, Sparkles } from 'lucide-react';
@@ -37,12 +37,7 @@ export function CalendarPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [detail, setDetail] = useState<EventLike | null>(null);
 
-  const [window, setWindow] = useState(() => ({
-    from: '',
-    to: '',
-    days: [] as { label: string; date: string }[],
-  }));
-  useEffect(() => { setWindow(computeWeekWindow()); }, []);
+  const [window] = useState(computeWeekWindow);
   const { data: events = [], isLoading, error } = useEvents({ from: window.from, to: window.to });
 
   const isoEvents: EventLike[] = events.map(e => ({

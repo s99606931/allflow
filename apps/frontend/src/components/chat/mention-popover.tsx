@@ -54,6 +54,7 @@ export function MentionPopover({ open, onSelect, onClose, className }: Props) {
             <button
               type="button"
               role="option"
+              aria-selected={false}
               onClick={() => onSelect(user)}
               className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] hover:bg-hover"
             >

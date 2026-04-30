@@ -1,11 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Card, Avatar, Badge, Button, IconButton } from '@/components/ui/primitives';
+import { Card, Badge, Button, IconButton } from '@/components/ui/primitives';
 import { userById } from '@/lib/fixtures';
 import { useNotifications, useNotificationMutations } from '@/lib/hooks/use-data';
 import {
-  AlertCircle, AtSign, Bell, CheckCircle2, GitMerge, Sparkles,
+  AlertCircle, AtSign, Bell, Sparkles,
   Filter, Settings2, MessageSquare,
 } from 'lucide-react';
 

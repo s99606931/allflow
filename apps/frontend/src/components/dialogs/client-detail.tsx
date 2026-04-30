@@ -7,8 +7,8 @@
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
-import { Plus, X } from 'lucide-react';
-import { Avatar, Button, IconButton } from '@/components/ui/primitives';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/primitives';
 import { Dialog, DialogField, DialogFooter, Select, Textarea } from '@/components/ui/dialog';
 import { ActivityTimeline, type CrmActivity, type CrmStage } from './activity-timeline';
 import { useTranslation } from '@/lib/i18n';

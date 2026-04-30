@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Avatar, Badge, Button, IconButton } from '@/components/ui/primitives';
+import { useMemo, useState } from 'react';
+import { Avatar, Button, IconButton } from '@/components/ui/primitives';
 import { userById } from '@/lib/fixtures';
-import { Hash, Lock, Plus, Search, Smile, Paperclip, AtSign, Sparkles, ArrowUp, MessageSquare, Pin, X } from 'lucide-react';
+import { Hash, Lock, Plus, Search, Sparkles, MessageSquare, Pin, X } from 'lucide-react';
 import { Composer } from '@/components/chat/composer';
 import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel';
 import { MentionPopover } from '@/components/chat/mention-popover';
@@ -23,16 +23,13 @@ export function ChatPage() {
   const { t } = useTranslation();
   const { data: me } = useMe();
   const { data: channels = [], isLoading: channelsLoading, error: channelsError } = useChannels();
-  const [active, setActive] = useState<string>('');
+  const [activeId, setActiveId] = useState<string>('');
+  const active = activeId || channels[0]?.id || '';
   const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [openThreadId, setOpenThreadId] = useState<number | null>(null);
   const [mentionOpen, setMentionOpen] = useState(false);
   const [extractedDismissed, setExtractedDismissed] = useState(false);
   const taskMutations = useTaskMutations();
-
-  useEffect(() => {
-    if (!active && channels.length > 0) setActive(channels[0]!.id);
-  }, [active, channels]);
 
   const publicChannels = channels.filter(c => c.kind === 'public' || c.kind === 'private');
   const dmChannels = channels.filter(c => c.kind === 'dm');
@@ -89,7 +86,7 @@ export function ChatPage() {
             <div className="px-3 py-4 text-[12px] text-fg-3">채널이 없습니다.</div>
           )}
           {publicChannels.map(c => (
-            <button key={c.id} onClick={() => setActive(c.id)}
+            <button key={c.id} onClick={() => setActiveId(c.id)}
               className={`w-full flex items-center gap-2 px-2 h-7 rounded text-[12.5px] transition-colors ${
                 active === c.id ? 'bg-accent-soft text-accent-strong font-semibold' : 'text-fg-1 hover:bg-hover'
               }`}>
@@ -104,7 +101,7 @@ export function ChatPage() {
                 <button className="text-fg-3 hover:text-fg-1"><Plus size={12} /></button>
               </div>
               {dmChannels.map(c => (
-                <button key={c.id} onClick={() => setActive(c.id)}
+                <button key={c.id} onClick={() => setActiveId(c.id)}
                   className={`w-full flex items-center gap-2 px-2 h-7 rounded text-[12.5px] transition-colors ${
                     active === c.id ? 'bg-accent-soft text-accent-strong font-semibold' : 'text-fg-1 hover:bg-hover'
                   }`}>
