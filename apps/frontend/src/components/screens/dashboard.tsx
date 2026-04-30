@@ -5,11 +5,14 @@ import { useMe, useProjects, useTasks } from '@/lib/hooks/use-data';
 import { userById } from '@/lib/fixtures';
 import { CheckCircle2, Circle, MoreHorizontal, Sparkles, Plus, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
+import { TaskCreateDialog } from '@/components/dialogs/task-create-dialog';
 
 export function DashboardPage() {
   const { data: me } = useMe();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
   const todoCount = tasks.filter(t => t.status !== 'done').length;
   const doneToday = tasks.filter(t => t.status === 'done').length;
@@ -33,9 +36,10 @@ export function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary"><Plus size={14} /> 태스크 추가</Button>
+          <Button variant="secondary" onClick={() => setTaskDialogOpen(true)}><Plus size={14} /> 태스크 추가</Button>
           <Button variant="primary"><Sparkles size={14} /> AI에게 요청</Button>
         </div>
+        <TaskCreateDialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen} />
       </div>
 
       {/* Top metrics row */}

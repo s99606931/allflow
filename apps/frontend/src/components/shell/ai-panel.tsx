@@ -26,7 +26,7 @@ interface ChatMessage {
 	text: string;
 	chips?: string[];
 	citations?: unknown[];
-	toolCalls?: unknown;
+	toolCalls?: unknown[] | Record<string, unknown>;
 	streaming?: boolean;
 }
 
@@ -64,16 +64,8 @@ function Message({
 					content={message.text}
 					className="text-[13px] text-fg leading-relaxed"
 				/>
-				{message.toolCalls && (
-					<details className="mt-1 text-[11px] text-fg-3 border border-border rounded p-1.5">
-						<summary className="cursor-pointer">
-							도구 호출{" "}
-							{Array.isArray(message.toolCalls) ? message.toolCalls.length : 1}건
-						</summary>
-						<pre className="mt-1 whitespace-pre-wrap text-[10.5px] overflow-auto max-h-[120px]">
-							{JSON.stringify(message.toolCalls, null, 2)}
-						</pre>
-					</details>
+				{message.toolCalls != null && (
+					<ToolCallTrace toolCalls={message.toolCalls} />
 				)}
 				{message.chips && (
 					<div className="flex flex-wrap gap-1.5">
@@ -290,6 +282,18 @@ export function AIPanel() {
 				</div>
 			</div>
 		</aside>
+	);
+}
+
+function ToolCallTrace({ toolCalls }: { toolCalls: unknown[] | Record<string, unknown> }) {
+	const count = Array.isArray(toolCalls) ? toolCalls.length : 1;
+	return (
+		<details className="mt-1 text-[11px] text-fg-3 border border-border rounded p-1.5">
+			<summary className="cursor-pointer">도구 호출 {count}건</summary>
+			<pre className="mt-1 whitespace-pre-wrap text-[10.5px] overflow-auto max-h-[120px]">
+				{JSON.stringify(toolCalls, null, 2)}
+			</pre>
+		</details>
 	);
 }
 

@@ -34,6 +34,20 @@ const baseApi = {
   me: async (): Promise<User> =>
     USE_MOCK ? (await sleep(), ME) : parsed(http.get('users/me').json(), UserSchema),
 
+  listUsers: async (): Promise<User[]> => {
+    if (USE_MOCK) {
+      await sleep();
+      const { TEAM } = await import('./fixtures');
+      return [...TEAM];
+    }
+    return parsed(http.get('users').json(), z.array(UserSchema));
+  },
+
+  inviteUserByEmail: async (email: string): Promise<{ id: string; pending: true }> =>
+    USE_MOCK
+      ? (await sleep(), { id: `inv-${Date.now().toString(36)}`, pending: true })
+      : http.post('users/invite', { json: { email } }).json<{ id: string; pending: true }>(),
+
   /* Projects --------------------------------------------------------------- */
   listProjects: async (): Promise<Project[]> =>
     USE_MOCK

@@ -30,21 +30,28 @@ export function ResourcesPage() {
   const { data: resources = [], isLoading, error } = useResources();
   const [kind, setKind] = useState<'all' | ResourceKind>('all');
   const [bookOpen, setBookOpen] = useState(false);
+  const [weekOffset, setWeekOffset] = useState(0);
 
   const filtered = useMemo(
     () => resources.filter(r => kind === 'all' || r.kind === kind),
     [resources, kind],
   );
 
+  const displayDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + weekOffset * 7);
+    return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+  }, [weekOffset]);
+
   return (
     <div className="p-6 max-w-[1440px] mx-auto space-y-5">
       <div className="flex items-center gap-2">
         <h2 className="text-[18px] font-bold text-fg">회의실 / 리소스 예약</h2>
-        <span className="text-[12px] text-fg-3" suppressHydrationWarning>{new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}</span>
+        <span className="text-[12px] text-fg-3" suppressHydrationWarning>{displayDate}</span>
         <div className="flex-1" />
-        <IconButton size="sm"><ChevronLeft size={14} /></IconButton>
-        <Button size="sm" variant="secondary">오늘</Button>
-        <IconButton size="sm"><ChevronRight size={14} /></IconButton>
+        <IconButton size="sm" onClick={() => setWeekOffset(n => n - 1)}><ChevronLeft size={14} /></IconButton>
+        <Button size="sm" variant="secondary" onClick={() => setWeekOffset(0)}>오늘</Button>
+        <IconButton size="sm" onClick={() => setWeekOffset(n => n + 1)}><ChevronRight size={14} /></IconButton>
         <Button size="sm" variant="primary" onClick={() => setBookOpen(true)} disabled={resources.length === 0}>
           <Plus size={13} /> 예약
         </Button>

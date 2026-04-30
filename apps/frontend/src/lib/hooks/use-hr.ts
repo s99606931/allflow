@@ -49,3 +49,22 @@ export function useCreateLeave() {
     },
   });
 }
+
+export function useCancelLeave() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`${API}/hr/leave/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: 'CANCELLED' }),
+      });
+      if (!res.ok) throw new Error('Failed to cancel leave request');
+      return res.json() as Promise<LeaveRequest>;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hr-leave'] });
+    },
+  });
+}

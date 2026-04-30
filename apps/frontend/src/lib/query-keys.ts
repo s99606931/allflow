@@ -27,6 +27,12 @@ const children = (resource: string, id: string, child: string, filters?: Filters
 export const keys = {
   me: () => ['me'] as const,
 
+  users: {
+    all: () => root('users'),
+    list: (filters?: Filters) => list('users', filters),
+    detail: (id: string) => detail('users', id),
+  },
+
   projects: {
     all: () => root('projects'),
     list: (filters?: Filters) => list('projects', filters),

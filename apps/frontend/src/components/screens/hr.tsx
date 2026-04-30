@@ -1,7 +1,7 @@
 'use client';
 
 import { Badge, Button, Card, CardBody, CardHeader, CardTitle } from '@/components/ui/primitives';
-import { useCreateLeave, useLeaveRequests, type LeaveRequest } from '@/lib/hooks/use-hr';
+import { useCancelLeave, useCreateLeave, useLeaveRequests, type LeaveRequest } from '@/lib/hooks/use-hr';
 import { useMe, useOrgUnits } from '@/lib/hooks/use-data';
 import { Award, Briefcase, CalendarClock, Plane, Plus, Users, X } from 'lucide-react';
 import { useState } from 'react';
@@ -226,18 +226,30 @@ function LeaveTab() {
         )}
 
         {!isLoading && leaves && leaves.length > 0 && (
-          <div className="space-y-2">
-            {leaves.map((leave) => (
-              <LeaveRow key={leave.id} leave={leave} />
-            ))}
-          </div>
+          <LeaveList leaves={leaves} />
         )}
       </CardBody>
     </Card>
   );
 }
 
-function LeaveRow({ leave }: { leave: LeaveRequest }) {
+function LeaveList({ leaves }: { leaves: LeaveRequest[] }) {
+  const cancelLeave = useCancelLeave();
+  return (
+    <div className="space-y-2">
+      {leaves.map((leave) => (
+        <LeaveRow key={leave.id} leave={leave} cancelLeave={cancelLeave} />
+      ))}
+    </div>
+  );
+}
+
+interface LeaveRowProps {
+  leave: LeaveRequest;
+  cancelLeave: ReturnType<typeof useCancelLeave>;
+}
+
+function LeaveRow({ leave, cancelLeave }: LeaveRowProps) {
   const start = leave.startDate.slice(0, 10);
   const end = leave.endDate.slice(0, 10);
   return (
@@ -254,6 +266,15 @@ function LeaveRow({ leave }: { leave: LeaveRequest }) {
         <span className="text-[11px] text-fg-3 ml-auto shrink-0">
           승인자: {leave.approver.name}
         </span>
+      )}
+      {leave.status === 'PENDING' && (
+        <button
+          onClick={() => cancelLeave.mutate(leave.id)}
+          disabled={cancelLeave.isPending}
+          className="text-[11px] text-danger hover:underline"
+        >
+          취소
+        </button>
       )}
     </div>
   );
