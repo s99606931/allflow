@@ -8,7 +8,8 @@ const CreateThreadBody = z.object({
 
 export async function aiThreadRoutes(app: FastifyInstance): Promise<void> {
   app.get('/ai/threads', { preHandler: [app.authenticate] }, async (req) => {
-    const userId = (req.user as { sub: string }).sub;
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
     return app.prisma.aiThread.findMany({
       where: { userId, deletedAt: null },
       orderBy: { updatedAt: 'desc' },
@@ -20,7 +21,8 @@ export async function aiThreadRoutes(app: FastifyInstance): Promise<void> {
   app.post('/ai/threads', { preHandler: [app.authenticate] }, async (req, reply) => {
     const parsed = CreateThreadBody.safeParse(req.body);
     if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
-    const userId = (req.user as { sub: string }).sub;
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
     const thread = await app.prisma.aiThread.create({
       data: { title: parsed.data.title, userId },
       select: { id: true, title: true, createdAt: true, updatedAt: true },
@@ -30,7 +32,8 @@ export async function aiThreadRoutes(app: FastifyInstance): Promise<void> {
 
   app.get('/ai/threads/:threadId/messages', { preHandler: [app.authenticate] }, async (req) => {
     const { threadId } = req.params as { threadId: string };
-    const userId = (req.user as { sub: string }).sub;
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
     const thread = await app.prisma.aiThread.findFirst({
       where: { id: threadId, userId, deletedAt: null },
     });
@@ -52,7 +55,8 @@ export async function aiThreadRoutes(app: FastifyInstance): Promise<void> {
 
   app.delete('/ai/threads/:threadId', { preHandler: [app.authenticate] }, async (req, reply) => {
     const { threadId } = req.params as { threadId: string };
-    const userId = (req.user as { sub: string }).sub;
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
     await app.prisma.aiThread.updateMany({
       where: { id: threadId, userId },
       data: { deletedAt: new Date() },

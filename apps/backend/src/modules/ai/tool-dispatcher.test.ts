@@ -4,21 +4,18 @@ import { BUILTIN_TOOLS, ToolDispatcher } from './tool-dispatcher.js';
 // biome-ignore lint/suspicious/noExplicitAny: prisma mock
 type AnyPrisma = any;
 
-function makeMockPrisma(
-  taskResults: unknown[] = [],
-  docResults: unknown[] = [],
-): AnyPrisma {
+function makeMockPrisma(taskResults: unknown[] = [], issueResults: unknown[] = []): AnyPrisma {
   return {
     task: { findMany: async () => taskResults },
-    doc: { findMany: async () => docResults },
+    issue: { findMany: async () => issueResults },
   };
 }
 
 describe('BUILTIN_TOOLS', () => {
-  it('2개 툴이 등록됨 (search_tasks, search_docs)', () => {
+  it('2개 툴이 등록됨 (search_tasks, search_issues)', () => {
     const names = BUILTIN_TOOLS.map((t) => t.name);
     expect(names).toContain('search_tasks');
-    expect(names).toContain('search_docs');
+    expect(names).toContain('search_issues');
     expect(names).toHaveLength(2);
   });
 
@@ -48,13 +45,13 @@ describe('ToolDispatcher', () => {
     expect((parsed[0] as { id: string }).id).toBe('t1');
   });
 
-  it('dispatch(search_docs) → JSON 문자열 반환', async () => {
-    const docs = [{ id: 'd1', title: '문서', updatedAt: new Date() }];
+  it('dispatch(search_issues) → JSON 문자열 반환', async () => {
+    const issues = [{ id: 'i1', title: '이슈', status: 'open' }];
     const d = new ToolDispatcher(BUILTIN_TOOLS);
-    const result = await d.dispatch('search_docs', { query: '문서' }, makeMockPrisma([], docs));
+    const result = await d.dispatch('search_issues', { query: '이슈' }, makeMockPrisma([], issues));
     const parsed = JSON.parse(result) as unknown[];
     expect(parsed).toHaveLength(1);
-    expect((parsed[0] as { id: string }).id).toBe('d1');
+    expect((parsed[0] as { id: string }).id).toBe('i1');
   });
 
   it('dispatch(unknown_tool) → error JSON 반환', async () => {

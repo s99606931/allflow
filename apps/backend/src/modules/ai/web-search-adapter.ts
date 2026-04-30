@@ -33,7 +33,7 @@ export class SearxNGAdapter implements WebSearchAdapter {
 }
 
 export class NoopWebSearchAdapter implements WebSearchAdapter {
-  async search(_query: string): Promise<WebSearchResult[]> {
+  async search(_query: string, _maxResults?: number): Promise<WebSearchResult[]> {
     return [];
   }
 }

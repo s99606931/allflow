@@ -1,13 +1,21 @@
 import { NotFoundError, ValidationError } from '@all-flow/shared/errors';
 /**
- * identity 모듈 — `GET /users/me`, `PATCH /users/me`.
+ * identity 모듈 — `GET /users`, `POST /users/invite`, `GET /users/me`, `PATCH /users/me`.
  *
- * GET 동작:
+ * GET /users 동작:
+ *  1) `app.authenticate` preHandler가 JWT를 검증한다.
+ *  2) soft-delete 제외한 전체 사용자 목록을 name 오름차순으로 반환.
+ *
+ * POST /users/invite 동작:
+ *  1) email 유효성 검증 후 중복 여부 확인.
+ *  2) 이미 등록된 이메일이면 ValidationError. 아니면 초대 완료 응답 (scaffold).
+ *
+ * GET /users/me 동작:
  *  1) `app.authenticate` preHandler가 JWT를 검증하고 `req.user.id`를 주입한다.
  *  2) Prisma에서 사용자 단건을 조회 → soft-delete 제외.
  *  3) @all-flow/contracts `User` 스키마(packages/contracts/openapi.yaml)와 동일한 형태로 직렬화.
  *
- * PATCH 동작:
+ * PATCH /users/me 동작:
  *  1) 본인 식별 후 ProfilePatch 입력을 부분 적용한다.
  *  2) name/role/dept/initials/color/email 모두 optional. 빈 객체 = no-op.
  *  3) 갱신 후 GET 과 동일한 직렬화로 응답.
@@ -29,6 +37,12 @@ const ProfilePatch = z
       .regex(/^#[0-9A-Fa-f]{6}$/)
       .optional(),
     email: z.string().email().optional(),
+  })
+  .strict();
+
+const InviteBody = z
+  .object({
+    email: z.string().email(),
   })
   .strict();
 
@@ -65,6 +79,35 @@ function serializeUser(user: UserRow): unknown {
 }
 
 export async function identityRoutes(app: FastifyInstance): Promise<void> {
+  app.get('/users', { preHandler: [app.authenticate] }, async () => {
+    const users = (await app.prisma.user.findMany({
+      where: { deletedAt: null },
+      select: USER_SELECT,
+      orderBy: { name: 'asc' },
+    })) as UserRow[];
+
+    return users.map(serializeUser);
+  });
+
+  app.post('/users/invite', { preHandler: [app.authenticate] }, async (req) => {
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const actorId = req.user!.id;
+    const parsed = InviteBody.safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+
+    const { email } = parsed.data;
+
+    const existing = await app.prisma.user.findFirst({
+      where: { email, deletedAt: null },
+      select: { id: true },
+    });
+    if (existing) throw new ValidationError('이미 등록된 이메일입니다');
+
+    app.log.info({ action: 'users.invite', actorId, email }, 'user invited');
+
+    return { message: '초대 이메일을 발송했습니다.', email };
+  });
+
   app.get('/users/me', { preHandler: [app.authenticate] }, async (req) => {
     // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
     const userId = req.user!.id;

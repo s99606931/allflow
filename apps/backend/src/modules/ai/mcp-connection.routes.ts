@@ -1,4 +1,5 @@
 import { ValidationError } from '@all-flow/shared/errors';
+import type { Prisma } from '@prisma/client';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
@@ -20,8 +21,9 @@ export async function mcpConnectionRoutes(app: FastifyInstance): Promise<void> {
   app.post('/ai/mcp-connections', { preHandler: [app.authenticate] }, async (req, reply) => {
     const parsed = CreateMcpBody.safeParse(req.body);
     if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+    const { config, ...rest } = parsed.data;
     const conn = await app.prisma.mcpConnection.create({
-      data: parsed.data,
+      data: { ...rest, config: config as Prisma.InputJsonValue },
       select: { id: true, name: true, transport: true, isEnabled: true, createdAt: true },
     });
     return reply.code(201).send(conn);

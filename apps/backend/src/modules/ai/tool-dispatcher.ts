@@ -29,23 +29,23 @@ export const BUILTIN_TOOLS: AiTool[] = [
     },
   },
   {
-    name: 'search_docs',
-    description: '워크스페이스 문서를 검색합니다',
+    name: 'search_issues',
+    description: '워크스페이스 이슈를 검색합니다',
     parameters: {
       type: 'object',
       properties: { query: { type: 'string', description: '검색어' } },
       required: ['query'],
     },
     async execute(args, prisma) {
-      const docs = await prisma.doc.findMany({
+      const issues = await prisma.issue.findMany({
         where: {
           OR: [{ title: { contains: String(args.query), mode: 'insensitive' } }],
           deletedAt: null,
         },
         take: 5,
-        select: { id: true, title: true, updatedAt: true },
+        select: { id: true, title: true, status: true },
       });
-      return JSON.stringify(docs);
+      return JSON.stringify(issues);
     },
   },
 ];
