@@ -19,7 +19,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { AIAdapterRegistry } from '../ai/ai-adapter.js';
 import { recordAICall } from './ai-observability.js';
-import { type BuildReportOutput, type ReportPrismaClient, buildReport } from './report-builder.js';
+import { type BuildReportOutput, buildReport, type ReportPrismaClient } from './report-builder.js';
 
 const WeeklyRequest = z.object({
   periodStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),

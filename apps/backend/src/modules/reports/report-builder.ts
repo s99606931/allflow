@@ -10,8 +10,9 @@
  *  - "scope" = 프로젝트 ID 화이트리스트(weekly), monthly 는 전체 권한 범위.
  *  - "tone"  = exec | team | casual (출력 어조).
  */
-import type { AIAdapter } from '../ai/ai-adapter.js';
+
 import { extractCitations } from '../ai/ai.routes.js';
+import type { AIAdapter } from '../ai/ai-adapter.js';
 
 export type ReportTone = 'exec' | 'team' | 'casual';
 

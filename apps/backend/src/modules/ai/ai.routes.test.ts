@@ -6,8 +6,8 @@ import { buildApp } from '../../app.js';
 import { resetEnvForTests } from '../../config/env.js';
 import { authPlugin } from '../../plugins/auth.js';
 import { rbacPlugin } from '../../plugins/rbac.js';
-import { AIAdapterRegistry, InMemoryAIAdapter } from './ai-adapter.js';
 import { aiRoutes, extractCitations } from './ai.routes.js';
+import { AIAdapterRegistry, InMemoryAIAdapter } from './ai-adapter.js';
 
 const TEST_AUTH = 'a'.repeat(16) + 'b'.repeat(16);
 

@@ -20,7 +20,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { recordAICall } from '../reports/ai-observability.js';
 import type { AIAdapter, AIAdapterRegistry, AIMessage, AIUsage } from './ai-adapter.js';
-import { DEFAULT_THRESHOLD, SOURCES, extractActions } from './extract-actions.js';
+import { DEFAULT_THRESHOLD, extractActions, SOURCES } from './extract-actions.js';
 
 const CompleteRequest = z.object({
   prompt: z.string().min(1).max(8000),
@@ -168,7 +168,7 @@ async function runStream(
  * 본문에서 [kind:id] 형식 인용 마커를 추출.
  * 예: "관련 태스크 [task:t-123]" → [{ kind: 'task', id: 't-123' }]
  */
-const CITATION_RE = /\[(task|doc|message|issue):([A-Za-z0-9_\-]+)\]/g;
+const CITATION_RE = /\[(task|doc|message|issue):([A-Za-z0-9_-]+)\]/g;
 
 export function extractCitations(text: string): Citation[] {
   const out: Citation[] = [];

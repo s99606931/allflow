@@ -15,8 +15,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
 import { resetEnvForTests } from '../../config/env.js';
 import type { RealtimeEvent } from '../../shared/schemas/index.js';
-import { realtimeBus } from './realtime-bus.js';
 import { realtimeWsRoutes } from './realtime.ws.js';
+import { realtimeBus } from './realtime-bus.js';
 
 const TEST_AUTH = 'a'.repeat(16) + 'b'.repeat(16);
 

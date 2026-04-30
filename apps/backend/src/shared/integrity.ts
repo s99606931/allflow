@@ -33,12 +33,14 @@ interface SoftDeleteClient {
       data: { deletedAt: Date };
     }) => Promise<{ count: number }>;
   };
-  task_findMany?: (args: { where: { projectId: string }; select: { id: true } }) => Promise<
-    { id: string }[]
-  >;
-  issue_findMany?: (args: { where: { projectId: string }; select: { id: true } }) => Promise<
-    { id: string }[]
-  >;
+  task_findMany?: (args: {
+    where: { projectId: string };
+    select: { id: true };
+  }) => Promise<{ id: string }[]>;
+  issue_findMany?: (args: {
+    where: { projectId: string };
+    select: { id: true };
+  }) => Promise<{ id: string }[]>;
 }
 
 /**

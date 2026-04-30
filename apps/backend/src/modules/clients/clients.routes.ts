@@ -41,6 +41,10 @@ export function __resetClientsForTests(): void {
   seq = 0;
 }
 
+export function getClientsCount(): number {
+  return store.size;
+}
+
 const newId = (): string => {
   seq += 1;
   return `cli-${seq.toString(36)}-${Date.now().toString(36)}`;

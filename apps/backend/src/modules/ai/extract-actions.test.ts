@@ -6,11 +6,11 @@
 import { describe, expect, it } from 'vitest';
 import { InMemoryAIAdapter } from './ai-adapter.js';
 import {
-  DEFAULT_THRESHOLD,
-  SOURCES,
   buildPrompt,
+  DEFAULT_THRESHOLD,
   extractActions,
   parseActionsResponse,
+  SOURCES,
 } from './extract-actions.js';
 
 const VALID_RESPONSE = JSON.stringify({

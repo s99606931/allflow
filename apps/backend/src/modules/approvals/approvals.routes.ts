@@ -58,6 +58,10 @@ export function __resetApprovalsForTests(): void {
   seq = 0;
 }
 
+export function getPendingApprovalsCount(): number {
+  return Array.from(store.values()).filter((r) => r.status === 'pending').length;
+}
+
 const newId = (): string => {
   seq += 1;
   return `apr-${seq.toString(36)}-${Date.now().toString(36)}`;

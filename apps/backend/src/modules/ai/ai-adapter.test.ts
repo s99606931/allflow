@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   AIAdapterError,
   AIAdapterRegistry,
+  buildDefaultAIRegistry,
   InMemoryAIAdapter,
   OpenAIAdapter,
-  buildDefaultAIRegistry,
 } from './ai-adapter.js';
 
 describe('AI adapter — InMemoryAdapter', () => {

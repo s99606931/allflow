@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PERMISSION_MATRIX, type ProjectRole, hasAtLeast, isPermitted } from './rbac.js';
+import { hasAtLeast, isPermitted, PERMISSION_MATRIX, type ProjectRole } from './rbac.js';
 
 describe('plugins/rbac — permission matrix', () => {
   it('hasAtLeast: owner ≥ admin ≥ member', () => {
