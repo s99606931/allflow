@@ -5,7 +5,7 @@
   "description": "ALL-Flow backend — Fastify 5 + Prisma 6 + Postgres 16 + Redis 7. OpenAPI contract via @all-flow/contracts.",
   "type": "module",
   "engines": {
-    "node": ">=22.0.0",
+    "node": ">=24.0.0",
     "pnpm": ">=9.0.0"
   },
   "packageManager": "pnpm@10.33.0",

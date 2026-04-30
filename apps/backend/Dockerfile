@@ -10,7 +10,7 @@
 #   docker build -t ghcr.io/<owner>/all-flow-backend:latest .
 #   docker run --rm -p 8080:8080 --env-file .env ghcr.io/<owner>/all-flow-backend:latest
 
-ARG NODE_VERSION=22
+ARG NODE_VERSION=24
 ARG PNPM_VERSION=10.33.0
 
 # ---------- 1) deps ----------

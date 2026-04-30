@@ -93,7 +93,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ["22"]
+        node-version: ["24"]
         task: [lint, typecheck, build, test]
     steps:
       - uses: actions/checkout@v4

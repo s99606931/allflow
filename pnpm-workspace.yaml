@@ -15,4 +15,4 @@ catalog:
   vitest: ^2.1.9
   '@types/node': ^22.13.4
   tsup: ^8.3.5
-  '@biomejs/biome': 1.9.4
+  '@biomejs/biome': 2.4.13

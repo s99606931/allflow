@@ -2,11 +2,11 @@
   "_meta": {
     "version": "2.4",
     "created": "2026-03-29",
-    "updated": "2026-04-29",
+    "updated": "2026-04-30",
     "description": "AutoVibe ecosystem registry",
     "total": {
-      "agents": 20,
-      "skills": 22,
+      "agents": 21,
+      "skills": 23,
       "hooks": 13,
       "rules": 7
     }
@@ -342,6 +342,21 @@
       "autovibe": true,
       "domain": "oss",
       "portable": true
+    },
+    "av-base-browser-e2e-author": {
+      "group": "base",
+      "version": "1.0",
+      "file": ".claude/agents/av-base-browser-e2e-author.md",
+      "model": "sonnet",
+      "memory": "project",
+      "maxTurns": 60,
+      "permissionMode": "default",
+      "status": "active",
+      "created": "2026-04-30",
+      "autovibe": true,
+      "domain": "base",
+      "portable": true,
+      "description": "실 브라우저 E2E 시나리오 작성+실행 (Playwright 직접)"
     }
   },
   "skills": {
@@ -614,6 +629,20 @@
       "domain": "oss",
       "portable": true,
       "user_invocable": true
+    },
+    "av-base-browser-e2e": {
+      "group": "base",
+      "version": "1.0",
+      "file": ".claude/skills/av-base-browser-e2e/SKILL.md",
+      "context": "fork",
+      "agent": "general-purpose",
+      "user_invocable": true,
+      "status": "active",
+      "created": "2026-04-30",
+      "autovibe": true,
+      "domain": "base",
+      "portable": true,
+      "description": "직접 브라우저 E2E 게이트웨이 — 학습+작성+실행"
     }
   },
   "hooks": {

@@ -11,7 +11,7 @@
 # 사용 (dev):
 #   docker compose -f docker-compose.yml -f docker-compose.dev.yml up frontend
 #
-ARG NODE_VERSION=22
+ARG NODE_VERSION=24
 ARG PNPM_VERSION=10.33.0
 
 FROM node:${NODE_VERSION}-alpine AS base
