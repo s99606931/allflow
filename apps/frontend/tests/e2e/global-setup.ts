@@ -1,13 +1,7 @@
 /**
  * Playwright global setup — 데모 계정으로 로그인 후 storageState 저장.
- *
- * credentials provider(email만 필요, 비밀번호 없음)로 로그인한 뒤
- * playwright/.auth/user.json 에 쿠키+localStorage 저장.
- * 이후 모든 테스트가 storageState 로 이 상태를 재사용한다.
- *
- * NEXT_PUBLIC_E2E=true 서버의 경우 auth bypass 가 활성화되어
- * 로그인 없이 바로 앱에 접근할 수 있으나, 기존 dev 서버 재사용 시
- * 이 setup 이 credentials 로그인을 수행한다.
+ * 로그인 완료 후 모든 테스트 대상 라우트를 워밍업(pre-compile)한다.
+ * Next.js dev 모드에서 첫 요청 시 40s+ 소요 → 병렬 테스트 타임아웃 방지.
  */
 
 import { chromium } from '@playwright/test';
@@ -19,6 +13,14 @@ export const STORAGE_STATE_PATH = path.join(
   '../../playwright/.auth/user.json',
 );
 
+const WARMUP_ROUTES = [
+  '/', '/projects', '/tasks', '/issues', '/calendar',
+  '/progress', '/gantt', '/chat', '/clients', '/docs',
+  '/ai-auto', '/notion', '/reports/weekly', '/reports/monthly',
+  '/org', '/users', '/hr', '/admin', '/notifications',
+  '/settings', '/approvals', '/resources',
+];
+
 export default async function globalSetup() {
   const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
 
@@ -29,20 +31,33 @@ export default async function globalSetup() {
   const context = await browser.newContext({ locale: 'ko-KR' });
   const page = await context.newPage();
 
-  await page.goto(`${baseURL}/login`);
-  await page.waitForLoadState('networkidle');
+  // login
+  await page.goto(`${baseURL}/login`, { timeout: 60_000 });
+  await page.waitForLoadState('domcontentloaded', { timeout: 60_000 });
 
   const emailInput = page.locator('input[type="email"]').first();
-  if (await emailInput.isVisible({ timeout: 5_000 }).catch(() => false)) {
+  if (await emailInput.isVisible({ timeout: 8_000 }).catch(() => false)) {
     await emailInput.fill('jiwoo.kim@omelet.com');
     await page.getByRole('button', { name: /^로그인$/i }).first().click();
 
     await page.waitForURL(
       url => !url.toString().includes('/login'),
-      { timeout: 15_000 },
+      { timeout: 30_000 },
     ).catch(() => {});
   }
 
   await context.storageState({ path: STORAGE_STATE_PATH });
+
+  // warm up all routes so dev-mode compilation doesn't cause test timeouts
+  console.log('[global-setup] warming up routes...');
+  for (const route of WARMUP_ROUTES) {
+    try {
+      await page.goto(`${baseURL}${route}`, { waitUntil: 'domcontentloaded', timeout: 90_000 });
+    } catch {
+      // warmup failure is non-fatal
+    }
+  }
+  console.log('[global-setup] warmup complete');
+
   await browser.close();
 }

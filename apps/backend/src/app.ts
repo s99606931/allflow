@@ -7,6 +7,7 @@ import { buildDefaultAIRegistry } from './modules/ai/ai-adapter.js';
 import { DbBackedAIRegistry } from './modules/ai/db-backed-registry.js';
 import { llmConnectionsRoutes } from './modules/ai/llm-connections.routes.js';
 import { approvalsRoutes } from './modules/approvals/approvals.routes.js';
+import { auditLogRoutes } from './modules/audit-log/audit-log.routes.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { channelsRoutes } from './modules/channels/channels.routes.js';
 import { clientsRoutes } from './modules/clients/clients.routes.js';
@@ -15,7 +16,9 @@ import { docsRoutes } from './modules/docs/docs.routes.js';
 import { eventsRoutes } from './modules/events/events.routes.js';
 import { ganttRoutes } from './modules/gantt/gantt.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
+import { hrRoutes } from './modules/hr/hr.routes.js';
 import { identityRoutes } from './modules/identity/identity.routes.js';
+import { notionRoutes } from './modules/integrations/notion/notion.routes.js';
 import { issuesRoutes } from './modules/issues/issues.routes.js';
 import { navCountsRoutes } from './modules/nav/nav-counts.routes.js';
 import { notificationsRoutes } from './modules/notifications/notifications.routes.js';
@@ -130,6 +133,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
         await api.register(orgRoutes);
         await api.register(searchRoutes);
         await api.register(navCountsRoutes);
+        await api.register(notionRoutes);
+        await api.register(auditLogRoutes);
+        await api.register(hrRoutes);
       },
       { prefix: '/api/v1' },
     );

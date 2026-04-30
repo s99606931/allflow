@@ -7,7 +7,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  // 로컬 dev 모드: 동시 컴파일 경합 방지를 위해 workers 4 상한.
+  workers: process.env.CI ? 2 : 4,
+  // dev 모드 warm 라우트 기준 60s (cold 시 globalSetup warmup이 선처리).
+  timeout: 60_000,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
 
   use: {
@@ -17,6 +20,8 @@ export default defineConfig({
     video: 'retain-on-failure',
     locale: 'ko-KR',
     timezoneId: 'Asia/Seoul',
+    actionTimeout: 15_000,
+    navigationTimeout: 60_000,
     // 글로벌 setup 에서 저장한 인증 상태 재사용 (auth bypass 또는 credentials 로그인)
     storageState: STORAGE_STATE_PATH,
   },

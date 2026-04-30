@@ -111,14 +111,19 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  memberships     ProjectMember[]
-  authoredTasks   Task[]          @relation("TaskCreatedBy")
-  assignedTasks   Task[]          @relation("TaskAssignee")
-  reportedIssues  Issue[]         @relation("IssueReporter")
-  assignedIssues  Issue[]         @relation("IssueAssignee")
-  comments        Comment[]
-  notifications   Notification[]
-  reports         Report[]        @relation("ReportAuthor")
+  memberships       ProjectMember[]
+  authoredTasks     Task[]            @relation("TaskCreatedBy")
+  assignedTasks     Task[]            @relation("TaskAssignee")
+  reportedIssues    Issue[]           @relation("IssueReporter")
+  assignedIssues    Issue[]           @relation("IssueAssignee")
+  comments          Comment[]
+  notifications     Notification[]
+  reports           Report[]          @relation("ReportAuthor")
+  messages          Message[]         @relation("MessageAuthor")
+  auditLogs         AuditLog[]        @relation("AuditLogActor")
+  leaveRequests     LeaveRequest[]    @relation("LeaveRequester")
+  approvedLeaves    LeaveRequest[]    @relation("LeaveApprover")
+  notionConnections NotionConnection[] @relation("NotionConnections")
 
   @@index([deletedAt])
   @@map("users")
@@ -365,4 +370,132 @@ model LlmConnection {
 
   @@index([isActive])
   @@map("llm_connections")
+}
+
+// =====================================================================
+// Channel / Message (chat persistence)
+// =====================================================================
+
+enum ChannelKind {
+  public
+  private
+  dm
+}
+
+model Channel {
+  id        String      @id @default(cuid())
+  name      String
+  kind      ChannelKind @default(public)
+
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  messages  Message[]
+
+  @@index([kind])
+  @@map("channels")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  channelId String   @map("channel_id")
+  authorId  String   @map("author_id")
+  parentId  String?  @map("parent_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  channel Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  author  User     @relation("MessageAuthor", fields: [authorId], references: [id])
+  parent  Message? @relation("MessageThread", fields: [parentId], references: [id])
+  replies Message[] @relation("MessageThread")
+
+  @@index([channelId, createdAt])
+  @@index([authorId])
+  @@index([parentId])
+  @@map("messages")
+}
+
+// =====================================================================
+// AuditLog (admin audit trail)
+// =====================================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  actorId    String   @map("actor_id")
+  targetType String?  @map("target_type")
+  targetId   String?  @map("target_id")
+  metadata   Json?
+
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  actor User @relation("AuditLogActor", fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+  @@map("audit_logs")
+}
+
+// =====================================================================
+// LeaveRequest (HR)
+// =====================================================================
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  PERSONAL
+  OTHER
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model LeaveRequest {
+  id          String      @id @default(cuid())
+  requesterId String      @map("requester_id")
+  approverId  String?     @map("approver_id")
+  type        LeaveType
+  status      LeaveStatus @default(PENDING)
+  startDate   DateTime    @map("start_date")
+  endDate     DateTime    @map("end_date")
+  reason      String?
+
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  requester User  @relation("LeaveRequester", fields: [requesterId], references: [id])
+  approver  User? @relation("LeaveApprover", fields: [approverId], references: [id])
+
+  @@index([requesterId, status])
+  @@index([approverId])
+  @@index([startDate, endDate])
+  @@map("leave_requests")
+}
+
+// =====================================================================
+// NotionConnection (Notion integration)
+// =====================================================================
+
+model NotionConnection {
+  id            String   @id @default(cuid())
+  workspaceId   String   @unique @map("workspace_id")
+  accessToken   String   @map("access_token")
+  botId         String   @map("bot_id")
+  workspaceName String   @map("workspace_name")
+  createdById   String   @map("created_by_id")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  createdBy User @relation("NotionConnections", fields: [createdById], references: [id])
+
+  @@index([createdById])
+  @@map("notion_connections")
 }

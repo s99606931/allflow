@@ -51,7 +51,9 @@ const envSchema = z.object({
     .min(32, 'AUTH_SECRET은 최소 32자 이상이어야 합니다 (next-auth 호환)')
     .optional(),
   OPENAI_API_KEY: z
-    .preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional()),
+    .string()
+    .optional()
+    .transform((v) => (v === '' || v === undefined ? undefined : v)),
   // OpenTelemetry (Step 8) — default off. true 일 때만 NodeSDK 초기화.
   OTEL_ENABLED: z
     .union([z.string(), z.boolean()])

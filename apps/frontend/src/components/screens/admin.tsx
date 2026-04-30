@@ -2,6 +2,7 @@
 
 import { Card, CardBody, CardHeader, CardTitle, Badge, Button } from '@/components/ui/primitives';
 import { useHealth, useOrgMutations } from '@/lib/hooks/use-data';
+import { useAuditLog } from '@/lib/hooks/use-admin';
 import { Activity, AlertCircle, Cpu, ShieldAlert } from 'lucide-react';
 import { LlmConnectionsPanel } from '@/components/admin/llm-connections-panel';
 
@@ -18,10 +19,23 @@ function formatUptime(seconds: number): string {
   return `${days}d ${hours % 24}h ${minutes % 60}m`;
 }
 
+function formatRelativeTime(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return `${seconds}초 전`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}분 전`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  const days = Math.floor(hours / 24);
+  return `${days}일 전`;
+}
+
 export function AdminPage() {
   const healthQuery = useHealth();
   const { revokeToken } = useOrgMutations();
   const health = healthQuery.data;
+  const auditLogQuery = useAuditLog();
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
@@ -101,13 +115,49 @@ export function AdminPage() {
       <LlmConnectionsPanel />
 
       <Card>
-        <CardHeader><CardTitle>실시간 감사 로그</CardTitle><Badge tone="neutral">미연결</Badge></CardHeader>
+        <CardHeader>
+          <CardTitle>실시간 감사 로그</CardTitle>
+          <Badge tone={auditLogQuery.isSuccess ? 'success' : 'neutral'}>
+            {auditLogQuery.isSuccess ? `${auditLogQuery.data.total}건` : '연결 중'}
+          </Badge>
+        </CardHeader>
         <CardBody>
-          <EmptyState
-            icon={<AlertCircle size={28} className="text-fg-3" />}
-            title="감사 로그 백엔드 미연결"
-            description="감사 로그 모듈이 아직 백엔드에 노출되지 않았습니다. 추후 사이클에서 GET /audit-log 와 연결됩니다."
-          />
+          {auditLogQuery.isLoading && (
+            <div className="py-8 text-center text-[13px] text-fg-3">데이터 로딩 중...</div>
+          )}
+          {auditLogQuery.isError && (
+            <EmptyState
+              icon={<AlertCircle size={28} className="text-fg-3" />}
+              title="감사 로그 불러오기 실패"
+              description="잠시 후 다시 시도해 주세요."
+            />
+          )}
+          {auditLogQuery.isSuccess && auditLogQuery.data.items.length === 0 && (
+            <div className="py-8 text-center text-[13px] text-fg-3">감사 로그 없음</div>
+          )}
+          {auditLogQuery.isSuccess && auditLogQuery.data.items.length > 0 && (
+            <div className="divide-y divide-line">
+              {auditLogQuery.data.items.map((entry) => (
+                <div key={entry.id} className="flex items-center gap-3 py-2.5 text-[12px]">
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                    style={{ backgroundColor: entry.actor.color }}
+                  >
+                    {entry.actor.initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-fg">{entry.actor.name}</span>
+                    <span className="text-fg-3 mx-1.5">·</span>
+                    <span className="font-mono text-fg-2">{entry.action}</span>
+                    {entry.targetType && (
+                      <span className="text-fg-3 ml-1.5">({entry.targetType})</span>
+                    )}
+                  </div>
+                  <div className="text-fg-3 shrink-0">{formatRelativeTime(entry.createdAt)}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardBody>
       </Card>
     </div>

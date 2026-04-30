@@ -8,16 +8,8 @@ import { Composer } from '@/components/chat/composer';
 import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel';
 import { MentionPopover } from '@/components/chat/mention-popover';
 import { useChannels, useMe, useTaskMutations } from '@/lib/hooks/use-data';
+import { useChatMessages, useSendMessage } from '@/lib/hooks/use-chat-messages';
 import { useTranslation } from '@/lib/i18n';
-
-interface LocalMessage {
-  id: number;
-  who: string;
-  time: string;
-  text: string;
-  threads?: number;
-  extracted?: boolean;
-}
 
 export function ChatPage() {
   const { t } = useTranslation();
@@ -25,11 +17,13 @@ export function ChatPage() {
   const { data: channels = [], isLoading: channelsLoading, error: channelsError } = useChannels();
   const [activeId, setActiveId] = useState<string>('');
   const active = activeId || channels[0]?.id || '';
-  const [messages, setMessages] = useState<LocalMessage[]>([]);
-  const [openThreadId, setOpenThreadId] = useState<number | null>(null);
+  const [openThreadId, setOpenThreadId] = useState<string | null>(null);
   const [mentionOpen, setMentionOpen] = useState(false);
   const [extractedDismissed, setExtractedDismissed] = useState(false);
   const taskMutations = useTaskMutations();
+  const sendMessage = useSendMessage();
+
+  const { data: messages = [] } = useChatMessages(active || null);
 
   const publicChannels = channels.filter(c => c.kind === 'public' || c.kind === 'private');
   const dmChannels = channels.filter(c => c.kind === 'dm');
@@ -38,11 +32,15 @@ export function ChatPage() {
   const threadParent = useMemo<ThreadMessage | null>(() => {
     const found = messages.find(m => m.id === openThreadId);
     if (!found) return null;
-    return { id: found.id, who: found.who, time: found.time, text: found.text };
+    return {
+      id: found.id,
+      who: found.author?.initials ?? '?',
+      time: new Date(found.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      text: found.content,
+    };
   }, [openThreadId, messages]);
 
   const onCreateTaskFromAI = async (text: string) => {
-    // Pull the first bullet "• title" from the AI message body.
     const bullet = text.match(/•\s+"?([^"\n]+)"?/);
     const title = bullet ? bullet[1].trim() : '채팅에서 추출된 액션';
     await taskMutations.create.mutateAsync({
@@ -53,16 +51,9 @@ export function ChatPage() {
     setExtractedDismissed(true);
   };
 
-  const onSent = (text: string) => {
-    setMessages(prev => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        who: me?.id ?? '',
-        time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
-        text,
-      },
-    ]);
+  const onSent = async (text: string) => {
+    if (!active) return;
+    await sendMessage.mutateAsync({ channelId: active, text });
   };
 
   return (
@@ -128,22 +119,25 @@ export function ChatPage() {
 
         <div className="flex-1 overflow-y-auto scroll p-5 space-y-4">
           {messages.map(m => {
-            if (m.who === 'ai') {
+            const isAi = m.authorId === 'ai';
+            if (isAi) {
               return (
                 <div key={m.id} className="flex gap-2.5 rounded-lg border border-accent/20 bg-accent-soft p-3">
                   <div className="w-7 h-7 rounded-md bg-accent text-accent-fg grid place-items-center shrink-0"><Sparkles size={13} /></div>
                   <div className="flex-1">
                     <div className="flex items-baseline gap-2">
                       <span className="text-[12.5px] font-semibold text-accent-strong">AI 어시스턴트</span>
-                      <span className="text-[10.5px] text-fg-3">{m.time}</span>
+                      <span className="text-[10.5px] text-fg-3">
+                        {new Date(m.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                      </span>
                     </div>
-                    <div className="text-[12.5px] text-fg-1 mt-0.5 whitespace-pre-wrap">{m.text}</div>
-                    {m.extracted && !extractedDismissed && (
+                    <div className="text-[12.5px] text-fg-1 mt-0.5 whitespace-pre-wrap">{m.content}</div>
+                    {!extractedDismissed && (
                       <div className="flex gap-1.5 mt-2">
                         <Button
                           variant="primary"
                           size="sm"
-                          onClick={() => onCreateTaskFromAI(m.text)}
+                          onClick={() => onCreateTaskFromAI(m.content)}
                           disabled={taskMutations.create.isPending}
                         >
                           {t('chat.toTask')}
@@ -155,31 +149,33 @@ export function ChatPage() {
                 </div>
               );
             }
-            const u = userById(m.who);
-            const mine = m.who === 'me';
+            const u = userById(m.authorId);
+            const mine = m.authorId === me?.id;
+            const displayUser = u ?? { name: m.author?.name ?? m.authorId, initials: m.author?.initials ?? '?', color: m.author?.color ?? '#888' };
+            const msgTime = new Date(m.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
             return (
               <div key={m.id} className={`flex gap-2.5 ${mine ? 'flex-row-reverse' : ''}`}>
-                {u && <Avatar user={u} size={32} />}
+                <Avatar user={displayUser} size={32} />
                 <div className={`flex-1 min-w-0 ${mine ? 'text-right' : ''}`}>
                   <div className={`flex items-baseline gap-2 ${mine ? 'justify-end' : ''}`}>
-                    <span className="text-[12.5px] font-semibold text-fg">{u?.name}</span>
-                    <span className="text-[10.5px] text-fg-3">{m.time}</span>
+                    <span className="text-[12.5px] font-semibold text-fg">{displayUser.name}</span>
+                    <span className="text-[10.5px] text-fg-3">{msgTime}</span>
                   </div>
                   <div className={`inline-block rounded-lg px-3 py-2 text-[13px] leading-relaxed mt-1 max-w-[600px] text-left ${
                     mine ? 'bg-accent-soft text-fg' : 'bg-bg-1 border border-border text-fg-1'
                   }`}>
-                    {m.text}
+                    {m.content}
                   </div>
-                  {m.threads && (
+                  {m.replyCount > 0 && (
                     <div className={`flex items-center gap-1.5 mt-1 text-[11px] text-accent-strong ${mine ? 'justify-end' : ''}`}>
                       <MessageSquare size={11} />
                       <button
                         type="button"
                         className="hover:underline"
-                        onClick={() => setOpenThreadId(typeof m.id === 'number' ? m.id : null)}
+                        onClick={() => setOpenThreadId(m.id)}
                         aria-label={t('chat.thread')}
                       >
-                        {m.threads}개 답글 · 2분 전
+                        {m.replyCount}개 답글
                       </button>
                     </div>
                   )}
