@@ -1,11 +1,15 @@
+import multipart from '@fastify/multipart';
 import sensible from '@fastify/sensible';
 import websocket from '@fastify/websocket';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { type Env, getEnv } from './config/env.js';
+import { aiAttachmentRoutes } from './modules/ai/ai-attachment.routes.js';
+import { aiThreadRoutes } from './modules/ai/ai-thread.routes.js';
 import { aiRoutes } from './modules/ai/ai.routes.js';
 import { buildDefaultAIRegistry } from './modules/ai/ai-adapter.js';
 import { DbBackedAIRegistry } from './modules/ai/db-backed-registry.js';
 import { llmConnectionsRoutes } from './modules/ai/llm-connections.routes.js';
+import { mcpConnectionRoutes } from './modules/ai/mcp-connection.routes.js';
 import { approvalsRoutes } from './modules/approvals/approvals.routes.js';
 import { auditLogRoutes } from './modules/audit-log/audit-log.routes.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
@@ -78,6 +82,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(errorHandlerPlugin);
   await app.register(rateLimitPlugin);
   await app.register(websocket);
+  await app.register(multipart);
 
   if (registerDb) {
     await app.register(prismaPlugin);
@@ -120,6 +125,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
         await api.register(realtimeRoutes);
         await api.register(realtimeWsRoutes);
         await api.register(aiRoutes, { registry: aiRegistry });
+        await api.register(aiThreadRoutes);
+        await api.register(aiAttachmentRoutes);
+        await api.register(mcpConnectionRoutes);
         await api.register(llmConnectionsRoutes, { registry: aiRegistry });
         await api.register(reportsRoutes, { registry: aiRegistry });
         await api.register(authRoutes);
