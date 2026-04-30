@@ -42,37 +42,33 @@ export async function channelsRoutes(app: FastifyInstance): Promise<void> {
     return rows.map((c) => ({ id: c.id, name: c.name, kind: c.kind, members: [] }));
   });
 
-  app.get(
-    '/channels/:channelId/messages',
-    { preHandler: [app.authenticate] },
-    async (req) => {
-      const { channelId } = req.params as { channelId: string };
-      const channel = await app.prisma.channel.findUnique({ where: { id: channelId } });
-      if (!channel) throw new ValidationError(`존재하지 않는 채널: ${channelId}`);
+  app.get('/channels/:channelId/messages', { preHandler: [app.authenticate] }, async (req) => {
+    const { channelId } = req.params as { channelId: string };
+    const channel = await app.prisma.channel.findUnique({ where: { id: channelId } });
+    if (!channel) throw new ValidationError(`존재하지 않는 채널: ${channelId}`);
 
-      const messages = await app.prisma.message.findMany({
-        where: { channelId },
-        orderBy: { createdAt: 'asc' },
-        take: 50,
-        include: {
-          author: { select: { id: true, name: true, initials: true, color: true } },
-          replies: { select: { id: true } },
-        },
-      });
+    const messages = await app.prisma.message.findMany({
+      where: { channelId },
+      orderBy: { createdAt: 'asc' },
+      take: 50,
+      include: {
+        author: { select: { id: true, name: true, initials: true, color: true } },
+        replies: { select: { id: true } },
+      },
+    });
 
-      return messages.map((m) => ({
-        id: m.id,
-        content: m.content,
-        channelId: m.channelId,
-        authorId: m.authorId,
-        parentId: m.parentId,
-        createdAt: m.createdAt.toISOString(),
-        updatedAt: m.updatedAt.toISOString(),
-        author: m.author,
-        replyCount: m.replies.length,
-      }));
-    },
-  );
+    return messages.map((m) => ({
+      id: m.id,
+      content: m.content,
+      channelId: m.channelId,
+      authorId: m.authorId,
+      parentId: m.parentId,
+      createdAt: m.createdAt.toISOString(),
+      updatedAt: m.updatedAt.toISOString(),
+      author: m.author,
+      replyCount: m.replies.length,
+    }));
+  });
 
   app.post(
     '/channels/:channelId/messages',

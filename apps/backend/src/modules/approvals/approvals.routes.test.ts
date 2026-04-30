@@ -72,17 +72,14 @@ async function buildTestApp() {
   process.env.AUTH_SECRET = TEST_AUTH;
   const app = await buildApp({ logger: false });
   const store = makeStore();
-  app.decorate(
-    'prisma',
-    {
-      approval: {
-        findMany: store.findMany,
-        findUnique: store.findUnique,
-        create: store.create,
-        update: store.update,
-      },
-    } as never,
-  );
+  app.decorate('prisma', {
+    approval: {
+      findMany: store.findMany,
+      findUnique: store.findUnique,
+      create: store.create,
+      update: store.update,
+    },
+  } as never);
   await app.register(authPlugin);
   await app.register(approvalsRoutes);
   return app;

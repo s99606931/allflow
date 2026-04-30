@@ -10,9 +10,27 @@ const TEST_AUTH = 'a'.repeat(16) + 'b'.repeat(16);
 
 const MOCK_CHANNELS = [
   { id: 'ch-general', name: '일반', kind: 'public', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'ch-eng', name: 'engineering', kind: 'public', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'ch-design', name: 'design', kind: 'private', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'dm-u1-u2', name: '김민수 ↔ 이서연', kind: 'dm', createdAt: new Date(), updatedAt: new Date() },
+  {
+    id: 'ch-eng',
+    name: 'engineering',
+    kind: 'public',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: 'ch-design',
+    name: 'design',
+    kind: 'private',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: 'dm-u1-u2',
+    name: '김민수 ↔ 이서연',
+    kind: 'dm',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
 ];
 
 function makeMockPrisma() {
@@ -25,7 +43,11 @@ function makeMockPrisma() {
       createMany: async () => ({ count: 0 }),
     },
     message: {
-      create: async ({ data }: { data: { content: string; channelId: string; authorId: string } }) => ({
+      create: async ({
+        data,
+      }: {
+        data: { content: string; channelId: string; authorId: string };
+      }) => ({
         id: 'msg-test-1',
         content: data.content,
         channelId: data.channelId,

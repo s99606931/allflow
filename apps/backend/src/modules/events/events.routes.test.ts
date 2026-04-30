@@ -29,9 +29,7 @@ function makeStore() {
   let seq = 0;
   return {
     findMany: async (args: AnyArgs) => {
-      const startFilter = args?.where?.start as
-        | { gte?: Date; lte?: Date }
-        | undefined;
+      const startFilter = args?.where?.start as { gte?: Date; lte?: Date } | undefined;
       let list = Array.from(rows.values());
       if (startFilter?.gte) {
         const gte = startFilter.gte;

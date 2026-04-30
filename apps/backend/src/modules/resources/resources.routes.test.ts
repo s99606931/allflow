@@ -41,7 +41,9 @@ function makeStores() {
       findMany: async (_args: AnyArgs) =>
         Array.from(resources.values()).sort((a, b) => a.id.localeCompare(b.id)),
       createMany: async (args: AnyArgs) => {
-        for (const data of args.data as Array<Partial<ResourceRow> & { id: string; name: string; kind: 'room' | 'equipment' }>) {
+        for (const data of args.data as Array<
+          Partial<ResourceRow> & { id: string; name: string; kind: 'room' | 'equipment' }
+        >) {
           const now = new Date();
           resources.set(data.id, {
             id: data.id,
@@ -65,7 +67,10 @@ function makeStores() {
         };
         for (const b of bookings.values()) {
           if (b.resourceId !== where.resourceId) continue;
-          if (b.start.getTime() < where.start.lt.getTime() && b.end.getTime() > where.end.gt.getTime()) {
+          if (
+            b.start.getTime() < where.start.lt.getTime() &&
+            b.end.getTime() > where.end.gt.getTime()
+          ) {
             return b;
           }
         }

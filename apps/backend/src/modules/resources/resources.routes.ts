@@ -14,8 +14,20 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 const RESOURCE_SEED = [
-  { id: 'room-101', name: '본사 5F 회의실 A', kind: 'room' as const, capacity: 8, location: '본사 5F' },
-  { id: 'room-102', name: '본사 5F 회의실 B', kind: 'room' as const, capacity: 4, location: '본사 5F' },
+  {
+    id: 'room-101',
+    name: '본사 5F 회의실 A',
+    kind: 'room' as const,
+    capacity: 8,
+    location: '본사 5F',
+  },
+  {
+    id: 'room-102',
+    name: '본사 5F 회의실 B',
+    kind: 'room' as const,
+    capacity: 4,
+    location: '본사 5F',
+  },
   { id: 'eq-vr-1', name: 'Quest Pro 헤드셋', kind: 'equipment' as const, location: 'IT 캐비닛' },
 ];
 
