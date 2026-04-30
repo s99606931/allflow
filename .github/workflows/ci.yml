@@ -41,7 +41,7 @@ jobs:
     name: Lint markdown + structure
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Verify required OSS files exist
         run: |
           for f in LICENSE README.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md; do
@@ -55,7 +55,7 @@ jobs:
     name: Validate .claude registry + frontmatter
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Validate components.json is valid JSON
         run: |
           python3 -c "import json; json.load(open('.claude/registry/components.json'))"
