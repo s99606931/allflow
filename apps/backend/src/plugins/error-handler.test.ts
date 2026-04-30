@@ -12,6 +12,7 @@ async function appUnderTest() {
       PORT: 1,
       OTEL_ENABLED: false,
       OTEL_SERVICE_NAME: 'all-flow-backend',
+      OPENAI_API_KEY: undefined,
     },
   });
 

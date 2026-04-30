@@ -104,10 +104,15 @@ export class OpenAICompatAdapter implements AIAdapter {
         method: 'POST',
         headers: this.buildHeaders(opts.traceId),
         body: this.buildBody(messages, opts, false),
-        signal: opts.signal,
+        signal: opts.signal ?? AbortSignal.timeout(30_000),
       });
     } catch (err) {
-      throw new AIAdapterError(`LLM 서버 호출 실패: ${(err as Error).message}`, { url });
+      const e = err as Error;
+      const msg =
+        e.name === 'TimeoutError' || e.name === 'AbortError'
+          ? 'LLM 서버 응답 시간 초과 (30s)'
+          : `LLM 서버 호출 실패: ${e.message}`;
+      throw new AIAdapterError(msg, { url });
     }
     if (!res.ok) {
       const detail = await safeText(res);
@@ -134,10 +139,15 @@ export class OpenAICompatAdapter implements AIAdapter {
         method: 'POST',
         headers: this.buildHeaders(opts.traceId),
         body: this.buildBody(messages, opts, true),
-        signal: opts.signal,
+        signal: opts.signal ?? AbortSignal.timeout(120_000),
       });
     } catch (err) {
-      throw new AIAdapterError(`LLM 서버 호출 실패: ${(err as Error).message}`, { url });
+      const e = err as Error;
+      const msg =
+        e.name === 'TimeoutError' || e.name === 'AbortError'
+          ? 'LLM 서버 스트림 시간 초과 (120s)'
+          : `LLM 서버 호출 실패: ${e.message}`;
+      throw new AIAdapterError(msg, { url });
     }
     if (!res.ok || !res.body) {
       const detail = res.body ? await safeText(res) : '(no body)';

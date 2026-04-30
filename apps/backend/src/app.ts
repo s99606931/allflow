@@ -2,8 +2,8 @@ import sensible from '@fastify/sensible';
 import websocket from '@fastify/websocket';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { type Env, getEnv } from './config/env.js';
-import { buildDefaultAIRegistry } from './modules/ai/ai-adapter.js';
 import { aiRoutes } from './modules/ai/ai.routes.js';
+import { buildDefaultAIRegistry } from './modules/ai/ai-adapter.js';
 import { DbBackedAIRegistry } from './modules/ai/db-backed-registry.js';
 import { llmConnectionsRoutes } from './modules/ai/llm-connections.routes.js';
 import { approvalsRoutes } from './modules/approvals/approvals.routes.js';
@@ -17,14 +17,15 @@ import { ganttRoutes } from './modules/gantt/gantt.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { identityRoutes } from './modules/identity/identity.routes.js';
 import { issuesRoutes } from './modules/issues/issues.routes.js';
+import { navCountsRoutes } from './modules/nav/nav-counts.routes.js';
 import { notificationsRoutes } from './modules/notifications/notifications.routes.js';
 import { orgRoutes } from './modules/org/org.routes.js';
 import { otelRoutes } from './modules/otel/otel.routes.js';
 import { projectsRoutes } from './modules/projects/projects.routes.js';
-import { realtimeBus } from './modules/realtime/realtime-bus.js';
 import { realtimeRoutes } from './modules/realtime/realtime.routes.js';
 import { realtimeWsRoutes } from './modules/realtime/realtime.ws.js';
-import { type RedisFanoutHandle, attachRedisFanout } from './modules/realtime/redis-fanout.js';
+import { realtimeBus } from './modules/realtime/realtime-bus.js';
+import { attachRedisFanout, type RedisFanoutHandle } from './modules/realtime/redis-fanout.js';
 import { reportsRoutes } from './modules/reports/reports.routes.js';
 import { resourcesRoutes } from './modules/resources/resources.routes.js';
 import { searchRoutes } from './modules/search/search.routes.js';
@@ -128,9 +129,18 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
         await api.register(channelsRoutes);
         await api.register(orgRoutes);
         await api.register(searchRoutes);
+        await api.register(navCountsRoutes);
       },
       { prefix: '/api/v1' },
     );
+
+    // Warm AI registry cache so the first /ai/complete call uses the active DB
+    // connection instead of falling back to InMemoryAdapter.
+    app.addHook('onReady', async () => {
+      await aiRegistry.invalidate().catch((err: Error) => {
+        app.log.warn({ err: err.message }, '[ai-registry] boot warm-up failed — using fallback');
+      });
+    });
 
     if (env.REDIS_URL) {
       const handle: RedisFanoutHandle = await attachRedisFanout(realtimeBus, env.REDIS_URL);

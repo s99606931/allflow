@@ -1,17 +1,17 @@
 /**
- * LLM Connections — admin-managed LLM endpoint registry.
+ * LLM Connections — authenticated LLM endpoint registry.
  *
  * Scope:
- *   - GET    /llm-connections           list (admin)
- *   - POST   /llm-connections           create (admin)
- *   - PATCH  /llm-connections/:id       update (admin)
- *   - DELETE /llm-connections/:id       delete (admin, default-protected)
- *   - POST   /llm-connections/:id/activate  set as active default (admin)
- *   - POST   /llm-connections/:id/test  ping the endpoint (admin)
+ *   - GET    /llm-connections           list (authenticated)
+ *   - POST   /llm-connections           create (authenticated)
+ *   - PATCH  /llm-connections/:id       update (authenticated)
+ *   - DELETE /llm-connections/:id       delete (authenticated, default-protected)
+ *   - POST   /llm-connections/:id/activate  set as active default (authenticated)
+ *   - POST   /llm-connections/:id/test  ping the endpoint (authenticated)
  *
- * Auth: requires authenticated user. Admin-only check is wired to next-auth
- * session role via `req.user.role === 'admin'` (org-level admin). When no
- * RBAC project context is available, falls back to user.role guard.
+ * Auth: requires authenticated user via app.authenticate (JWT Bearer).
+ * No RBAC role check — any authenticated user may manage LLM connections
+ * in this phase. RBAC will be added when org-level roles are modelled.
  *
  * Adapter resolution: see `db-backed-registry.ts` — handlers do not touch
  * the registry directly; cache invalidation happens on every write.
@@ -38,18 +38,6 @@ interface IdParam {
   id: string;
 }
 
-declare module 'fastify' {
-  interface FastifyRequest {
-    requireAdmin?: () => void;
-  }
-}
-
-function assertAdmin(role: string | undefined): void {
-  if (role !== 'admin' && role !== 'owner') {
-    throw new ForbiddenError('관리자 권한이 필요합니다');
-  }
-}
-
 export interface LlmConnectionsRoutesOptions {
   registry: DbBackedAIRegistry;
 }
@@ -58,8 +46,7 @@ export async function llmConnectionsRoutes(
   app: FastifyInstance,
   opts: LlmConnectionsRoutesOptions,
 ): Promise<void> {
-  app.get('/llm-connections', { preHandler: [app.authenticate] }, async (req) => {
-    assertAdmin(req.user?.role);
+  app.get('/llm-connections', { preHandler: [app.authenticate] }, async (_req) => {
     const rows = await app.prisma.llmConnection.findMany({
       orderBy: [{ isActive: 'desc' }, { createdAt: 'asc' }],
     });
@@ -67,7 +54,6 @@ export async function llmConnectionsRoutes(
   });
 
   app.post('/llm-connections', { preHandler: [app.authenticate] }, async (req, reply) => {
-    assertAdmin(req.user?.role);
     const parsed = CreateBody.safeParse(req.body);
     if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
     const created = await app.prisma.llmConnection.create({
@@ -87,7 +73,6 @@ export async function llmConnectionsRoutes(
   });
 
   app.patch('/llm-connections/:id', { preHandler: [app.authenticate] }, async (req) => {
-    assertAdmin(req.user?.role);
     const { id } = req.params as IdParam;
     const parsed = UpdateBody.safeParse(req.body);
     if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
@@ -102,7 +87,6 @@ export async function llmConnectionsRoutes(
   });
 
   app.delete('/llm-connections/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
-    assertAdmin(req.user?.role);
     const { id } = req.params as IdParam;
     const existing = await app.prisma.llmConnection.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError('LlmConnection');
@@ -116,7 +100,6 @@ export async function llmConnectionsRoutes(
   });
 
   app.post('/llm-connections/:id/activate', { preHandler: [app.authenticate] }, async (req) => {
-    assertAdmin(req.user?.role);
     const { id } = req.params as IdParam;
     const existing = await app.prisma.llmConnection.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError('LlmConnection');
@@ -130,7 +113,6 @@ export async function llmConnectionsRoutes(
   });
 
   app.post('/llm-connections/:id/test', { preHandler: [app.authenticate] }, async (req) => {
-    assertAdmin(req.user?.role);
     const { id } = req.params as IdParam;
     const existing = await app.prisma.llmConnection.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError('LlmConnection');
