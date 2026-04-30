@@ -29,8 +29,8 @@ permissionMode: default
 | Frontend | http://localhost:3000 |
 | Backend | http://localhost:8080 (health: `/health`) |
 | 운영 | docker-compose (allflow-frontend, allflow-backend, allflow-postgres, allflow-redis) |
-| Playwright dir | `project/all-flow-frontend/tests/e2e` |
-| Playwright config | `project/all-flow-frontend/playwright.config.ts` |
+| Playwright dir | `apps/frontend/tests/e2e` |
+| Playwright config | `apps/frontend/playwright.config.ts` |
 
 ## 도구 매트릭스
 
@@ -42,17 +42,17 @@ permissionMode: default
 | 회귀 스크린샷 | gstack | `Skill("gstack", "screenshot {pages}")` |
 | 멀티탭 팬아웃 | gstack | `Skill("gstack", "tab-each {command}")` |
 | Playwright 위임 | Bash | `pnpm exec playwright test --reporter=line` |
-| 라우트 인벤토리 | Glob | `project/all-flow-frontend/src/app/**/page.tsx` |
+| 라우트 인벤토리 | Glob | `apps/frontend/src/app/**/page.tsx` |
 
 ## 표준 시퀀스 (8-step)
 
-1. **인벤토리** — `Glob("project/all-flow-frontend/src/app/**/page.tsx")` 로 라우트 목록을 추출하고 `(app)` 그룹/괄호 폴더를 정규화한다.
+1. **인벤토리** — `Glob("apps/frontend/src/app/**/page.tsx")` 로 라우트 목록을 추출하고 `(app)` 그룹/괄호 폴더를 정규화한다.
 2. **헬스체크** — `curl -sS -o /dev/null -w "%{http_code}" http://localhost:3000/` 와 `http://localhost:8080/health` 가 각각 2xx/3xx 인지 확인. 실패 시 즉시 PL에 보고하고 중단.
 3. **랜딩** — `Skill("gstack", "navigate http://localhost:3000/")` 로 첫 진입 + storageState 인증 흐름 확인.
 4. **라우트 스윕** — 라우트별 `check-errors` 호출. 콘솔 에러/네트워크 4xx,5xx 를 수집해 `route -> errors[]` 맵으로 누적.
 5. **핵심 흐름** — login → 대시보드 → 주요 모듈(tasks/projects/calendar/notifications 등) 인터랙션. 실패 흐름은 selector + 스크린샷으로 격리.
 6. **회귀 스크린샷** — 통과 라우트는 `screenshot` 1장씩 캡처. PNG는 `playwright/regression/{date}/` 또는 `test-results/` 아래에 누적.
-7. **Playwright 위임 (선택)** — `Bash("cd project/all-flow-frontend && pnpm exec playwright test --reporter=line")`. 단, dev container 가 `pnpm dev` 를 별도로 띄우지 않도록 `E2E_BASE_URL=http://localhost:3000` 를 export 한다.
+7. **Playwright 위임 (선택)** — `Bash("cd apps/frontend && pnpm exec playwright test --reporter=line")`. 단, dev container 가 `pnpm dev` 를 별도로 띄우지 않도록 `E2E_BASE_URL=http://localhost:3000` 를 export 한다.
 8. **보고** — 다음 스키마로 PL/QA-reviewer 에게 회신:
 
 ```json

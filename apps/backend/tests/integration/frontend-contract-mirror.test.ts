@@ -8,7 +8,7 @@
  * Phase 7에서 backend 가 각 엔드포인트를 구현하면
  * `frontend-contract.test.ts` 의 라이브 호출 케이스가 추가되어 본 가드를 졸업한다.
  *
- * Source: project/all-flow-frontend/openapi.yaml
+ * Source: apps/frontend/openapi.yaml
  */
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SPEC = resolve(__dirname, '..', '..', '..', 'all-flow-frontend', 'openapi.yaml');
+const SPEC = resolve(__dirname, '..', '..', '..', 'frontend', 'openapi.yaml');
 const yaml = readFileSync(SPEC, 'utf8');
 
 // 단순 토큰 매칭 — `paths:` 블록 안의 `<method>:` 행을 path 별로 수집.

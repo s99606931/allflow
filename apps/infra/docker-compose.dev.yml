@@ -14,7 +14,7 @@ services:
   backend:
     image: allflow-backend:dev
     build:
-      context: ../all-flow-backend
+      context: ../backend
       dockerfile: Dockerfile
       target: dev
     command: ["pnpm", "dev"]
@@ -28,7 +28,7 @@ services:
       # Prisma DATABASE_URL (compose-internal).
       DATABASE_URL: postgresql://${POSTGRES_USER:-allflow}:${POSTGRES_PASSWORD:-allflow_dev_pw}@postgres:5432/${POSTGRES_DB:-allflow}?schema=public
     volumes:
-      - ../all-flow-backend:/app
+      - ../backend:/app
       - backend-node-modules:/app/node_modules
     ports:
       - "${BACKEND_PORT:-8080}:8080"
@@ -36,7 +36,7 @@ services:
   frontend:
     image: allflow-frontend:dev
     build:
-      context: ../all-flow-frontend
+      context: ../frontend
       dockerfile: Dockerfile
       target: dev
     command: ["pnpm", "dev"]
@@ -52,7 +52,7 @@ services:
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/api/v1}
       NEXT_PUBLIC_USE_MOCK: ${NEXT_PUBLIC_USE_MOCK:-false}
     volumes:
-      - ../all-flow-frontend:/app
+      - ../frontend:/app
       - frontend-node-modules:/app/node_modules
       - frontend-next-cache:/app/.next
     ports:

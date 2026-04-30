@@ -1,8 +1,7 @@
 # ALL-Flow monorepo workspaces
-# Step 1 (2026-04-30): BE + FE only. infra has no package.json (Makefile-driven).
-# Step 3+ will activate packages/* and apps/* after folder migration.
+# Step 2 (2026-04-30): folder migrated to apps/. infra has no package.json (Makefile-driven, excluded).
+# Step 3+ will activate packages/* (contracts, shared, config-*).
 packages:
-  - 'project/all-flow-backend'
-  - 'project/all-flow-frontend'
+  - 'apps/backend'
+  - 'apps/frontend'
   # - 'packages/*'   # Step 3+ (contracts, shared, config-*)
-  # - 'apps/*'       # Step 2 (after git mv project/all-flow-* → apps/*)

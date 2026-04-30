@@ -13,7 +13,7 @@ services:
   backend:
     image: ${BACKEND_IMAGE:-allflow-backend:latest}
     build:
-      context: ../all-flow-backend
+      context: ../backend
       dockerfile: Dockerfile
       target: runtime
     restart: always
@@ -36,7 +36,7 @@ services:
   frontend:
     image: ${FRONTEND_IMAGE:-allflow-frontend:latest}
     build:
-      context: ../all-flow-frontend
+      context: ../frontend
       dockerfile: Dockerfile
       target: prod
     restart: always

@@ -2,7 +2,7 @@
  * Prisma 시드 — frontend src/lib/fixtures.ts 를 기반으로 개발용 초기 데이터 적재.
  *
  * 출처:
- *   project/all-flow-frontend/src/lib/fixtures.ts (TEAM/PROJECTS/TASKS/ISSUES)
+ *   apps/frontend/src/lib/fixtures.ts (TEAM/PROJECTS/TASKS/ISSUES)
  *
  * 정책:
  *   - upsert 기반 (재실행 안전, 멱등)
