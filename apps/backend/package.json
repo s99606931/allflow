@@ -42,7 +42,6 @@
   "dependencies": {
     "@all-flow/contracts": "workspace:*",
     "@all-flow/shared": "workspace:*",
-    "@fastify/jwt": "^9.1.0",
     "@fastify/sensible": "^6.0.4",
     "@fastify/websocket": "^11.2.0",
     "@prisma/client": "^6.19.3",
