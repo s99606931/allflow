@@ -1,6 +1,6 @@
 # 운영 오픈 전수검사 체크리스트
 
-> **생성일**: 2026-04-30 | **마지막 업데이트**: 2026-04-30 DB×UI 상세 검증 완료
+> **생성일**: 2026-04-30 | **마지막 업데이트**: 2026-05-02 AI Q2 enhance + T1 영속화 + auth revoke + 코드 품질 개선
 > **서비스**: AllFlow | **환경**: localhost (FE:80, BE:8080)
 > **범례**: ✅ PASS | ❌ FAIL | ⚠️ 주의 (P1) | 🔄 테스트 중
 
@@ -15,7 +15,7 @@
 | PostgreSQL (port 15432) | ✅ PASS | docker healthy, 9개 테이블 확인 |
 | Redis (port 16379) | ✅ PASS | docker healthy |
 | DB 시드 데이터 | ✅ PASS | `pnpm seed:init` (admin 1명) / `pnpm seed:demo` (users:7+ projects:8 tasks:32 issues:8 +보조데이터) / `pnpm seed:reset` (TRUNCATE) |
-| USE_MOCK 상태 | ✅ N/A | 2026-05-02 USE_MOCK 분기 전면 제거 (BE 단일 진입점) |
+| USE_MOCK 상태 | ✅ N/A | 2026-05-02 USE_MOCK 76개 분기 + fixtures import 전면 제거 |
 
 ---
 
@@ -99,13 +99,13 @@
 | TypeScript FE typecheck | ✅ PASS | 0 errors |
 | TypeScript BE typecheck | ✅ PASS | 0 errors (수정 완료 2026-04-30) |
 | ESLint FE (errors) | ✅ PASS | 0 errors |
-| ESLint FE (warnings) | ⚠️ P1 | 115 warnings (react-hooks, no-explicit-any) |
-| FE Unit test (vitest) | ✅ PASS | 71/71 |
-| BE Unit test (vitest) | ✅ PASS | 267/267 (통합 28 skip = testcontainers 환경) |
+| ESLint FE (warnings) | ✅ 개선 | 10 warnings (모두 test/e2e 파일, 프로덕션 0건) |
+| FE Unit test (vitest) | ✅ PASS | 81/81 (+10, 2026-05-02) |
+| BE Unit test (vitest) | ✅ PASS | 382/382 (+115, 2026-05-02) |
 | console.log 잔존 | ✅ PASS | 1건 (i18n.ts dev-only warn — 의도적) |
 | TODO/FIXME 잔존 | ✅ PASS | 0건 |
 | any 타입 남용 | ✅ PASS | 1건 (자동생성 파일 제외) |
-| 500줄 초과 파일 | ⚠️ P1 | hr/page.tsx(535), settings.tsx(522) |
+| 500줄 초과 파일 | ✅ 수정 완료 | settings.tsx → 9파일 분리 (2026-05-02) |
 
 ---
 
@@ -114,10 +114,11 @@
 | 항목 | 상태 | 비고 |
 |------|------|------|
 | @fastify/jwt CVE (fast-jwt critical×2 + high×1) | ✅ 수정 완료 | 미사용 의존성 제거 (2026-04-30) |
-| PostCSS@8.4.31 XSS (moderate) | ⚠️ P1 | Storybook devDep, 빌드 타임만 |
+| PostCSS@8.4.31 XSS (moderate) | ✅ 수정 완료 | 현재 8.5.12 설치됨 (2026-05-02 실사) |
+| auth 토큰 블록리스트 | ✅ 수정 완료 | RevokedToken Prisma + jti 검사 (2026-05-02) |
 | 하드코딩 시크릿 | ✅ PASS | 0건 |
 | eval() 사용 | ✅ PASS | 0건 |
-| pnpm audit 잔존 | ✅ | 1 moderate (devDep) |
+| pnpm audit 잔존 | ✅ | 0 moderate (PostCSS 업데이트 후) |
 
 ---
 
@@ -153,15 +154,22 @@
 
 ---
 
-## 9. 운영 오픈 후 P1 개선 항목 (1주 내)
+## 9. 운영 오픈 후 개선 항목 현황 (2026-05-02 업데이트)
 
-| # | 항목 | 조치 |
-|---|------|------|
-| 1 | ESLint warnings 115건 | react-hooks/set-state-in-effect 우선 fix |
-| 2 | ~~BE typecheck 3 errors~~ | ✅ 수정 완료 (2026-04-30) |
-| 3 | next-auth@5.0.0-beta.30 | GA 릴리즈 시 업그레이드 |
-| 4 | hr/page.tsx 535줄, settings.tsx 522줄 | 컴포넌트 분리 |
-| 5 | PostCSS@8.4.31 (Storybook devDep) | Storybook 업그레이드 시 자동 해결 |
+| # | 항목 | 상태 | 조치일 |
+|---|------|------|--------|
+| 1 | ESLint warnings 115건 | ✅ 10건으로 감소 (test 파일만 잔존) | 2026-05-02 |
+| 2 | ~~BE typecheck 3 errors~~ | ✅ 수정 완료 | 2026-04-30 |
+| 3 | next-auth@5.0.0-beta.30 | ⚠️ GA 릴리즈 대기 | 미완 |
+| 4 | settings.tsx 522줄 | ✅ 9파일 분리 (87 LOC shell) | 2026-05-02 |
+| 5 | PostCSS@8.4.31 | ✅ 8.5.12로 업데이트됨 | 자동 해결 |
+| 6 | in-memory → Prisma 영속화 (T1) | ✅ 7 도메인 완결 | 2026-05-02 |
+| 7 | auth revoke 블록리스트 | ✅ RevokedToken + jti 검사 | 2026-05-02 |
+| 8 | AI Q2 enhance (RAG/MCP/Tool/WebSearch) | ✅ 완료 + 커밋 | 2026-05-02 |
+
+**잔여 P2 항목**:
+- T2: E2E 전수 회귀 (docker-compose 환경 필요)
+- T5: Vercel Turbo Remote Cache (사용자 `npx turbo login` 필요)
 
 ---
 
