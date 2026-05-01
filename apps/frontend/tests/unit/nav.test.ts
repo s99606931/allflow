@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NAV } from '@/lib/fixtures';
+import { NAV } from '@/lib/nav';
 
 /**
  * 사이드바 네비게이션 무결성 테스트.

@@ -15,7 +15,7 @@
 | PostgreSQL (port 15432) | ✅ PASS | docker healthy, 9개 테이블 확인 |
 | Redis (port 16379) | ✅ PASS | docker healthy |
 | DB 시드 데이터 | ✅ PASS | `pnpm seed:init` (admin 1명) / `pnpm seed:demo` (users:7+ projects:8 tasks:32 issues:8 +보조데이터) / `pnpm seed:reset` (TRUNCATE) |
-| USE_MOCK 상태 | ✅ PASS | 컨테이너 내부 미설정 → 기본 false (실DB 연동) |
+| USE_MOCK 상태 | ✅ N/A | 2026-05-02 USE_MOCK 분기 전면 제거 (BE 단일 진입점) |
 
 ---
 
@@ -147,7 +147,7 @@
 | G4: TypeScript FE 0 errors | 0 | ✅ PASS |
 | G5: BE API 연동 | 9개 도메인 | ✅ PASS |
 | G6: Critical 보안 취약점 | 0 | ✅ PASS (수정 완료) |
-| G7: DB 실데이터 연동 | USE_MOCK=false | ✅ PASS |
+| G7: DB 실데이터 연동 | USE_MOCK 분기 제거됨 | ✅ PASS |
 
 ### 🟢 최종 판정: **운영 오픈 가능**
 

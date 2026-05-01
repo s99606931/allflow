@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { NAV } from '@/lib/fixtures';
+import { NAV } from '@/lib/nav';
 import { useUsers, useProjects, useTasks, useIssues } from '@/lib/hooks/use-data';
 import { Avatar } from '@/components/ui/primitives';
 import type { User, Project, Task, Issue } from '@/lib/schemas';

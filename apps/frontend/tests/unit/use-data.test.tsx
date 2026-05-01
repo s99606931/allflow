@@ -2,16 +2,69 @@
  * TEST-F1 — React Query hook unit tests.
  *
  * `src/lib/hooks/use-data.ts` 의 query/mutation 훅이 다음을 지키는지 검증한다.
- *  - loading → success 전이 (USE_MOCK 픽스처 경로)
+ *  - loading → success 전이 (api 모듈 직접 mock)
  *  - mutation 성공 시 관련 queryKey invalidate
  *  - error 모드에서 onError 토스트 호출
  *
- * 외부 fetch 는 USE_MOCK=true 경로(픽스처)로만 흐르므로 별도 MSW 가 필요 없다.
+ * USE_MOCK 분기를 모두 제거한 뒤, 외부 fetch 는 `vi.mock('@/lib/api', ...)` 으로
+ * 가짜 응답을 주입하여 테스트한다 (BE 의존 없음).
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { describe, expect, it, vi } from 'vitest';
+
+import { PROJECTS, TASKS, ISSUES, ME } from '@/lib/fixtures';
+
+vi.mock('@/lib/api', () => {
+  const api = {
+    me: vi.fn(async () => ME),
+    listProjects: vi.fn(async () => [...PROJECTS]),
+    getProject: vi.fn(async (id: string) => PROJECTS.find((p) => p.id === id)),
+    createProject: vi.fn(async (input: { name: string }) => ({
+      ...input,
+      id: 'PRJ-NEW',
+      color: '#3B82F6',
+      progress: 0,
+      status: 'todo',
+      due: '',
+      members: [],
+      tasks: { total: 0, done: 0 },
+    })),
+    updateProject: vi.fn(async (id: string, patch: Record<string, unknown>) => ({
+      ...(PROJECTS.find((p) => p.id === id) ?? {}),
+      ...patch,
+    })),
+    listTasks: vi.fn(async (params?: { projectId?: string; assigneeId?: string }) =>
+      TASKS.filter(
+        (t) =>
+          (!params?.projectId || t.proj === params.projectId) &&
+          (!params?.assigneeId || t.assignee === params.assigneeId),
+      ),
+    ),
+    createTask: vi.fn(async (input: { title: string; projectId: string; assigneeId: string }) => ({
+      id: 'TASK-NEW',
+      title: input.title,
+      status: 'todo',
+      proj: input.projectId,
+      assignee: input.assigneeId,
+      due: '',
+      priority: 'med',
+      tags: [],
+    })),
+    updateTask: vi.fn(async (id: string, patch: Record<string, unknown>) => ({ id, ...patch })),
+    listIssues: vi.fn(async () => [...ISSUES]),
+    listApprovals: vi.fn(async (_filters?: { status?: string }) => []),
+  };
+  return { api };
+});
+
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 import {
   useApprovals,
@@ -22,13 +75,6 @@ import {
   useTasks,
 } from '@/lib/hooks/use-data';
 import { keys } from '@/lib/query-keys';
-
-vi.mock('sonner', () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
 
 function makeWrapper() {
   const qc = new QueryClient({
@@ -83,7 +129,7 @@ describe('use-data hooks (TEST-F1)', () => {
     expect(Array.isArray(result.current.data)).toBe(true);
   });
 
-  it('useApprovals: USE_MOCK 픽스처 경로에서 status 필터 호출 시 query 키가 분기된다', async () => {
+  it('useApprovals: status 필터 호출 시 query 키가 분기된다', async () => {
     const { Wrapper, qc } = makeWrapper();
     const { result: a } = renderHook(() => useApprovals(), { wrapper: Wrapper });
     const { result: b } = renderHook(

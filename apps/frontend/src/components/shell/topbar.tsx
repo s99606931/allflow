@@ -1,8 +1,16 @@
 "use client";
 
 import { Avatar, IconButton } from "@/components/ui/primitives";
-import { ME } from "@/lib/fixtures";
 import { useMe } from "@/lib/hooks/use-data";
+
+const ANON_USER = {
+	id: "anon",
+	name: "...",
+	role: "",
+	dept: "",
+	initials: "?",
+	color: "#888888",
+};
 import { useRealtime } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/store/ui-store";
@@ -73,7 +81,7 @@ export function Topbar({
 	const toggleAI = useUIStore((s) => s.toggleAIPanel);
 	const { status: rtStatus } = useRealtime();
 	const meQuery = useMe();
-	const me = meQuery.data ?? ME;
+	const me = meQuery.data ?? ANON_USER;
 
 	const rtColor =
 		rtStatus === "open"

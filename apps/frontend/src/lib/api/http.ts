@@ -7,7 +7,6 @@
 import ky from 'ky';
 import type { z } from 'zod';
 
-export const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api/v1';
 
 export const http = ky.create({
@@ -15,8 +14,6 @@ export const http = ky.create({
   timeout: 15_000,
   retry: { limit: 1 },
 });
-
-export const sleep = (ms = 250) => new Promise((r) => setTimeout(r, ms));
 
 export class ApiSchemaError extends Error {
   constructor(public readonly issues: z.ZodIssue[]) {

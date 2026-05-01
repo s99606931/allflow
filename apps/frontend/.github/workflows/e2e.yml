@@ -34,7 +34,6 @@ jobs:
         working-directory: all-flow-frontend
     env:
       CI: 'true'
-      NEXT_PUBLIC_USE_MOCK: 'true'  # FE 단독 E2E 시 픽스처 모드
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

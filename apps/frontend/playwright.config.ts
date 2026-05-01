@@ -44,9 +44,6 @@ export default defineConfig({
           NEXT_PUBLIC_E2E: 'true',
           AUTH_SECRET: 'e2e-test-secret-not-for-production',
           NEXTAUTH_SECRET: 'e2e-test-secret-not-for-production',
-          // Exercise the real /api/v1 stub routes during E2E so the fetch
-          // surface gets covered end-to-end.
-          NEXT_PUBLIC_USE_MOCK: 'false',
         },
       },
 });

@@ -1,4 +1,12 @@
-import type { User, Project, Task, Issue, Activity, NavSection } from './types';
+/**
+ * 테스트 / 스토리북 전용 픽스처.
+ *
+ * 프로덕션 코드는 BE API 만 사용한다 (USE_MOCK 분기 정리 완료).
+ * 본 파일은 vitest 단위 테스트 (schemas, primitives) 와 Storybook 의 시각화 입력으로만 쓰인다.
+ *
+ * 정적 NAV 트리는 `lib/nav.ts` 로 분리되어 있다.
+ */
+import type { User, Project, Task, Issue, Activity } from './types';
 
 export const ME: User = {
   id: 'me', name: '김지우', role: '프로덕트 매니저', dept: '프로덕트팀',
@@ -49,42 +57,3 @@ export const ACTIVITY: Activity[] = [
   { who: 'ai', what: '회의록에서 자동으로', target: '7개의 액션 아이템', verb: '을 생성했습니다', time: '1시간 전', proj: 'p1', kind: 'ai' },
   { who: 'u5', what: '문서', target: 'Q2 마케팅 KPI 정리', verb: '를 발행했습니다', time: '2시간 전', proj: 'p3', kind: 'doc' },
 ];
-
-export const NAV: NavSection[] = [
-  { sect: '워크스페이스', items: [
-    { id: 'home', label: '대시보드', icon: 'LayoutDashboard', href: '/' },
-    { id: 'projects', label: '프로젝트', icon: 'FolderKanban', href: '/projects' },
-    { id: 'tasks', label: '내 태스크', icon: 'CheckSquare', href: '/tasks' },
-    { id: 'gantt', label: '간트차트', icon: 'GanttChart', href: '/gantt' },
-    { id: 'issues', label: '이슈 관리', icon: 'AlertCircle', href: '/issues' },
-    { id: 'approvals', label: '결재함', icon: 'FileCheck2', href: '/approvals' },
-    { id: 'calendar', label: '캘린더', icon: 'Calendar', href: '/calendar' },
-    { id: 'docs', label: '문서 / 위키', icon: 'FileText', href: '/docs' },
-    { id: 'chat', label: '팀 채팅', icon: 'MessageSquare', href: '/chat' },
-  ]},
-  { sect: '영업 / 고객사', items: [
-    { id: 'progress', label: '진행률 관리', icon: 'TrendingUp', href: '/progress' },
-    { id: 'clients', label: '고객사 (CRM)', icon: 'Building2', href: '/clients' },
-  ]},
-  { sect: 'AI', items: [
-    { id: 'ai-auto', label: 'AI 자동 등록', icon: 'Sparkles', href: '/ai-auto' },
-    { id: 'notion', label: 'Notion 연동', icon: 'Database', href: '/notion' },
-  ]},
-  { sect: '보고', items: [
-    { id: 'weekly', label: '주간 보고', icon: 'FileBarChart', href: '/reports/weekly' },
-    { id: 'monthly', label: '월간 보고', icon: 'BarChart3', href: '/reports/monthly' },
-  ]},
-  { sect: '관리', items: [
-    { id: 'org', label: '조직도', icon: 'Network', href: '/org' },
-    { id: 'users-pro', label: '사용자 관리', icon: 'Users', href: '/users' },
-    { id: 'hr', label: '인사 / HR', icon: 'BadgeCheck', href: '/hr' },
-    { id: 'resources', label: '회의실 · 리소스', icon: 'CalendarRange', href: '/resources' },
-    { id: 'admin', label: '관리자 콘솔', icon: 'Shield', href: '/admin' },
-    { id: 'notif', label: '알림 센터', icon: 'Bell', href: '/notifications' },
-    { id: 'settings', label: '개인 설정', icon: 'Settings', href: '/settings' },
-  ]},
-];
-
-export function userById(id: string): User | undefined {
-  return TEAM.find(u => u.id === id);
-}

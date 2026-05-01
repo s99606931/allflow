@@ -10,8 +10,8 @@ cd all-flow-frontend
 pnpm install
 # next-auth v5 는 AUTH_SECRET 이 없으면 부팅에 실패합니다. 데모용 임시값 OK.
 export AUTH_SECRET=$(openssl rand -hex 32)
-# (선택) in-app /api/v1 stub 라우트로 fetch 경로까지 검증하려면:
-export NEXT_PUBLIC_USE_MOCK=false
+# 백엔드 베이스 URL (기본 `/api/v1` — proxy.ts 의 same-origin 라우팅과 호환)
+# export NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
 export NEXT_PUBLIC_REALTIME_MODE=sse   # SSE 스트림 → /api/v1/sse 자동 연결
 pnpm dev         # → http://localhost:3000
 pnpm storybook   # → http://localhost:6006 (디자인 시스템 갤러리, Storybook 10)
@@ -26,7 +26,7 @@ pnpm storybook   # → http://localhost:6006 (디자인 시스템 갤러리, Sto
 |---|---|---|
 | **OpenAPI 3.1 스펙** | `openapi.yaml` | Identity · Projects · Tasks · Issues · Reports · AI · Realtime · Notifications |
 | **Zod 스키마** | `src/lib/schemas.ts` | 모든 API 응답 런타임 검증 + 타입 자동 추론 |
-| **API 클라이언트** | `src/lib/api.ts` | Mock ↔ HTTP 단일 시멘 + Zod 검증 + Bearer 토큰 훅 |
+| **API 클라이언트** | `src/lib/api.ts` | BE `/api/v1` 단일 진입점 + Zod 검증 + Bearer 토큰 훅 |
 | **WebSocket / SSE** | `src/lib/realtime.ts` | `useRealtime()` · `useRealtimeEvents()` · 자동 재연결 + 모드 토글 |
 | **PDF 리포트** | `src/lib/pdf-reports.tsx` | 주간/월간 react-pdf 렌더 + Pretendard CDN · 다이내믹 임포트 |
 | **Storybook 10** | `.storybook/` · `*.stories.tsx` | Foundation/Tokens · Primitives 갤러리 · 라이트/다크 + 6 액센트 토글 |
@@ -161,10 +161,12 @@ all-flow-frontend/
 ```
 React Query  ──→  api.listProjects()
                        │
-                       ├── USE_MOCK=true  → fixtures.ts 에서 250ms 지연 후 반환
-                       └── USE_MOCK=false → ky.get('/api/v1/projects')
-                                              └─→ src/app/api/v1/projects/route.ts (in-app stub)
+                       └── ky.get('/api/v1/projects') → BE Fastify 라우트
 ```
+
+> 단위 테스트는 `vi.mock('@/lib/api', ...)` 으로 가짜 응답을 주입하고,
+> Storybook 은 `lib/fixtures.ts` 의 정적 데이터를 직접 임포트한다.
+> 프로덕션 코드는 BE API 만 사용 — USE_MOCK 분기는 모두 제거됨 (2026-05-02).
 
 **Zustand 스토어** (`store/ui-store.ts`):
 `theme · accent · sidebarCollapsed · aiPanelOpen` — `persist` 로 localStorage 동기화
@@ -195,7 +197,7 @@ React Query  ──→  api.listProjects()
 2. **WebSocket / SSE** — 실시간 알림 · 채팅 · 활동 피드 ✅ (`lib/realtime.ts` + `/api/v1/sse`)
 3. **react-pdf** — 주간/월간 보고 PDF 다운로드 ✅ (`lib/pdf-reports.tsx`)
 4. **Storybook** — 프리미티브 문서화 ✅ (`*.stories.tsx`, Storybook 10)
-5. **In-app stub 백엔드** ✅ (`src/app/api/v1/**` — 11개 라우트, USE_MOCK=false 검증 완료)
+5. **In-app stub 백엔드** — `_archived_mock_2026_04_30/` 으로 archive (BE 단일 진입점 정합화 완료)
 6. **`eslint.config.mjs`** — Flat config + next/core-web-vitals + next/typescript (사용자 수동 작업, config-protection 정책)
 7. **WebSocket 모드** — `/api/v1/sse` 외 ws 브로커 통합 (Redis pub/sub 또는 별도 Node 서버)
 8. **next-auth DB adapter** — 현재 JWT-only, Prisma/Drizzle adapter 도입 시 세션 영속화

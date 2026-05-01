@@ -8,7 +8,7 @@ import {
 	QuickCreateMenu,
 	type QuickCreateKind,
 } from "@/components/shell/quick-create-menu";
-import { NAV } from "@/lib/fixtures";
+import { NAV } from "@/lib/nav";
 import { useResizeDrag } from "@/lib/hooks/use-resize-drag";
 import { cn } from "@/lib/utils";
 import { SIDEBAR_MAX, SIDEBAR_MIN, useUIStore } from "@/store/ui-store";
