@@ -5,6 +5,7 @@ import { useMe, useProjects, useTasks } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { CheckCircle2, Circle, MoreHorizontal, Sparkles, Plus, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { TaskCreateDialog } from '@/components/dialogs/task-create-dialog';
 
@@ -14,6 +15,7 @@ export function DashboardPage() {
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
   const userMap = useUserMap();
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const router = useRouter();
 
   const todoCount = tasks.filter(t => t.status !== 'done').length;
   const doneToday = tasks.filter(t => t.status === 'done').length;
@@ -38,7 +40,7 @@ export function DashboardPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => setTaskDialogOpen(true)}><Plus size={14} /> 태스크 추가</Button>
-          <Button variant="primary"><Sparkles size={14} /> AI에게 요청</Button>
+          <Button variant="primary" onClick={() => router.push('/ai-auto')}><Sparkles size={14} /> AI에게 요청</Button>
         </div>
         <TaskCreateDialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen} />
       </div>

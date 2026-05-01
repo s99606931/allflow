@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardBody, Avatar, Badge, Button } from '@/components/ui/primitives';
-import { MoreHorizontal, Shield, UserPlus, Filter, Download } from 'lucide-react';
+import { MoreHorizontal, Search, Shield, UserPlus, Filter, Download, X } from 'lucide-react';
 import { useUsers, useInviteUser } from '@/lib/hooks/use-data';
 import type { User } from '@/lib/schemas';
 
@@ -23,6 +23,14 @@ export function UsersPage() {
   const inviteMutation = useInviteUser();
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const displayed = useMemo(() => {
+    if (!search) return users;
+    const q = search.toLowerCase();
+    return users.filter(u => u.name.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q) || u.role.toLowerCase().includes(q));
+  }, [users, search]);
 
   function handleInvite() {
     if (!inviteEmail.trim()) return;
@@ -53,7 +61,26 @@ export function UsersPage() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="secondary" size="sm"><Filter size={13} /> 필터</Button>
+        <Button variant={showSearch ? 'primary' : 'secondary'} size="sm" onClick={() => { setShowSearch(v => !v); setSearch(''); }}>
+          <Filter size={13} /> 필터
+        </Button>
+        {showSearch && (
+          <div className="relative">
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
+            <input
+              autoFocus
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="이름·이메일·역할 검색..."
+              className="h-8 w-52 pl-8 pr-7 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-3 hover:text-fg">
+                <X size={11} />
+              </button>
+            )}
+          </div>
+        )}
         <div className="flex-1" />
         <Button
           variant="secondary"
@@ -115,10 +142,10 @@ export function UsersPage() {
         {error && (
           <div className="px-4 py-12 text-center text-[12px] text-danger">사용자를 불러오지 못했습니다.</div>
         )}
-        {!isLoading && !error && users.length === 0 && (
-          <div className="px-4 py-12 text-center text-[12px] text-fg-3">사용자가 없습니다.</div>
+        {!isLoading && !error && displayed.length === 0 && (
+          <div className="px-4 py-12 text-center text-[12px] text-fg-3">{search ? '검색 결과가 없습니다.' : '사용자가 없습니다.'}</div>
         )}
-        {users.map(u => (
+        {displayed.map(u => (
           <div
             key={u.id}
             className="grid grid-cols-[36px_1fr_140px_100px_80px_100px_28px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover"

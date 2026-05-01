@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardBody, Avatar, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
 import type { IssueSev, IssuePrio } from '@/lib/types';
-import { Filter, Plus, Search, Sparkles } from 'lucide-react';
+import { CheckCircle2, Filter, Plus, Search, Sparkles } from 'lucide-react';
 import { useIssues } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { IssueCreateDialog } from '@/components/dialogs/issue-create-dialog';
@@ -18,13 +18,30 @@ const PRIO_COLOR: Record<IssuePrio, string> = {
   P0: 'oklch(0.62 0.2 25)', P1: 'oklch(0.72 0.18 50)', P2: 'oklch(0.7 0.13 220)', P3: 'oklch(0.7 0.01 250)',
 };
 
+type IssueFilter = '전체' | '내 이슈' | '🔥 Critical' | 'Open' | '⏰ SLA 임박';
+
 export function IssuesPage() {
   const [createOpen, setCreateOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<IssueFilter>('전체');
+  const [search, setSearch] = useState('');
+  const [aiDismissed, setAiDismissed] = useState(false);
+  const [aiApproved, setAiApproved] = useState(false);
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const { data: issues = [], isLoading, error } = useIssues();
   const userMap = useUserMap();
   const p0Count = issues.filter(i => i.prio === 'P0' && (i.status === 'open' || i.status === 'in-progress')).length;
   const newCount = issues.filter(i => i.status === 'open').length;
   const slaAtRisk = issues.filter(i => i.slaPct >= 80).length;
+
+  const displayed = useMemo(() => {
+    return issues.filter(i => {
+      if (activeFilter === '내 이슈') return false;
+      if (activeFilter === '🔥 Critical') return i.sev === 'critical';
+      if (activeFilter === 'Open') return i.status === 'open';
+      if (activeFilter === '⏰ SLA 임박') return i.slaPct >= 80;
+      return true;
+    }).filter(i => !search || i.title.toLowerCase().includes(search.toLowerCase()) || i.id.toLowerCase().includes(search.toLowerCase()));
+  }, [issues, activeFilter, search]);
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
@@ -52,27 +69,33 @@ export function IssuesPage() {
       {/* Toolbar */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-1 p-0.5 rounded-md bg-bg-2 border border-border">
-          {['전체', '내 이슈', '🔥 Critical', 'Open', '⏰ SLA 임박'].map((c, i) => (
+          {(['전체', '내 이슈', '🔥 Critical', 'Open', '⏰ SLA 임박'] as IssueFilter[]).map(c => (
             <button
               key={c}
+              onClick={() => setActiveFilter(c)}
               className={`px-2.5 h-7 rounded text-[12px] font-medium transition-colors ${
-                i === 0 ? 'bg-bg-elev text-fg shadow-sm' : 'text-fg-2 hover:text-fg-1'
+                activeFilter === c ? 'bg-bg-elev text-fg shadow-sm' : 'text-fg-2 hover:text-fg-1'
               }`}
             >
               {c}
             </button>
           ))}
         </div>
-        <Button variant="secondary" size="sm"><Filter size={13} /> 필터</Button>
+        {activeFilter !== '전체' && (
+          <button onClick={() => setActiveFilter('전체')} className="text-[11px] text-fg-3 hover:text-fg-1 underline">초기화</button>
+        )}
+        <Button variant="secondary" size="sm" onClick={() => { setActiveFilter('전체'); setSearch(''); }}><Filter size={13} /> 필터</Button>
         <div className="flex-1" />
         <div className="relative">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
           <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
             placeholder="이슈 검색..."
             className="h-8 w-56 pl-8 pr-3 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent"
           />
         </div>
-        <Button variant="secondary" size="sm"><Sparkles size={13} /> AI 자동 분류</Button>
+        <Button variant="secondary" size="sm" disabled><Sparkles size={13} /> AI 자동 분류</Button>
         <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}><Plus size={13} /> 새 이슈</Button>
         <IssueCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
       </div>
@@ -92,10 +115,10 @@ export function IssuesPage() {
         </div>
         {isLoading && <div className="px-4 py-12 text-center text-[12px] text-fg-3">불러오는 중...</div>}
         {error && <div className="px-4 py-12 text-center text-[12px] text-danger">이슈를 불러오지 못했습니다.</div>}
-        {!isLoading && !error && issues.length === 0 && (
+        {!isLoading && !error && displayed.length === 0 && (
           <div className="px-4 py-12 text-center text-[12px] text-fg-3">표시할 이슈가 없습니다.</div>
         )}
-        {issues.map(iss => {
+        {displayed.map(iss => {
           const u = userMap.get(iss.assignee);
           return (
             <div
@@ -140,22 +163,39 @@ export function IssuesPage() {
       </Card>
 
       {/* AI suggestion */}
-      <Card className="!bg-accent-soft border-accent/20">
-        <CardBody className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-md bg-accent text-accent-fg grid place-items-center shrink-0"><Sparkles size={14} /></div>
-          <div className="flex-1">
-            <div className="text-[13px] font-semibold text-fg">AI 권장 액션 — 결제 PG 응답 지연 (ISS-238)</div>
-            <p className="text-[12.5px] text-fg-1 mt-1 leading-relaxed">
-              지난 30일 동안 동일 패턴 3회 발생. <strong>백업 PG 우회 라우트 활성화</strong>를 권장합니다. 평균 복구 시간 4분 → 40초로 단축될 것으로 예상돼요.
-            </p>
-            <div className="flex gap-2 mt-2.5">
-              <Button variant="primary" size="sm">백업 라우트 활성화</Button>
-              <Button variant="secondary" size="sm">근거 보기</Button>
-              <Button variant="ghost" size="sm">무시</Button>
+      {!aiDismissed && (
+        <Card className="!bg-accent-soft border-accent/20">
+          <CardBody className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-md bg-accent text-accent-fg grid place-items-center shrink-0"><Sparkles size={14} /></div>
+            <div className="flex-1">
+              <div className="text-[13px] font-semibold text-fg">AI 권장 액션 — 결제 PG 응답 지연 (ISS-238)</div>
+              <p className="text-[12.5px] text-fg-1 mt-1 leading-relaxed">
+                지난 30일 동안 동일 패턴 3회 발생. <strong>백업 PG 우회 라우트 활성화</strong>를 권장합니다. 평균 복구 시간 4분 → 40초로 단축될 것으로 예상돼요.
+              </p>
+              {evidenceOpen && (
+                <div className="mt-2 p-2.5 rounded bg-bg-elev border border-border text-[11.5px] text-fg-2 space-y-1">
+                  <div>• 2026-04-02: ISS-192 — 동일 PG 타임아웃 (4m 복구)</div>
+                  <div>• 2026-04-18: ISS-215 — 결제 API 503 (3m 복구)</div>
+                  <div>• 2026-05-01: ISS-238 — 현재 이슈 (진행 중)</div>
+                </div>
+              )}
+              {aiApproved ? (
+                <div className="flex items-center gap-1.5 mt-2.5 text-[12px] text-success font-medium">
+                  <CheckCircle2 size={13} /> 백업 라우트 활성화 완료
+                </div>
+              ) : (
+                <div className="flex gap-2 mt-2.5">
+                  <Button variant="primary" size="sm" onClick={() => setAiApproved(true)}>백업 라우트 활성화</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setEvidenceOpen(v => !v)}>
+                    {evidenceOpen ? '근거 숨기기' : '근거 보기'}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setAiDismissed(true)}>무시</Button>
+                </div>
+              )}
             </div>
-          </div>
-        </CardBody>
-      </Card>
+          </CardBody>
+        </Card>
+      )}
     </div>
   );
 }
