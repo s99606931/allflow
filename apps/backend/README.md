@@ -47,7 +47,12 @@ all-flow-backend/
 ├─ prisma/
 │  ├─ schema.prisma
 │  ├─ migrations/
-│  └─ seed.ts
+│  ├─ seed.ts                        # 호환 진입점 → seeds/demo 호출
+│  └─ seeds/
+│     ├─ _shared.ts                  # 공통 도메인 데이터 정의
+│     ├─ init.ts                     # 초기 시드: 빈 DB + admin 1명
+│     ├─ demo.ts                     # 데모 시드: 모든 메뉴 데이터
+│     └─ reset.ts                    # 전체 데이터 TRUNCATE
 ├─ tests/
 │  ├─ unit/
 │  ├─ integration/                   # supertest + testcontainers
@@ -79,10 +84,36 @@ cd all-flow-backend
 pnpm install
 docker compose -f docker/docker-compose.yml up -d  # postgres + redis
 pnpm prisma migrate dev
-pnpm seed
+
+# 시드 — 두 가지 모드 중 선택
+pnpm seed:init           # (A) 초기 시드: 빈 DB + admin 1명만 (사용자 직접 입력)
+pnpm seed:demo           # (B) 데모 시드: 모든 메뉴 풍부한 테스트 데이터
+pnpm seed:reset          # 모든 데이터 초기화 (스키마는 유지)
+# 하위 호환: `pnpm seed` 는 `pnpm seed:demo` 와 동일
+
 pnpm dev                 # → http://localhost:8080/api/v1
 pnpm openapi:check       # 프론트와 스펙 일치 검증
 pnpm test                # 단위
 pnpm test:int            # 통합 (testcontainers)
 pnpm test:e2e            # 컨트랙트 (frontend openapi.yaml 기준)
 ```
+
+### 시드 모드 비교
+
+| 모드 | 용도 | 데이터 |
+|------|------|--------|
+| `pnpm seed:init` | 신규 프로젝트, 운영 첫 배포 | admin 1명 + 기본 LLM 연결만 |
+| `pnpm seed:demo` | QA, 데모 시연, 로컬 개발 | 7 users + 8 projects + 32 tasks + 8 issues + 보조 데이터 |
+| `pnpm seed:reset` | 데이터 정리 → 재시드 전 단계 | (TRUNCATE — 빈 DB) |
+
+루트에서도 동일 명령:
+```bash
+pnpm seed:init       # 루트에서 backend 시드 실행
+pnpm seed:demo
+pnpm seed:reset
+```
+
+환경변수:
+- `ADMIN_EMAIL`: init 시드 admin 이메일 (기본 `admin@all-flow.local`)
+- `ADMIN_NAME`: init 시드 admin 이름 (기본 `관리자`)
+- `SEED_RESET_FORCE=1`: production NODE_ENV 에서도 reset 강제 실행 (위험)

@@ -14,7 +14,7 @@
 | Backend (port 8080) | ✅ PASS | docker healthy, `/api/v1/health` → `{"status":"ok"}` |
 | PostgreSQL (port 15432) | ✅ PASS | docker healthy, 9개 테이블 확인 |
 | Redis (port 16379) | ✅ PASS | docker healthy |
-| DB 시드 데이터 | ✅ PASS | users:7, projects:8, tasks:44, issues:8 |
+| DB 시드 데이터 | ✅ PASS | `pnpm seed:init` (admin 1명) / `pnpm seed:demo` (users:7+ projects:8 tasks:32 issues:8 +보조데이터) / `pnpm seed:reset` (TRUNCATE) |
 | USE_MOCK 상태 | ✅ PASS | 컨테이너 내부 미설정 → 기본 false (실DB 연동) |
 
 ---
