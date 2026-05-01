@@ -9,7 +9,10 @@ import { aiAttachmentRoutes } from './modules/ai/ai-attachment.routes.js';
 import { aiThreadRoutes } from './modules/ai/ai-thread.routes.js';
 import { DbBackedAIRegistry } from './modules/ai/db-backed-registry.js';
 import { llmConnectionsRoutes } from './modules/ai/llm-connections.routes.js';
+import { McpClientManager } from './modules/ai/mcp-client-registry.js';
 import { mcpConnectionRoutes } from './modules/ai/mcp-connection.routes.js';
+import { BUILTIN_TOOLS, ToolDispatcher } from './modules/ai/tool-dispatcher.js';
+import { buildWebSearchAdapter } from './modules/ai/web-search-adapter.js';
 import { approvalsRoutes } from './modules/approvals/approvals.routes.js';
 import { auditLogRoutes } from './modules/audit-log/audit-log.routes.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
@@ -114,6 +117,17 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
       fallback,
       log: app.log,
     });
+    // Tool-call agentic loop: ToolDispatcher = builtin tools + MCP client manager.
+    const mcpManager = new McpClientManager(app.prisma);
+    const toolDispatcher = new ToolDispatcher(BUILTIN_TOOLS, mcpManager);
+    const webSearch = buildWebSearchAdapter({
+      ...(env.WEB_SEARCH_PROVIDER ? { WEB_SEARCH_PROVIDER: env.WEB_SEARCH_PROVIDER } : {}),
+      ...(env.SEARXNG_URL ? { SEARXNG_URL: env.SEARXNG_URL } : {}),
+      ...(env.BRAVE_SEARCH_API_KEY ? { BRAVE_SEARCH_API_KEY: env.BRAVE_SEARCH_API_KEY } : {}),
+    });
+    app.addHook('onClose', async () => {
+      await mcpManager.close();
+    });
     await app.register(
       async (api) => {
         await api.register(identityRoutes);
@@ -124,7 +138,11 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
         await api.register(notificationsRoutes);
         await api.register(realtimeRoutes);
         await api.register(realtimeWsRoutes);
-        await api.register(aiRoutes, { registry: aiRegistry });
+        await api.register(aiRoutes, {
+          registry: aiRegistry,
+          dispatcher: toolDispatcher,
+          webSearch,
+        });
         await api.register(aiThreadRoutes);
         await api.register(aiAttachmentRoutes);
         await api.register(mcpConnectionRoutes);

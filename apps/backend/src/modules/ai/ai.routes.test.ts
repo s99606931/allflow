@@ -6,8 +6,14 @@ import { buildApp } from '../../app.js';
 import { resetEnvForTests } from '../../config/env.js';
 import { authPlugin } from '../../plugins/auth.js';
 import { rbacPlugin } from '../../plugins/rbac.js';
-import { aiRoutes, extractCitations } from './ai.routes.js';
-import { AIAdapterRegistry, InMemoryAIAdapter } from './ai-adapter.js';
+import { aiRoutes, CITATION_SYSTEM_PROMPT, extractCitations } from './ai.routes.js';
+import {
+  AIAdapterRegistry,
+  type AICompleteOptions,
+  type AICompletionResult,
+  type AIMessage,
+  InMemoryAIAdapter,
+} from './ai-adapter.js';
 
 const TEST_AUTH = 'a'.repeat(16) + 'b'.repeat(16);
 
@@ -111,6 +117,85 @@ describe('modules/ai/ai.routes', () => {
       payload: { prompt: '' },
     });
     expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('POST /ai/complete → 첫 메시지에 citation 가이드 system prompt 자동 주입 (F1)', async () => {
+    const seen: AIMessage[][] = [];
+    const reg = new AIAdapterRegistry();
+    const spy: InMemoryAIAdapter = new InMemoryAIAdapter();
+    const original = spy.complete.bind(spy);
+    spy.complete = async (
+      msgs: AIMessage[],
+      o: AICompleteOptions = {},
+    ): Promise<AICompletionResult> => {
+      seen.push(msgs);
+      return original(msgs, o);
+    };
+    reg.register(spy, true);
+    resetEnvForTests();
+    process.env.AUTH_SECRET = TEST_AUTH;
+    const app = await buildApp({ logger: false });
+    await app.register(makePrismaStubPlugin());
+    await app.register(authPlugin);
+    await app.register(rbacPlugin);
+    await app.register(aiRoutes, { registry: reg });
+    const r = await app.inject({
+      method: 'POST',
+      url: '/ai/complete',
+      headers: { authorization: `Bearer ${await token()}` },
+      payload: { prompt: 'hello' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(seen.length).toBeGreaterThan(0);
+    const sent = seen[0] ?? [];
+    expect(sent[0]?.role).toBe('system');
+    expect(sent[0]?.content).toBe(CITATION_SYSTEM_PROMPT);
+    expect(sent[0]?.content).toContain('[task:<id>]');
+    expect(sent[0]?.content).toContain('[issue:<id>]');
+    await app.close();
+  });
+
+  it('POST /ai/complete → 응답에 usage(promptTokens/completionTokens/totalTokens/costUSD) 포함 (F3)', async () => {
+    const app = await buildTestApp({ Hello: 'Hi back' });
+    const r = await app.inject({
+      method: 'POST',
+      url: '/ai/complete',
+      headers: { authorization: `Bearer ${await token()}` },
+      payload: { prompt: 'Hello' },
+    });
+    expect(r.statusCode).toBe(200);
+    const body = r.json() as {
+      usage: {
+        promptTokens: number;
+        completionTokens: number;
+        totalTokens: number;
+        costUSD: number | null;
+        model?: string;
+      };
+    };
+    expect(body.usage).toBeDefined();
+    expect(body.usage.promptTokens).toBeGreaterThan(0);
+    expect(body.usage.completionTokens).toBeGreaterThan(0);
+    expect(body.usage.totalTokens).toBe(body.usage.promptTokens + body.usage.completionTokens);
+    // in-memory adapter 는 PRICE_TABLE 의 0/0 가격 → costUSD === 0
+    expect(body.usage.costUSD).toBe(0);
+    expect(body.usage.model).toBe('in-memory');
+    await app.close();
+  });
+
+  it('POST /ai/complete (stream) → done 페이로드에 usage 포함 (F3)', async () => {
+    const app = await buildTestApp({ Stream: 'Result' });
+    const r = await app.inject({
+      method: 'POST',
+      url: '/ai/complete',
+      headers: { authorization: `Bearer ${await token()}` },
+      payload: { prompt: 'Stream', stream: true },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(r.body).toContain('"usage"');
+    expect(r.body).toContain('"promptTokens"');
+    expect(r.body).toContain('"totalTokens"');
     await app.close();
   });
 
