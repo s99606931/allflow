@@ -58,7 +58,16 @@ test('Tweaks — 다크 모드 전환', async ({ page }) => {
       cur.state = { ...(cur.state ?? {}), theme: 'dark' };
       localStorage.setItem(k, JSON.stringify(cur));
     });
-    await page.reload();
+    await page.reload({ waitUntil: 'networkidle' });
+    // React useEffect가 data-theme을 설정할 때까지 대기
+    await page.waitForFunction(
+      () =>
+        document.documentElement.classList.contains('dark') ||
+        document.documentElement.dataset.theme === 'dark' ||
+        document.body.classList.contains('dark'),
+      undefined,
+      { timeout: 5_000 },
+    ).catch(() => null); // 지원 안 하는 경우 graceful 처리
   }
 
   // <html> 또는 body 에 dark 클래스가 적용

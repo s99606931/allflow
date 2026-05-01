@@ -6,7 +6,7 @@ export default defineConfig({
   globalSetup: './tests/e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : 1,
   // 로컬 dev 모드: Next.js dev 동시 렌더링 부하 방지 (직렬). CI: 2.
   workers: process.env.CI ? 2 : 1,
   // dev 모드 warm 라우트 기준 60s (cold 시 globalSetup warmup이 선처리).

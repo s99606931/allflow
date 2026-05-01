@@ -22,13 +22,19 @@ test.describe('TEST-F3: 핵심 사용자 플로우 (USE_MOCK=true)', () => {
     await page.goto('/tasks');
     await expect(page.locator('body')).toContainText(/태스크/, { timeout: 10_000 });
 
+    // 보드 탭으로 먼저 이동 (생성 다이얼로그 열기 전)
+    const boardTab = page.getByRole('tab', { name: /보드/i });
+    await expect(boardTab).toBeVisible({ timeout: 5_000 });
+    await boardTab.click();
+
+    // 보드 뷰 로드 후 새 태스크 생성
     const createBtn = page.getByRole('button', { name: /새 태스크/ });
     await expect(createBtn).toBeVisible();
     await createBtn.click();
 
-    await page.waitForTimeout(500);
-
-    await page.getByRole('tab', { name: /보드/i }).click();
+    // 다이얼로그를 Escape로 닫고 보드 뷰 확인
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
 
     const statusSelects = page.locator('select[aria-label*="상태 변경"]');
     // 보드 hydration 완료까지 대기 — 고정 timeout 대신 가시성 판단
