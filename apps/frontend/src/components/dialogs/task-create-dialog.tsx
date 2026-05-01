@@ -29,28 +29,28 @@ export function TaskCreateDialog({ open, onOpenChange }: Props) {
   const { data: users = [] } = useUsers();
   const firstUser = users[0]?.id ?? '';
   const [title, setTitle] = useState('');
-  const [proj, setProj] = useState('');
-  const [assignee, setAssignee] = useState(firstUser);
+  const [projectId, setProjectId] = useState('');
+  const [assigneeId, setAssigneeId] = useState(firstUser);
   const [priority, setPriority] = useState<Priority>('med');
   const [due, setDue] = useState('');
 
   const reset = () => {
     setTitle('');
-    setProj('');
-    setAssignee(firstUser);
+    setProjectId('');
+    setAssigneeId(firstUser);
     setPriority('med');
     setDue('');
   };
 
-  const projectId = proj || projects[0]?.id || '';
+  const resolvedProjectId = projectId || projects[0]?.id || '';
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!title.trim() || !projectId || !assignee) return;
+    if (!title.trim() || !resolvedProjectId || !assigneeId) return;
     await create.mutateAsync({
       title: title.trim(),
-      proj: projectId,
-      assignee,
+      projectId: resolvedProjectId,
+      assigneeId,
       priority,
       due: due.trim() || undefined,
     });
@@ -72,7 +72,7 @@ export function TaskCreateDialog({ open, onOpenChange }: Props) {
         </DialogField>
         <div className="grid grid-cols-2 gap-3">
           <DialogField label="프로젝트" required>
-            <Select value={projectId} onChange={e => setProj(e.target.value)} required>
+            <Select value={resolvedProjectId} onChange={e => setProjectId(e.target.value)} required>
               {projects.map(p => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -81,7 +81,7 @@ export function TaskCreateDialog({ open, onOpenChange }: Props) {
             </Select>
           </DialogField>
           <DialogField label="담당자" required>
-            <Select value={assignee} onChange={e => setAssignee(e.target.value)} required>
+            <Select value={assigneeId} onChange={e => setAssigneeId(e.target.value)} required>
               {users.map(u => (
                 <option key={u.id} value={u.id}>
                   {u.name}
@@ -111,7 +111,7 @@ export function TaskCreateDialog({ open, onOpenChange }: Props) {
           <Button
             type="submit"
             variant="primary"
-            disabled={create.isPending || !projectId}
+            disabled={create.isPending || !resolvedProjectId}
           >
             {create.isPending ? '등록 중…' : '등록'}
           </Button>

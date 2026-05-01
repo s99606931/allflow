@@ -56,8 +56,8 @@ export const TaskSchema = z.object({
 });
 export const TaskCreateSchema = z.object({
   title: z.string().min(1),
-  proj: z.string(),
-  assignee: z.string(),
+  projectId: z.string(),
+  assigneeId: z.string(),
   due: z.string().optional(),
   priority: PrioritySchema.optional(),
 });
@@ -278,11 +278,11 @@ export const CommentCreateSchema = z.object({
 /* Issue create/transition ------------------------------------------------- */
 export const IssueCreateSchema = z.object({
   title: z.string().min(1),
-  proj: z.string(),
-  assignee: z.string(),
-  reporter: z.string(),
+  projectId: z.string(),
+  assigneeId: z.string().optional(),
   sev: IssueSevSchema,
   prio: IssuePrioSchema,
+  sla: z.string().default('24h'),
   tags: z.array(z.string()).default([]),
 });
 export const IssueTransitionSchema = z.object({

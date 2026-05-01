@@ -107,8 +107,8 @@ describe('use-data hooks (TEST-F1)', () => {
     await act(async () => {
       await result.current.create.mutateAsync({
         title: '테스트 태스크',
-        proj: 'p1',
-        assignee: 'u1',
+        projectId: 'p1',
+        assigneeId: 'u1',
       });
     });
 
@@ -148,7 +148,7 @@ describe('use-data hooks (TEST-F1)', () => {
     const { result } = renderHook(() => useTaskMutations(), { wrapper: Wrapper });
     await act(async () => {
       await result.current.create
-        .mutateAsync({ title: 'x', proj: 'p1', assignee: 'u1' })
+        .mutateAsync({ title: 'x', projectId: 'p1', assigneeId: 'u1' })
         .catch(() => {
           /* swallow expected rejection */
         });

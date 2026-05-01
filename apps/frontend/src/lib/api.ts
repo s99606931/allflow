@@ -90,7 +90,7 @@ const baseApi = {
 
   createTask: async (input: TaskCreate): Promise<Task> =>
     USE_MOCK
-      ? (await sleep(), { id: 'TASK-NEW', status: 'todo', tags: [], due: '', priority: 'med', ...input } as Task)
+      ? (await sleep(), { id: 'TASK-NEW', status: 'todo', tags: [], due: '', priority: 'med', proj: input.projectId, assignee: input.assigneeId } as unknown as Task)
       : parsed(http.post('tasks', { json: input }).json(), TaskSchema),
 
   updateTask: async (id: string, patch: TaskPatch): Promise<Task> =>

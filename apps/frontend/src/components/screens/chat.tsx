@@ -47,8 +47,8 @@ export function ChatPage() {
     const title = bullet ? bullet[1].trim() : '채팅에서 추출된 액션';
     await taskMutations.create.mutateAsync({
       title,
-      proj: 'PRJ-204',
-      assignee: me?.id ?? '',
+      projectId: 'PRJ-204',
+      assigneeId: me?.id ?? '',
     });
     setExtractedDismissed(true);
   };

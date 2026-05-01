@@ -30,31 +30,29 @@ export function IssueCreateDialog({ open, onOpenChange }: Props) {
   const firstProj = projects[0]?.id ?? '';
   const firstUser = users[0]?.id ?? '';
   const [title, setTitle] = useState('');
-  const [proj, setProj] = useState(firstProj);
-  const [assignee, setAssignee] = useState(firstUser);
-  const [reporter, setReporter] = useState(firstUser);
+  const [projectId, setProjectId] = useState(firstProj);
+  const [assigneeId, setAssigneeId] = useState(firstUser);
   const [sev, setSev] = useState<IssueSev>('med');
   const [prio, setPrio] = useState<IssuePrio>('P2');
 
   const reset = () => {
     setTitle('');
-    setProj(firstProj);
-    setAssignee(firstUser);
-    setReporter(firstUser);
+    setProjectId(firstProj);
+    setAssigneeId(firstUser);
     setSev('med');
     setPrio('P2');
   };
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!title.trim() || !proj || !assignee || !reporter) return;
+    if (!title.trim() || !projectId) return;
     await create.mutateAsync({
       title: title.trim(),
-      proj,
-      assignee,
-      reporter,
+      projectId,
+      assigneeId: assigneeId || undefined,
       sev,
       prio,
+      sla: '24h',
       tags: [],
     });
     reset();
@@ -69,28 +67,21 @@ export function IssueCreateDialog({ open, onOpenChange }: Props) {
         </DialogField>
         <div className="grid grid-cols-2 gap-3">
           <DialogField label="프로젝트" required>
-            <Select value={proj} onChange={e => setProj(e.target.value)} required>
+            <Select value={projectId} onChange={e => setProjectId(e.target.value)} required>
               {projects.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </Select>
           </DialogField>
-          <DialogField label="담당자" required>
-            <Select value={assignee} onChange={e => setAssignee(e.target.value)} required>
+          <DialogField label="담당자">
+            <Select value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
               {users.map(u => (
                 <option key={u.id} value={u.id}>{u.name}</option>
               ))}
             </Select>
           </DialogField>
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          <DialogField label="보고자" required>
-            <Select value={reporter} onChange={e => setReporter(e.target.value)} required>
-              {users.map(u => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
-            </Select>
-          </DialogField>
+        <div className="grid grid-cols-2 gap-3">
           <DialogField label="심각도">
             <Select value={sev} onChange={e => setSev(e.target.value as IssueSev)}>
               {SEV_OPTIONS.map(o => (

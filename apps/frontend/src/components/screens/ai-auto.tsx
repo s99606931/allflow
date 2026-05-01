@@ -67,8 +67,8 @@ export function AIAutoPage() {
     for (const p of picks) {
       await tasks.create.mutateAsync({
         title: p.title,
-        proj: p.proj,
-        assignee: p.assignee || 'me',
+        projectId: p.proj,
+        assigneeId: p.assignee || 'me',
         due: p.due,
         priority: p.priority ?? 'med',
       });
