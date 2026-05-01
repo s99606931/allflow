@@ -289,3 +289,88 @@ test('S7: 채팅 — 멘션 버튼(@) → 팝오버 + 사용자 목록', async (
   const firstText = await userButtons.first().textContent();
   expect(firstText?.trim().length, '멘션 팝오버 첫 사용자 이름이 비어 있음').toBeGreaterThan(0);
 });
+
+// ---------- S8: nav-counts ----------
+
+test('S8: nav-counts — GET /api/v1/nav-counts → 2xx + 숫자 맵', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+  const resp = await page.request.get('/api/v1/nav-counts');
+  expect(resp.status(), 'nav-counts가 2xx 여야 함').toBeLessThan(300);
+
+  const body = await resp.json();
+  expect(typeof body, 'nav-counts 응답이 object 여야 함').toBe('object');
+});
+
+// ---------- S9: gantt ----------
+
+test('S9: gantt — GET /api/v1/gantt → 2xx + tasks 배열', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+  const resp = await page.request.get('/api/v1/gantt');
+  expect(resp.status(), 'gantt가 2xx 여야 함').toBeLessThan(300);
+
+  const body = await resp.json();
+  expect(typeof body, 'gantt 응답이 object 여야 함').toBe('object');
+  expect(Array.isArray(body.tasks), 'gantt 응답에 tasks 배열이 있어야 함').toBe(true);
+});
+
+// ---------- S10: audit-log ----------
+
+test('S10: audit-log — GET /api/v1/audit-log → 2xx + items 배열', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+  const resp = await page.request.get('/api/v1/audit-log');
+  expect(resp.status(), 'audit-log가 2xx 여야 함').toBeLessThan(300);
+
+  const body = await resp.json();
+  expect(typeof body, 'audit-log 응답이 object 여야 함').toBe('object');
+  expect(Array.isArray(body.items), 'audit-log 응답에 items 배열이 있어야 함').toBe(true);
+});
+
+// ---------- S11: notifications/read-all ----------
+
+test('S11: notifications/read-all — POST → 2xx', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+  const resp = await page.request.post('/api/v1/notifications/read-all');
+  expect(resp.status(), 'notifications/read-all가 2xx 여야 함').toBeLessThan(300);
+});
+
+// ---------- S12: llm-connections ----------
+
+test('S12: llm-connections — GET /api/v1/llm-connections → 2xx + 배열', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+  const resp = await page.request.get('/api/v1/llm-connections');
+  expect(resp.status(), 'llm-connections가 2xx 여야 함').toBeLessThan(300);
+
+  const body = await resp.json();
+  expect(Array.isArray(body), 'llm-connections 응답이 배열이어야 함').toBe(true);
+});
+
+// ---------- S13: mcp-connections ----------
+
+test('S13: mcp-connections — GET /api/v1/ai/mcp-connections → 2xx + 배열', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+  const resp = await page.request.get('/api/v1/ai/mcp-connections');
+  expect(resp.status(), 'mcp-connections가 2xx 여야 함').toBeLessThan(300);
+
+  const body = await resp.json();
+  expect(Array.isArray(body), 'mcp-connections 응답이 배열이어야 함').toBe(true);
+});
+
+// ---------- S14: AI complete (smoke) ----------
+
+test('S14: AI complete — POST /api/v1/ai/complete → 2xx + text 필드', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+  const resp = await page.request.post('/api/v1/ai/complete', {
+    data: { prompt: 'hello', stream: false },
+  });
+  expect(resp.status(), 'ai/complete가 2xx 여야 함').toBeLessThan(300);
+
+  const body = await resp.json();
+  expect(typeof body.text, 'ai/complete 응답에 text 필드가 있어야 함').toBe('string');
+});
