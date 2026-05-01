@@ -68,6 +68,17 @@ const envSchema = z.object({
     .url('OTEL_EXPORTER_OTLP_ENDPOINT 는 URL 이어야 합니다 (예: http://otel-collector:4318)')
     .optional(),
   OTEL_SERVICE_NAME: z.string().min(1).default('all-flow-backend'),
+  // Web search (Phase 1: AI assistant tool 'web_search' 백엔드).
+  // 'brave' (기본 권장) | 'searxng' | undefined(=Noop).
+  WEB_SEARCH_PROVIDER: z.enum(['brave', 'searxng']).optional(),
+  SEARXNG_URL: z
+    .string()
+    .url('SEARXNG_URL 는 URL 이어야 합니다 (예: http://searxng:8080)')
+    .optional(),
+  BRAVE_SEARCH_API_KEY: z
+    .string()
+    .optional()
+    .transform((v) => (v === '' || v === undefined ? undefined : v)),
 });
 
 export type Env = z.infer<typeof envSchema>;

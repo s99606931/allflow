@@ -13,6 +13,7 @@ async function appUnderTest() {
       OTEL_ENABLED: false,
       OTEL_SERVICE_NAME: 'all-flow-backend',
       OPENAI_API_KEY: undefined,
+      BRAVE_SEARCH_API_KEY: undefined,
     },
   });
 
