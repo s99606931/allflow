@@ -5,8 +5,9 @@
  *  1) `Authorization: Bearer <token>` 헤더에서 토큰 추출
  *  2) AUTH_SECRET을 HKDF로 32바이트 키로 유도(next-auth v5 기본 알고리즘)
  *  3) `jose.jwtDecrypt` 로 JWE 복호화 또는 JWS 검증
- *  4) 페이로드를 `req.user` 에 주입 (id/name/email)
- *  5) 실패 시 `AuthError` (401)
+ *  4) RevokedToken 블록리스트 확인 — tokenId(jti) 존재 시 401
+ *  5) 페이로드를 `req.user` 에 주입 (id/name/email)
+ *  6) 실패 시 `AuthError` (401)
  *
  * `app.authenticate` decorator 를 라우트 preHandler 로 사용한다:
  *   app.get('/users/me', { preHandler: app.authenticate }, async (req) => req.user);
@@ -18,6 +19,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 import { jwtDecrypt, jwtVerify } from 'jose';
 import { getEnv } from '../config/env.js';
+import { getPrisma } from './prisma.js';
 
 const hkdfAsync = promisify(hkdf);
 
@@ -68,15 +70,25 @@ interface VerifyOptions {
   salt: string;
 }
 
-export async function verifyToken(token: string, opts: VerifyOptions): Promise<AuthUser> {
+interface VerifyResult {
+  user: AuthUser;
+  jti?: string;
+}
+
+async function verifyTokenInternal(token: string, opts: VerifyOptions): Promise<VerifyResult> {
   if (isJwe(token)) {
     const key = await deriveKey(opts.secret, opts.salt);
     const { payload } = await jwtDecrypt(token, key);
-    return toAuthUser(payload);
+    return { user: toAuthUser(payload), jti: typeof payload.jti === 'string' ? payload.jti : undefined };
   }
   const secretBytes = new TextEncoder().encode(opts.secret);
   const { payload } = await jwtVerify(token, secretBytes);
-  return toAuthUser(payload);
+  return { user: toAuthUser(payload), jti: typeof payload.jti === 'string' ? payload.jti : undefined };
+}
+
+export async function verifyToken(token: string, opts: VerifyOptions): Promise<AuthUser> {
+  const { user } = await verifyTokenInternal(token, opts);
+  return user;
 }
 
 function toAuthUser(payload: Record<string, unknown>): AuthUser {
@@ -103,7 +115,12 @@ async function plugin(app: FastifyInstance): Promise<void> {
   app.decorate('authenticate', async (req: FastifyRequest, _reply: FastifyReply) => {
     try {
       const token = extractToken(req);
-      const user = await verifyToken(token, { secret, salt });
+      const { user, jti } = await verifyTokenInternal(token, { secret, salt });
+      if (jti) {
+        const prisma = app.prisma ?? getPrisma();
+        const revoked = await prisma.revokedToken.findUnique({ where: { tokenId: jti } });
+        if (revoked) throw new AuthError('토큰이 폐기되었습니다');
+      }
       req.user = user;
     } catch (err) {
       if (err instanceof AuthError) throw err;

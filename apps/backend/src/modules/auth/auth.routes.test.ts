@@ -7,10 +7,37 @@ import { authRoutes } from './auth.routes.js';
 
 const TEST_AUTH = 'a'.repeat(16) + 'b'.repeat(16);
 
+// biome-ignore lint/suspicious/noExplicitAny: 테스트 mock 의 prisma 시그니처는 호출부 모양을 신뢰한다.
+type AnyArgs = any;
+
+function makeRevokedTokenStore() {
+  const revoked = new Set<string>();
+  return {
+    findUnique: async (args: AnyArgs) => {
+      const tokenId = args?.where?.tokenId as string;
+      return revoked.has(tokenId) ? { tokenId } : null;
+    },
+    upsert: async (args: AnyArgs) => {
+      const tokenId = args?.where?.tokenId as string;
+      revoked.add(tokenId);
+      return { tokenId };
+    },
+  };
+}
+
 async function buildTestApp() {
   resetEnvForTests();
   process.env.AUTH_SECRET = TEST_AUTH;
   const app = await buildApp({ logger: false });
+  const store = makeRevokedTokenStore();
+  app.decorate('prisma', {
+    revokedToken: {
+      findUnique: store.findUnique,
+      upsert: store.upsert,
+    },
+    // biome-ignore lint/suspicious/noExplicitAny: 테스트 mock stub
+    user: { findUnique: async (_: AnyArgs) => null },
+  } as AnyArgs);
   await app.register(authPlugin);
   await app.register(authRoutes);
   return app;
@@ -117,16 +144,41 @@ describe('modules/auth — POST /auth/tokens/revoke', () => {
       method: 'POST',
       url: '/auth/tokens/revoke',
       headers: { authorization: `Bearer ${token}` },
-      payload: { tokenId: 'tok-abc' },
+      payload: { tokenId: 'tok-idempotent' },
     });
     const r2 = await app.inject({
       method: 'POST',
       url: '/auth/tokens/revoke',
       headers: { authorization: `Bearer ${token}` },
-      payload: { tokenId: 'tok-abc' },
+      payload: { tokenId: 'tok-idempotent' },
     });
     expect(r1.statusCode).toBe(200);
     expect(r2.statusCode).toBe(200);
+    await app.close();
+  });
+
+  it('revoke된 tokenId(jti)로 만든 토큰은 이후 인증 시 401', async () => {
+    const app = await buildTestApp();
+    const jti = 'jti-to-revoke';
+    const token = await makeJws({ sub: 'u1', jti });
+
+    // revoke 호출
+    const rRevoke = await app.inject({
+      method: 'POST',
+      url: '/auth/tokens/revoke',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { tokenId: jti },
+    });
+    expect(rRevoke.statusCode).toBe(200);
+
+    // 이후 동일 jti 토큰으로 인증 시도 → 401
+    const rProtected = await app.inject({
+      method: 'POST',
+      url: '/auth/tokens/revoke',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { tokenId: 'another-tok' },
+    });
+    expect(rProtected.statusCode).toBe(401);
     await app.close();
   });
 });
