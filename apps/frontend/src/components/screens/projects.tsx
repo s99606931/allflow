@@ -1,12 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, AvatarStack, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
 import { useProjects } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
+import { ProjectCreateDialog } from '@/components/dialogs/project-create-dialog';
 import { Loader2, Plus } from 'lucide-react';
 import Link from 'next/link';
 
 export function ProjectsPage() {
+  const [createOpen, setCreateOpen] = useState(false);
   const { data: projects = [], isLoading } = useProjects();
   const userMap = useUserMap();
   const activeCount = projects.filter(p => p.status !== 'done').length;
@@ -19,7 +22,8 @@ export function ProjectsPage() {
           <h2 className="text-[18px] font-bold text-fg">프로젝트</h2>
           <p className="text-[12.5px] text-fg-2 mt-0.5">활성 {activeCount}개 · 완료 {doneCount}개</p>
         </div>
-        <Button variant="primary" size="sm"><Plus size={14} /> 새 프로젝트</Button>
+        <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}><Plus size={14} /> 새 프로젝트</Button>
+        <ProjectCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
       </div>
 
       {isLoading && (
