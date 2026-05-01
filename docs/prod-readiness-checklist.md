@@ -166,7 +166,9 @@
 | 6 | in-memory → Prisma 영속화 (T1) | ✅ 7 도메인 완결 | 2026-05-02 |
 | 7 | auth revoke 블록리스트 | ✅ RevokedToken + jti 검사 | 2026-05-02 |
 | 8 | AI Q2 enhance (RAG/MCP/Tool/WebSearch) | ✅ 완료 + 커밋 | 2026-05-02 |
-| 9 | 테스트 커버리지 대폭 확대 (FE+BE) | ✅ FE 81→167 / BE 542→581 | 2026-05-02 |
+| 9 | 테스트 커버리지 대폭 확대 (FE+BE) | ✅ FE 81→167 / BE 542→583 | 2026-05-02 |
+| 10 | FE 미배선 UI 버튼 전수 배선 | ✅ 16건 → 0건 (ai-auto/issues/dashboard/users/docs/chat/org/report/notion) | 2026-05-02 |
+| 11 | FE TS typecheck 오류 3건 수정 | ✅ Zod v4 origin / TanStack v5 undefined / unknown as cast | 2026-05-02 |
 
 **잔여 P2 항목**:
 - T2: E2E 전수 회귀 (docker-compose 환경 필요)
