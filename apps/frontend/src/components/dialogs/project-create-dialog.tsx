@@ -5,7 +5,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/primitives';
-import { Dialog, DialogField, DialogFooter, TextInput } from '@/components/ui/dialog';
+import { DateInput, Dialog, DialogField, DialogFooter, TextInput } from '@/components/ui/dialog';
 import { useProjectMutations } from '@/lib/hooks/use-data';
 
 interface Props {
@@ -66,12 +66,10 @@ export function ProjectCreateDialog({ open, onOpenChange }: Props) {
           </DialogField>
         </div>
         <DialogField label="마감일" hint="선택">
-          <input
-            type="date"
+          <DateInput
             aria-label="마감일"
             value={due}
             onChange={e => setDue(e.target.value)}
-            className="h-9 w-full rounded border border-border px-2 text-[13px] bg-surface text-fg"
           />
         </DialogField>
         <DialogFooter>

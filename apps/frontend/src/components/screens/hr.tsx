@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge, Button, Card, CardBody, CardHeader, CardTitle } from '@/components/ui/primitives';
+import { DateInput } from '@/components/ui/dialog';
 import { useCancelLeave, useCreateLeave, useLeaveRequests, type LeaveRequest } from '@/lib/hooks/use-hr';
 import { useMe, useOrgUnits } from '@/lib/hooks/use-data';
 import { Award, Briefcase, CalendarClock, Plane, Plus, Users, X } from 'lucide-react';
@@ -174,20 +175,18 @@ function LeaveTab() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[11.5px] text-fg-2">시작일</label>
-                <input
-                  type="date"
+                <DateInput
                   required
-                  className="h-8 px-2 rounded-md border border-border bg-bg-elev text-[12.5px] text-fg"
+                  aria-label="시작일"
                   value={form.startDate}
                   onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
                 />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[11.5px] text-fg-2">종료일</label>
-                <input
-                  type="date"
+                <DateInput
                   required
-                  className="h-8 px-2 rounded-md border border-border bg-bg-elev text-[12.5px] text-fg"
+                  aria-label="종료일"
                   value={form.endDate}
                   onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
                 />

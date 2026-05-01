@@ -10,7 +10,7 @@
 
 import { useMemo, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/primitives';
-import { Dialog, DialogField, DialogFooter, Select, TextInput } from '@/components/ui/dialog';
+import { DateTimeInput, Dialog, DialogField, DialogFooter, Select } from '@/components/ui/dialog';
 import { useMe, useResourceMutations } from '@/lib/hooks/use-data';
 import { useTranslation } from '@/lib/i18n';
 
@@ -66,10 +66,10 @@ export function ResourceBookDialog({ open, onOpenChange, resources, existingBook
         </DialogField>
         <div className="grid grid-cols-2 gap-3">
           <DialogField label={t('resources.book.start')} required>
-            <TextInput type="datetime-local" value={start} onChange={e => setStart(e.target.value)} required />
+            <DateTimeInput value={start} onChange={e => setStart(e.target.value)} required />
           </DialogField>
           <DialogField label={t('resources.book.end')} required>
-            <TextInput type="datetime-local" value={end} onChange={e => setEnd(e.target.value)} required />
+            <DateTimeInput value={end} onChange={e => setEnd(e.target.value)} required />
           </DialogField>
         </div>
         {conflict && (

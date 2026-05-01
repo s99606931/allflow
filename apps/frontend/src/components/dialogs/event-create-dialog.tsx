@@ -10,7 +10,7 @@
 
 import { useMemo, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/primitives';
-import { Dialog, DialogField, DialogFooter, TextInput, Textarea } from '@/components/ui/dialog';
+import { DateTimeInput, Dialog, DialogField, DialogFooter, TextInput, Textarea } from '@/components/ui/dialog';
 import { useEventMutations, useUsers } from '@/lib/hooks/use-data';
 import { useTranslation } from '@/lib/i18n';
 import type { Event } from '@/lib/schemas';
@@ -73,10 +73,10 @@ export function EventCreateDialog({ open, onOpenChange, existingEvents = [] }: P
         </DialogField>
         <div className="grid grid-cols-2 gap-3">
           <DialogField label={t('schedule.create.start')} required>
-            <TextInput type="datetime-local" value={start} onChange={e => setStart(e.target.value)} required />
+            <DateTimeInput value={start} onChange={e => setStart(e.target.value)} required />
           </DialogField>
           <DialogField label={t('schedule.create.end')} required>
-            <TextInput type="datetime-local" value={end} onChange={e => setEnd(e.target.value)} required />
+            <DateTimeInput value={end} onChange={e => setEnd(e.target.value)} required />
           </DialogField>
         </div>
         <DialogField label={t('schedule.create.location')}>

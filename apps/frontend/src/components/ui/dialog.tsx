@@ -159,3 +159,58 @@ export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttrib
     );
   },
 );
+
+/* Typed date/time inputs ----------------------------------------------------
+ * Lock the native `type` so consumers always get the proper picker UI
+ * (calendar / clock / combined). Native HTML date inputs already invoke
+ * the browser's accessible date picker — we only need consistent styling
+ * and the type guarantee.
+ */
+
+const DATE_INPUT_BASE =
+  'h-9 w-full rounded-md border border-border bg-bg-1 px-3 text-[13px] text-fg-1 ' +
+  'focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft';
+
+type TypedDateProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'>;
+
+export const DateInput = React.forwardRef<HTMLInputElement, TypedDateProps>(
+  function DateInput({ className, ...props }, ref) {
+    return (
+      <input
+        ref={ref}
+        type="date"
+        data-component="date-input"
+        className={cn(DATE_INPUT_BASE, className)}
+        {...props}
+      />
+    );
+  },
+);
+
+export const TimeInput = React.forwardRef<HTMLInputElement, TypedDateProps>(
+  function TimeInput({ className, ...props }, ref) {
+    return (
+      <input
+        ref={ref}
+        type="time"
+        data-component="time-input"
+        className={cn(DATE_INPUT_BASE, className)}
+        {...props}
+      />
+    );
+  },
+);
+
+export const DateTimeInput = React.forwardRef<HTMLInputElement, TypedDateProps>(
+  function DateTimeInput({ className, ...props }, ref) {
+    return (
+      <input
+        ref={ref}
+        type="datetime-local"
+        data-component="datetime-input"
+        className={cn(DATE_INPUT_BASE, className)}
+        {...props}
+      />
+    );
+  },
+);
