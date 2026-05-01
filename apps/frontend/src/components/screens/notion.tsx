@@ -74,7 +74,7 @@ export function NotionPage() {
               필요합니다. 개발 모드에서는 워크스페이스 정보를 직접 입력해 연결을 테스트할 수 있습니다.
             </p>
           </div>
-          <Button variant="secondary" size="sm" disabled>
+          <Button variant="secondary" size="sm" onClick={() => window.open('https://developers.notion.com/docs/authorization', '_blank', 'noopener,noreferrer')}>
             <ExternalLink size={12} /> OAuth 가이드
           </Button>
         </CardBody>

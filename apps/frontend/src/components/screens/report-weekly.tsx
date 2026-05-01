@@ -30,6 +30,7 @@ function computeLastWeek(): { start: string; end: string } {
 export function ReportWeeklyPage() {
   const [sendOpen, setSendOpen] = useState(false);
   const [report, setReport] = useState<Report | null>(null);
+  const [reportType, setReportType] = useState<'주간' | '격주' | '월간'>('주간');
   const period = useMemo(() => computeLastWeek(), []);
   const { weeklyReport } = useAiMutations();
   const { data: projects = [] } = useProjects();
@@ -54,8 +55,8 @@ export function ReportWeeklyPage() {
             <div>
               <div className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold mb-1.5">유형</div>
               <div className="flex gap-1 p-0.5 rounded-md bg-bg-2 border border-border">
-                {['주간', '격주', '월간'].map((c, i) => (
-                  <button key={c} className={`flex-1 h-7 rounded text-[12px] font-medium transition-colors ${i === 0 ? 'bg-bg-elev text-fg shadow-sm' : 'text-fg-2'}`}>{c}</button>
+                {(['주간', '격주', '월간'] as const).map(c => (
+                  <button key={c} onClick={() => setReportType(c)} className={`flex-1 h-7 rounded text-[12px] font-medium transition-colors ${reportType === c ? 'bg-bg-elev text-fg shadow-sm' : 'text-fg-2 hover:text-fg-1'}`}>{c}</button>
                 ))}
               </div>
             </div>
