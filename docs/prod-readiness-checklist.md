@@ -1,6 +1,6 @@
 # 운영 오픈 전수검사 체크리스트
 
-> **생성일**: 2026-04-30 | **마지막 업데이트**: 2026-05-02 AI Q2 enhance + T1 영속화 + auth revoke + 코드 품질 개선
+> **생성일**: 2026-04-30 | **마지막 업데이트**: 2026-05-02 테스트 커버리지 대폭 확대
 > **서비스**: AllFlow | **환경**: localhost (FE:80, BE:8080)
 > **범례**: ✅ PASS | ❌ FAIL | ⚠️ 주의 (P1) | 🔄 테스트 중
 
@@ -100,8 +100,8 @@
 | TypeScript BE typecheck | ✅ PASS | 0 errors (수정 완료 2026-04-30) |
 | ESLint FE (errors) | ✅ PASS | 0 errors |
 | ESLint FE (warnings) | ✅ 개선 | 10 warnings (모두 test/e2e 파일, 프로덕션 0건) |
-| FE Unit test (vitest) | ✅ PASS | 81/81 (+10, 2026-05-02) |
-| BE Unit test (vitest) | ✅ PASS | 542/542 (+275, 2026-05-02) — 56 files, 라우트 커버리지 41%→96% |
+| FE Unit test (vitest) | ✅ PASS | 167/167 (+86, 2026-05-02) — 19 files (훅 9종+api-error+query-keys 신설) |
+| BE Unit test (vitest) | ✅ PASS | 581/581 (+39, 2026-05-02) — 61 files (notion/llm-conn/ai-attach/search-svc/db-registry 신설) |
 | console.log 잔존 | ✅ PASS | 1건 (i18n.ts dev-only warn — 의도적) |
 | TODO/FIXME 잔존 | ✅ PASS | 0건 |
 | any 타입 남용 | ✅ PASS | 1건 (자동생성 파일 제외) |
@@ -166,6 +166,7 @@
 | 6 | in-memory → Prisma 영속화 (T1) | ✅ 7 도메인 완결 | 2026-05-02 |
 | 7 | auth revoke 블록리스트 | ✅ RevokedToken + jti 검사 | 2026-05-02 |
 | 8 | AI Q2 enhance (RAG/MCP/Tool/WebSearch) | ✅ 완료 + 커밋 | 2026-05-02 |
+| 9 | 테스트 커버리지 대폭 확대 (FE+BE) | ✅ FE 81→167 / BE 542→581 | 2026-05-02 |
 
 **잔여 P2 항목**:
 - T2: E2E 전수 회귀 (docker-compose 환경 필요)
