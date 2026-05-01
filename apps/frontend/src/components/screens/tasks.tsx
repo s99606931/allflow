@@ -7,6 +7,7 @@ import { useTasks, useTaskMutations, useProjects } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { StatusKey } from '@/lib/schemas';
 import { TaskDetailDialog } from './task-detail';
+import { TaskCreateDialog } from '@/components/dialogs/task-create-dialog';
 import { CheckCircle2, Circle, Filter, KanbanSquare, LayoutList, Plus, Search, CalendarDays } from 'lucide-react';
 
 const COLS: { id: StatusKey; label: string; color: string }[] = [
@@ -20,11 +21,12 @@ const COLS: { id: StatusKey; label: string; color: string }[] = [
 export function TasksPage() {
   const [tab, setTab] = useState('list');
   const [openTask, setOpenTask] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const [filter, setFilter] = useState<'all' | 'mine' | 'today' | 'overdue'>('all');
   const [search, setSearch] = useState('');
   const { data: tasks = [] } = useTasks();
   const { data: projects = [] } = useProjects();
-  const { update, create } = useTaskMutations();
+  const { update } = useTaskMutations();
   const userMap = useUserMap();
 
   const filtered = tasks.filter(t => {
@@ -34,13 +36,7 @@ export function TasksPage() {
     return true;
   });
 
-  const onCreate = () =>
-    create.mutate({
-      title: '새 태스크',
-      proj: projects[0]?.id ?? '',
-      assignee: 'me',
-      priority: 'med',
-    });
+  const onCreate = () => setCreateOpen(true);
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
@@ -68,8 +64,8 @@ export function TasksPage() {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="태스크 검색..."
             className="h-8 w-56 pl-8 pr-3 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent" />
         </div>
-        <Button variant="primary" size="sm" disabled={create.isPending} onClick={onCreate}>
-          <Plus size={13} /> {create.isPending ? '생성 중...' : '새 태스크'}
+        <Button variant="primary" size="sm" onClick={onCreate}>
+          <Plus size={13} /> 새 태스크
         </Button>
       </div>
 
@@ -165,6 +161,7 @@ export function TasksPage() {
       </Tabs.Root>
 
       <TaskDetailDialog taskId={openTask} onClose={() => setOpenTask(null)} />
+      <TaskCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 }

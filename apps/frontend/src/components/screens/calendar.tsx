@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardBody, Avatar, Button } from '@/components/ui/primitives';
 import { ChevronLeft, ChevronRight, Plus, Video, Sparkles } from 'lucide-react';
 import { EventCreateDialog } from '@/components/dialogs/event-create-dialog';
@@ -37,8 +37,10 @@ export function CalendarPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [detail, setDetail] = useState<EventLike | null>(null);
 
-  const [window] = useState(computeWeekWindow);
-  const { data: events = [], isLoading, error } = useEvents({ from: window.from, to: window.to });
+  const [weekWindow, setWeekWindow] = useState<ReturnType<typeof computeWeekWindow> | null>(null);
+  useEffect(() => { setWeekWindow(computeWeekWindow()); }, []);
+  const window = weekWindow;
+  const { data: events = [], isLoading, error } = useEvents({ from: window?.from ?? '', to: window?.to ?? '' });
   const userMap = useUserMap();
 
   const isoEvents: EventLike[] = events.map(e => ({
@@ -53,7 +55,7 @@ export function CalendarPage() {
   const placed = events.map(e => {
     const start = new Date(e.start);
     const end = new Date(e.end);
-    const monday = new Date(window.from + 'T00:00:00');
+    const monday = new Date((window?.from ?? '') + 'T00:00:00');
     const dayIdx = Math.floor((start.getTime() - monday.getTime()) / (24 * 3600 * 1000));
     const hour = start.getHours();
     const len = Math.max(1, Math.round((end.getTime() - start.getTime()) / 3600_000));
@@ -69,7 +71,7 @@ export function CalendarPage() {
           <Button variant="ghost" size="sm"><ChevronLeft size={14} /></Button>
           <Button variant="ghost" size="sm"><ChevronRight size={14} /></Button>
         </div>
-        <h2 className="text-[16px] font-bold text-fg ml-1">{window.from} — {window.to}</h2>
+        <h2 className="text-[16px] font-bold text-fg ml-1">{window ? `${window.from} — ${window.to}` : '...'}</h2>
         <div className="flex-1" />
         <div className="flex items-center gap-1 p-0.5 rounded-md bg-bg-2 border border-border">
           {(['week', 'month'] as const).map(v => (
@@ -92,7 +94,7 @@ export function CalendarPage() {
       <Card className="overflow-hidden">
         <div className="grid grid-cols-[60px_repeat(5,1fr)] border-b border-border">
           <div />
-          {window.days.map((d, i) => (
+          {(window?.days ?? []).map((d, i) => (
             <div key={`${d.label}-${i}`} className="px-3 py-3 text-center border-l border-border">
               <div className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold">{d.label}</div>
               <div className="text-[20px] font-bold mt-0.5 mono text-fg">{d.date}</div>
@@ -108,7 +110,7 @@ export function CalendarPage() {
                 {h}:00
               </div>
             ))}
-            {HOURS.map(h => window.days.map((_, di) => (
+            {HOURS.map(h => (window?.days ?? []).map((_, di) => (
               <div key={`c-${h}-${di}`} className="border-b border-l border-border" style={{ gridRow: h - 7, gridColumn: di + 2 }} />
             )))}
             {placed.map((ev, i) => (

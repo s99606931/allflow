@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardBody, Avatar, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
 import type { IssueSev, IssuePrio } from '@/lib/types';
 import { Filter, Plus, Search, Sparkles } from 'lucide-react';
 import { useIssues } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
+import { IssueCreateDialog } from '@/components/dialogs/issue-create-dialog';
 
 const SEV_TONE: Record<IssueSev, 'danger' | 'warning' | 'info' | 'neutral'> = {
   critical: 'danger', high: 'warning', med: 'info', low: 'neutral',
@@ -17,6 +19,7 @@ const PRIO_COLOR: Record<IssuePrio, string> = {
 };
 
 export function IssuesPage() {
+  const [createOpen, setCreateOpen] = useState(false);
   const { data: issues = [], isLoading, error } = useIssues();
   const userMap = useUserMap();
   const p0Count = issues.filter(i => i.prio === 'P0' && (i.status === 'open' || i.status === 'in-progress')).length;
@@ -70,7 +73,8 @@ export function IssuesPage() {
           />
         </div>
         <Button variant="secondary" size="sm"><Sparkles size={13} /> AI 자동 분류</Button>
-        <Button variant="primary" size="sm"><Plus size={13} /> 새 이슈</Button>
+        <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}><Plus size={13} /> 새 이슈</Button>
+        <IssueCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
       </div>
 
       {/* Issue list */}
