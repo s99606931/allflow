@@ -60,7 +60,7 @@ describe('toApiError (TEST-F14)', () => {
   });
 
   it('ZodError → kind:validation with details', () => {
-    const ze = new ZodError([{ code: 'too_small', minimum: 1, type: 'string', inclusive: true, message: 'min 1', path: ['name'] }]);
+    const ze = new ZodError([{ code: 'too_small', minimum: 1, origin: 'string', inclusive: true, message: 'min 1', path: ['name'] }]);
     const result = toApiError(ze);
     expect(result.kind).toBe('validation');
     expect(result.details).toBeTruthy();

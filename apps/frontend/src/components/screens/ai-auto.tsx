@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress } from '@/components/ui/primitives';
 import { AiChatPanel } from '@/components/ai/ai-chat-panel';
 import { useAiMutations, useProjects, useTaskMutations } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
+import { useVoiceInput } from '@/lib/hooks/use-voice-input';
 import type { ExtractedAction } from '@/lib/schemas';
 import { FileText, Mail, Mic, Sparkles, Upload, Database, Wand2, X, Check, FileAudio } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -34,6 +35,8 @@ export function AIAutoPage() {
   const defaultProj = defaultProjOverride ?? firstProjectId;
 
   const userMap = useUserMap();
+  const onTranscript = useCallback((t: string) => setText(prev => prev ? `${prev}\n${t}` : t), []);
+  const voice = useVoiceInput(onTranscript);
   const ai = useAiMutations();
   const tasks = useTaskMutations();
   const extracting = ai.extractActions.isPending;
@@ -134,7 +137,15 @@ export function AIAutoPage() {
                 <FileAudio size={28} className="mx-auto text-fg-3" />
                 <div className="text-[13px] font-medium text-fg mt-2">음성 파일 드롭 또는 실시간 녹음</div>
                 <div className="text-[11.5px] text-fg-3 mt-1">최대 60분 · Whisper-large-v3 자동 전사</div>
-                <Button variant="primary" size="sm" className="mt-3"><Mic size={12} /> 녹음 시작</Button>
+                <Button
+                  variant={voice.listening ? 'secondary' : 'primary'}
+                  size="sm"
+                  className="mt-3"
+                  onClick={voice.listening ? voice.stop : voice.start}
+                  disabled={!voice.supported}
+                >
+                  <Mic size={12} /> {voice.listening ? '녹음 중지' : '녹음 시작'}
+                </Button>
               </div>
             )}
 

@@ -108,7 +108,7 @@ describe('useAiThreadMutations (TEST-F9)', () => {
     const { result } = renderHook(() => useAiThreadMutations(), { wrapper: Wrapper });
 
     await act(async () => {
-      await result.current.create.mutateAsync().catch(() => undefined);
+      await result.current.create.mutateAsync(undefined).catch(() => undefined);
     });
 
     await waitFor(() => expect(result.current.create.isError).toBe(true));

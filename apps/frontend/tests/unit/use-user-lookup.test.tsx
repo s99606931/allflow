@@ -28,7 +28,7 @@ describe('useUserMap (TEST-F11)', () => {
         { id: 'u1', name: 'Alice', email: 'a@a.com', role: 'member', initials: 'AL', color: '#000', status: 'active', createdAt: '' },
         { id: 'u2', name: 'Bob', email: 'b@b.com', role: 'member', initials: 'BO', color: '#111', status: 'active', createdAt: '' },
       ],
-    } as ReturnType<typeof useUsers>);
+    } as unknown as ReturnType<typeof useUsers>);
 
     const { result } = renderHook(() => useUserMap(), { wrapper: makeWrapper() });
 
@@ -40,7 +40,7 @@ describe('useUserMap (TEST-F11)', () => {
   it('returns empty Map when users array is empty', () => {
     vi.mocked(useUsers).mockReturnValue({
       data: [],
-    } as ReturnType<typeof useUsers>);
+    } as unknown as ReturnType<typeof useUsers>);
 
     const { result } = renderHook(() => useUserMap(), { wrapper: makeWrapper() });
 
@@ -50,7 +50,7 @@ describe('useUserMap (TEST-F11)', () => {
   it('returns empty Map when data is undefined (loading state)', () => {
     vi.mocked(useUsers).mockReturnValue({
       data: undefined,
-    } as ReturnType<typeof useUsers>);
+    } as unknown as ReturnType<typeof useUsers>);
 
     const { result } = renderHook(() => useUserMap(), { wrapper: makeWrapper() });
 
