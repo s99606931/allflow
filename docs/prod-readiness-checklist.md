@@ -101,7 +101,7 @@
 | ESLint FE (errors) | ✅ PASS | 0 errors |
 | ESLint FE (warnings) | ✅ 개선 | 10 warnings (모두 test/e2e 파일, 프로덕션 0건) |
 | FE Unit test (vitest) | ✅ PASS | 81/81 (+10, 2026-05-02) |
-| BE Unit test (vitest) | ✅ PASS | 382/382 (+115, 2026-05-02) |
+| BE Unit test (vitest) | ✅ PASS | 542/542 (+275, 2026-05-02) — 56 files, 라우트 커버리지 41%→96% |
 | console.log 잔존 | ✅ PASS | 1건 (i18n.ts dev-only warn — 의도적) |
 | TODO/FIXME 잔존 | ✅ PASS | 0건 |
 | any 타입 남용 | ✅ PASS | 1건 (자동생성 파일 제외) |
