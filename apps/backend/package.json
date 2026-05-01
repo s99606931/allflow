@@ -37,7 +37,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seeds/demo.ts",
+    "seed:init": "tsx prisma/seeds/init.ts",
+    "seed:demo": "tsx prisma/seeds/demo.ts",
+    "seed:reset": "tsx prisma/seeds/reset.ts"
   },
   "dependencies": {
     "@all-flow/contracts": "workspace:*",

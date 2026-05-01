@@ -15,7 +15,11 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "dev": "turbo run dev --parallel",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "seed": "pnpm --filter @all-flow/backend seed:demo",
+    "seed:init": "pnpm --filter @all-flow/backend seed:init",
+    "seed:demo": "pnpm --filter @all-flow/backend seed:demo",
+    "seed:reset": "pnpm --filter @all-flow/backend seed:reset"
   },
   "devDependencies": {
     "turbo": "^2.5.0"

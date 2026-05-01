@@ -5,6 +5,6 @@
     "noEmit": true,
     "incremental": false
   },
-  "include": ["prisma/seed.ts", "src/**/*"],
+  "include": ["prisma/seed.ts", "prisma/seeds/**/*", "src/**/*"],
   "exclude": ["node_modules", "dist", "coverage", "tests"]
 }
