@@ -9,6 +9,7 @@ import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel'
 import { MentionPopover } from '@/components/chat/mention-popover';
 import { useChannels, useMe, useTaskMutations, useUsers } from '@/lib/hooks/use-data';
 import { useChatMessages, useSendMessage } from '@/lib/hooks/use-chat-messages';
+import { useAiStream } from '@/lib/hooks/use-ai';
 import { useTranslation } from '@/lib/i18n';
 
 export function ChatPage() {
@@ -22,6 +23,9 @@ export function ChatPage() {
   const [openThreadId, setOpenThreadId] = useState<string | null>(null);
   const [mentionOpen, setMentionOpen] = useState(false);
   const [extractedDismissed, setExtractedDismissed] = useState(false);
+  const [chatSummary, setChatSummary] = useState('');
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const { streaming: summarizing, streamComplete } = useAiStream();
   const taskMutations = useTaskMutations();
   const sendMessage = useSendMessage();
 
@@ -41,6 +45,21 @@ export function ChatPage() {
       text: found.content,
     };
   }, [openThreadId, messages]);
+
+  async function summarizeChat() {
+    if (summarizing || messages.length === 0) return;
+    setSummaryOpen(true);
+    setChatSummary('');
+    const excerpt = messages
+      .slice(-20)
+      .map(m => `${m.author?.name ?? '?'}: ${m.content}`)
+      .join('\n');
+    await streamComplete(
+      `다음 채팅 대화를 한국어로 3~5문장으로 요약해주세요:\n\n${excerpt}`,
+      (delta) => setChatSummary(prev => prev + delta),
+      () => {},
+    );
+  }
 
   const onCreateTaskFromAI = async (text: string) => {
     const bullet = text.match(/•\s+"?([^"\n]+)"?/);
@@ -116,9 +135,22 @@ export function ChatPage() {
           <div className="flex-1" />
           <IconButton size="sm"><Pin size={13} /></IconButton>
           <IconButton size="sm"><Search size={13} /></IconButton>
-          <Button variant="secondary" size="sm"><Sparkles size={12} /> 대화 요약</Button>
+          <Button variant={summaryOpen ? 'primary' : 'secondary'} size="sm" onClick={summarizeChat} disabled={summarizing || messages.length === 0}>
+            <Sparkles size={12} /> {summarizing ? '요약 중...' : '대화 요약'}
+          </Button>
         </header>
 
+        {summaryOpen && chatSummary && (
+          <div className="mx-4 mt-3 p-3 rounded-lg border border-accent/20 bg-accent-soft text-[12.5px] text-fg-1 leading-relaxed flex gap-2">
+            <Sparkles size={13} className="text-accent-strong shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <div className="text-[11px] font-semibold text-accent-strong mb-1">대화 요약</div>
+              {chatSummary}
+              {summarizing && <span className="inline-block w-1.5 h-3.5 bg-accent-strong ml-0.5 animate-pulse" />}
+            </div>
+            <button onClick={() => { setSummaryOpen(false); setChatSummary(''); }} className="text-fg-3 hover:text-fg shrink-0"><X size={12} /></button>
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto scroll p-5 space-y-4">
           {messages.map(m => {
             const isAi = m.authorId === 'ai';

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button } from '@/components/ui/primitives';
 import { useOrgMutations, useOrgUnits } from '@/lib/hooks/use-data';
+import { toast } from 'sonner';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { Plus, Search, UserPlus } from 'lucide-react';
 
@@ -45,7 +46,7 @@ export function OrgPage() {
         >
           <UserPlus size={13} /> {invite.isPending ? '전송 중...' : '초대'}
         </Button>
-        <Button variant="secondary" size="sm"><Plus size={13} /> 부서 추가</Button>
+        <Button variant="secondary" size="sm" onClick={() => toast.info('부서 추가 기능은 관리자 페이지에서 지원 예정입니다.')}><Plus size={13} /> 부서 추가</Button>
       </div>
 
       {isLoading && <div className="py-12 text-center text-[12px] text-fg-3">불러오는 중...</div>}
