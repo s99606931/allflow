@@ -9,8 +9,7 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/primitives';
 import { Dialog, DialogField, DialogFooter, Select, TextInput } from '@/components/ui/dialog';
-import { useTaskMutations, useProjects } from '@/lib/hooks/use-data';
-import { TEAM } from '@/lib/fixtures';
+import { useTaskMutations, useProjects, useUsers } from '@/lib/hooks/use-data';
 import type { Priority } from '@/lib/schemas';
 
 interface Props {
@@ -27,7 +26,8 @@ const PRIO_OPTIONS: { value: Priority; label: string }[] = [
 export function TaskCreateDialog({ open, onOpenChange }: Props) {
   const { create } = useTaskMutations();
   const { data: projects = [] } = useProjects();
-  const firstUser = TEAM[0]?.id ?? '';
+  const { data: users = [] } = useUsers();
+  const firstUser = users[0]?.id ?? '';
   const [title, setTitle] = useState('');
   const [proj, setProj] = useState('');
   const [assignee, setAssignee] = useState(firstUser);
@@ -82,7 +82,7 @@ export function TaskCreateDialog({ open, onOpenChange }: Props) {
           </DialogField>
           <DialogField label="담당자" required>
             <Select value={assignee} onChange={e => setAssignee(e.target.value)} required>
-              {TEAM.map(u => (
+              {users.map(u => (
                 <option key={u.id} value={u.id}>
                   {u.name}
                 </option>

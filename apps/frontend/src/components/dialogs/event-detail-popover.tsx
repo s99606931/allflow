@@ -7,7 +7,7 @@
 
 import { Avatar, Button } from '@/components/ui/primitives';
 import { Dialog, DialogFooter } from '@/components/ui/dialog';
-import { TEAM } from '@/lib/fixtures';
+import { useUsers } from '@/lib/hooks/use-data';
 import { useTranslation } from '@/lib/i18n';
 
 export interface EventLike {
@@ -26,8 +26,9 @@ interface Props {
 
 export function EventDetailPopover({ event, onClose }: Props) {
   const { t } = useTranslation();
+  const { data: users = [] } = useUsers();
   if (!event) return null;
-  const attendees = TEAM.filter(u => event.attendees.includes(u.id));
+  const attendees = users.filter(u => event.attendees.includes(u.id));
   return (
     <Dialog open onOpenChange={open => !open && onClose()} title={event.title} size="sm">
       <div className="space-y-3 text-[13px] text-fg-1">

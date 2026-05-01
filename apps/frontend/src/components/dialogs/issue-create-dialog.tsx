@@ -6,8 +6,7 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/primitives';
 import { Dialog, DialogField, DialogFooter, Select, TextInput } from '@/components/ui/dialog';
-import { useIssueMutations } from '@/lib/hooks/use-data';
-import { PROJECTS, TEAM } from '@/lib/fixtures';
+import { useIssueMutations, useProjects, useUsers } from '@/lib/hooks/use-data';
 import type { IssuePrio, IssueSev } from '@/lib/schemas';
 
 interface Props {
@@ -26,8 +25,10 @@ const PRIO_OPTIONS: IssuePrio[] = ['P0', 'P1', 'P2', 'P3'];
 
 export function IssueCreateDialog({ open, onOpenChange }: Props) {
   const { create } = useIssueMutations();
-  const firstProj = PROJECTS[0]?.id ?? '';
-  const firstUser = TEAM[0]?.id ?? '';
+  const { data: projects = [] } = useProjects();
+  const { data: users = [] } = useUsers();
+  const firstProj = projects[0]?.id ?? '';
+  const firstUser = users[0]?.id ?? '';
   const [title, setTitle] = useState('');
   const [proj, setProj] = useState(firstProj);
   const [assignee, setAssignee] = useState(firstUser);
@@ -69,14 +70,14 @@ export function IssueCreateDialog({ open, onOpenChange }: Props) {
         <div className="grid grid-cols-2 gap-3">
           <DialogField label="프로젝트" required>
             <Select value={proj} onChange={e => setProj(e.target.value)} required>
-              {PROJECTS.map(p => (
+              {projects.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </Select>
           </DialogField>
           <DialogField label="담당자" required>
             <Select value={assignee} onChange={e => setAssignee(e.target.value)} required>
-              {TEAM.map(u => (
+              {users.map(u => (
                 <option key={u.id} value={u.id}>{u.name}</option>
               ))}
             </Select>
@@ -85,7 +86,7 @@ export function IssueCreateDialog({ open, onOpenChange }: Props) {
         <div className="grid grid-cols-3 gap-3">
           <DialogField label="보고자" required>
             <Select value={reporter} onChange={e => setReporter(e.target.value)} required>
-              {TEAM.map(u => (
+              {users.map(u => (
                 <option key={u.id} value={u.id}>{u.name}</option>
               ))}
             </Select>

@@ -10,7 +10,8 @@
 import { useMemo } from 'react';
 import { ArrowRight, Plus, X } from 'lucide-react';
 import { Avatar, IconButton } from '@/components/ui/primitives';
-import { TEAM, userById } from '@/lib/fixtures';
+import { useUsers } from '@/lib/hooks/use-data';
+import { useUserMap } from '@/lib/hooks/use-user-lookup';
 
 interface Props {
   value: string[];
@@ -18,7 +19,9 @@ interface Props {
 }
 
 export function ApprovalLineEditor({ value, onChange }: Props) {
-  const remaining = useMemo(() => TEAM.filter(u => !value.includes(u.id)), [value]);
+  const { data: users = [] } = useUsers();
+  const userMap = useUserMap();
+  const remaining = useMemo(() => users.filter(u => !value.includes(u.id)), [users, value]);
 
   const setAt = (idx: number, id: string) => {
     const copy = [...value];
@@ -39,7 +42,7 @@ export function ApprovalLineEditor({ value, onChange }: Props) {
       <div className="mb-2 text-[11.5px] font-semibold uppercase tracking-wider text-fg-3">결재 라인</div>
       <ol className="flex flex-wrap items-center gap-2">
         {value.map((id, idx) => {
-          const user = userById(id);
+          const user = userMap.get(id);
           if (!user) return null;
           return (
             <li key={`${id}-${idx}`} className="flex items-center gap-2 rounded-md border border-border bg-bg-elev px-2 py-1">
@@ -51,7 +54,7 @@ export function ApprovalLineEditor({ value, onChange }: Props) {
                 value={id}
                 onChange={e => setAt(idx, e.target.value)}
               >
-                {TEAM.map(u => (
+                {users.map(u => (
                   <option key={u.id} value={u.id}>
                     {u.name}
                   </option>

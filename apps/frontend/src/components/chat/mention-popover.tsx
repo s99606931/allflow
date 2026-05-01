@@ -8,7 +8,6 @@
 
 import { useMemo, useState } from 'react';
 import { Avatar } from '@/components/ui/primitives';
-import { TEAM } from '@/lib/fixtures';
 import type { User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -16,15 +15,16 @@ interface Props {
   open: boolean;
   onSelect: (user: User) => void;
   onClose: () => void;
+  users?: User[];
   className?: string;
 }
 
-export function MentionPopover({ open, onSelect, onClose, className }: Props) {
+export function MentionPopover({ open, onSelect, onClose, users = [], className }: Props) {
   const [query, setQuery] = useState('');
   const matches = useMemo(
     () =>
-      TEAM.filter(u => u.name.toLowerCase().includes(query.toLowerCase()) || u.id.includes(query.toLowerCase())).slice(0, 6),
-    [query],
+      users.filter(u => u.name.toLowerCase().includes(query.toLowerCase()) || u.id.includes(query.toLowerCase())).slice(0, 6),
+    [query, users],
   );
 
   if (!open) return null;

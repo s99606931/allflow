@@ -13,8 +13,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Button } from '@/components/ui/primitives';
 import { Dialog, DialogField, DialogFooter, Select, TextInput, Textarea } from '@/components/ui/dialog';
-import { useApprovalMutations } from '@/lib/hooks/use-data';
-import { TEAM } from '@/lib/fixtures';
+import { useApprovalMutations, useUsers } from '@/lib/hooks/use-data';
 import { useTranslation } from '@/lib/i18n';
 
 interface Props {
@@ -29,9 +28,10 @@ const KINDS = ['leave', 'expense', 'purchase', 'general', 'overtime'] as const;
 export function ApprovalForm({ open, onOpenChange, onSuccess, extraSlot }: Props) {
   const { t } = useTranslation();
   const { create } = useApprovalMutations();
+  const { data: users = [] } = useUsers();
   const [title, setTitle] = useState('');
   const [kind, setKind] = useState<(typeof KINDS)[number]>('general');
-  const [approver, setApprover] = useState(TEAM[0]?.id ?? '');
+  const [approver, setApprover] = useState('');
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
 
@@ -80,7 +80,7 @@ export function ApprovalForm({ open, onOpenChange, onSuccess, extraSlot }: Props
           </DialogField>
           <DialogField label={t('approval.create.line')} required>
             <Select value={approver} onChange={e => setApprover(e.target.value)}>
-              {TEAM.map(u => (
+              {users.map(u => (
                 <option key={u.id} value={u.id}>
                   {u.name}
                 </option>

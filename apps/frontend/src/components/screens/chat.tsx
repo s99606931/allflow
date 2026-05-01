@@ -7,13 +7,14 @@ import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { Composer } from '@/components/chat/composer';
 import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel';
 import { MentionPopover } from '@/components/chat/mention-popover';
-import { useChannels, useMe, useTaskMutations } from '@/lib/hooks/use-data';
+import { useChannels, useMe, useTaskMutations, useUsers } from '@/lib/hooks/use-data';
 import { useChatMessages, useSendMessage } from '@/lib/hooks/use-chat-messages';
 import { useTranslation } from '@/lib/i18n';
 
 export function ChatPage() {
   const { t } = useTranslation();
   const userMap = useUserMap();
+  const { data: users = [] } = useUsers();
   const { data: me } = useMe();
   const { data: channels = [], isLoading: channelsLoading, error: channelsError } = useChannels();
   const [activeId, setActiveId] = useState<string>('');
@@ -196,6 +197,7 @@ export function ChatPage() {
               setMentionOpen(false);
               onSent(`@${u.name} `);
             }}
+            users={users}
             className="bottom-20 left-3"
           />
         </div>

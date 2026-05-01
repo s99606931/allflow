@@ -11,8 +11,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/primitives';
 import { Dialog, DialogField, DialogFooter, TextInput, Textarea } from '@/components/ui/dialog';
-import { useEventMutations } from '@/lib/hooks/use-data';
-import { TEAM } from '@/lib/fixtures';
+import { useEventMutations, useUsers } from '@/lib/hooks/use-data';
 import { useTranslation } from '@/lib/i18n';
 import type { Event } from '@/lib/schemas';
 
@@ -29,6 +28,7 @@ function overlaps(aStart: string, aEnd: string, bStart: string, bEnd: string): b
 export function EventCreateDialog({ open, onOpenChange, existingEvents = [] }: Props) {
   const { t } = useTranslation();
   const { create } = useEventMutations();
+  const { data: users = [] } = useUsers();
   const [title, setTitle] = useState('');
   const today = new Date().toISOString().slice(0, 10);
   const [start, setStart] = useState(`${today}T09:00`);
@@ -84,7 +84,7 @@ export function EventCreateDialog({ open, onOpenChange, existingEvents = [] }: P
         </DialogField>
         <DialogField label={t('schedule.create.attendees')}>
           <div className="flex flex-wrap gap-1">
-            {TEAM.map(user => {
+            {users.map(user => {
               const active = attendees.includes(user.id);
               return (
                 <button

@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TEAM, PROJECTS, TASKS, ISSUES, NAV } from '@/lib/fixtures';
+import { NAV } from '@/lib/fixtures';
+import { useUsers, useProjects, useTasks, useIssues } from '@/lib/hooks/use-data';
 import { Avatar } from '@/components/ui/primitives';
+import type { User, Project, Task, Issue } from '@/lib/schemas';
 import {
   Search, ArrowRight, Sparkles, X, Hash, FolderKanban, CheckSquare,
   AlertCircle, User as UserIcon, FileText,
@@ -50,6 +52,11 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
+  const { data: users = [] } = useUsers();
+  const { data: projects = [] } = useProjects();
+  const { data: tasks = [] } = useTasks();
+  const { data: issues = [] } = useIssues();
+
   // ⌘K / Ctrl+K
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -81,7 +88,10 @@ export function CommandPalette() {
   }, [open]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const hits = useMemo(() => buildHits(q), [q]);
+  const hits = useMemo(
+    () => buildHits(q, { users, projects, tasks, issues }),
+    [q, users, projects, tasks, issues],
+  );
 
   // Group ordering
   const groups = useMemo(() => groupHits(hits), [hits]);
@@ -150,7 +160,7 @@ export function CommandPalette() {
                       onClick={() => go(h)}
                       className={`w-full flex items-center gap-3 px-3 h-10 rounded-md text-left text-[12.5px] transition-colors ${idx === activeIdx ? 'bg-accent-soft text-fg' : 'text-fg-1 hover:bg-hover'}`}
                     >
-                      <KindIcon hit={h} />
+                      <KindIcon hit={h} users={users} />
                       <div className="flex-1 min-w-0">
                         <div className="truncate font-medium">{h.title}</div>
                         {h.sub && <div className="text-[10.5px] text-fg-3 truncate">{h.sub}</div>}
@@ -178,7 +188,7 @@ export function CommandPalette() {
   );
 }
 
-function KindIcon({ hit }: { hit: Hit }) {
+function KindIcon({ hit, users }: { hit: Hit; users: User[] }) {
   const map = {
     page: Hash, project: FolderKanban, task: CheckSquare, issue: AlertCircle,
     user: UserIcon, doc: FileText, action: Sparkles,
@@ -186,7 +196,7 @@ function KindIcon({ hit }: { hit: Hit }) {
   const Icon = map[hit.kind] ?? Hash;
 
   if (hit.kind === 'user') {
-    const u = TEAM.find(t => t.id === hit.id);
+    const u = users.find(user => user.id === hit.id);
     if (u) return <Avatar user={u} size={22} />;
   }
   if (hit.kind === 'project' && hit.color) {
@@ -201,7 +211,14 @@ function KindIcon({ hit }: { hit: Hit }) {
 
 /* Build + group ------------------------------------------------------ */
 
-function buildHits(q: string): Hit[] {
+interface BuildHitsData {
+  users: User[];
+  projects: Project[];
+  tasks: Task[];
+  issues: Issue[];
+}
+
+function buildHits(q: string, { users, projects, tasks, issues }: BuildHitsData): Hit[] {
   const query = q.trim().toLowerCase();
   const hits: Hit[] = [];
 
@@ -220,19 +237,19 @@ function buildHits(q: string): Hit[] {
   );
 
   // Projects
-  for (const p of PROJECTS) {
+  for (const p of projects) {
     hits.push({ kind: 'project', id: p.id, title: p.name, sub: `${p.code} · ${p.tasks.done}/${p.tasks.total}`, href: `/projects/${p.id}`, color: p.color });
   }
   // Tasks
-  for (const t of TASKS) {
+  for (const t of tasks) {
     hits.push({ kind: 'task', id: t.id, title: t.title, sub: `${t.id} · ${t.due}`, href: `/tasks` });
   }
   // Issues
-  for (const i of ISSUES.slice(0, 8)) {
+  for (const i of issues.slice(0, 8)) {
     hits.push({ kind: 'issue', id: i.id, title: i.title, sub: `${i.id} · ${i.prio} · ${i.proj}`, href: `/issues` });
   }
   // Users
-  for (const u of TEAM) {
+  for (const u of users) {
     hits.push({ kind: 'user', id: u.id, title: u.name, sub: `${u.role} · ${u.dept}`, href: `/users` });
   }
   // Actions (always present)

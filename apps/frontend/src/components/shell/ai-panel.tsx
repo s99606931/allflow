@@ -4,9 +4,8 @@ import { Avatar, Badge, Button } from "@/components/ui/primitives";
 import { AiComposer } from "@/components/ai/ai-composer";
 import { AiThreadSidebar } from "@/components/ai/ai-thread-sidebar";
 import { MarkdownRenderer } from "@/components/ai/markdown-renderer";
-import { ME } from "@/lib/fixtures";
 import { useResizeDrag } from "@/lib/hooks/use-resize-drag";
-import { useAiMutations, useAiStream, useLlmConnections } from "@/lib/hooks/use-data";
+import { useAiMutations, useAiStream, useLlmConnections, useMe } from "@/lib/hooks/use-data";
 import type { AttachedFile } from "@/lib/hooks/use-file-attach";
 import { cn } from "@/lib/utils";
 import { AI_PANEL_MAX, AI_PANEL_MIN, useUIStore } from "@/store/ui-store";
@@ -37,20 +36,25 @@ const STARTER: ChatMessage = {
 	chips: ["주간 리포트 생성", "회의록 정리", "태스크 검색"],
 };
 
+const ME_FALLBACK = { initials: '나', color: '#5B6CFF' } as const;
+
 function Message({
 	message,
 	onChipClick,
+	me,
 }: {
 	message: ChatMessage;
 	onChipClick: (text: string) => void;
+	me?: { initials: string; color: string } | null;
 }) {
+	const avatarUser = me ?? ME_FALLBACK;
 	if (message.role === "user") {
 		return (
 			<div className="flex gap-2.5 items-start justify-end">
 				<div className="bg-accent-soft text-fg max-w-[80%] px-3 py-2 rounded-lg rounded-tr-sm text-[13px] whitespace-pre-wrap">
 					{message.text}
 				</div>
-				<Avatar user={ME} size={28} />
+				<Avatar user={avatarUser} size={28} />
 			</div>
 		);
 	}
@@ -106,6 +110,7 @@ export function AIPanel() {
 	const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 
+	const { data: me } = useMe();
 	const { complete } = useAiMutations();
 	const { streamComplete, streaming } = useAiStream();
 	const llmConnectionsQuery = useLlmConnections();
@@ -238,7 +243,7 @@ export function AIPanel() {
 					<div className="flex flex-col flex-1 min-h-0 min-w-0">
 						<div ref={scrollRef} className="flex-1 overflow-y-auto scroll p-5 space-y-4 min-h-0">
 							{msgs.map((m) => (
-								<Message key={m.id} message={m} onChipClick={handleSuggest} />
+								<Message key={m.id} message={m} onChipClick={handleSuggest} me={me} />
 							))}
 							{isPending && !streaming && (
 								<div className="flex gap-2.5 items-start">
