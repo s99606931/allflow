@@ -11,9 +11,17 @@ import { useState, type FormEvent } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Button, Badge } from '@/components/ui/primitives';
 import { TextInput } from '@/components/ui/dialog';
 import { useAiMutations } from '@/lib/hooks/use-data';
+import type { AiUsageMetric } from '@/lib/api';
 import { Sparkles, Send, Trash2 } from 'lucide-react';
 
-type Turn = { role: 'user' | 'assistant'; text: string };
+type Turn = { role: 'user' | 'assistant'; text: string; usage?: AiUsageMetric };
+
+function formatUsage(u: AiUsageMetric): string {
+  const tokens = `${u.promptTokens}↑ + ${u.completionTokens}↓ = ${u.totalTokens} tok`;
+  const cost = u.costUSD === null ? '비용 N/A' : `$${u.costUSD.toFixed(6)}`;
+  const model = u.model ? ` · ${u.model}` : '';
+  return `${tokens} · ${cost}${model}`;
+}
 
 export function AiChatPanel() {
   const { complete } = useAiMutations();
@@ -27,7 +35,14 @@ export function AiChatPanel() {
     setTurns(prev => [...prev, { role: 'user', text: value }]);
     setPrompt('');
     const reply = await complete.mutateAsync(value);
-    setTurns(prev => [...prev, { role: 'assistant', text: reply }]);
+    setTurns(prev => [
+      ...prev,
+      {
+        role: 'assistant',
+        text: reply.text,
+        ...(reply.usage ? { usage: reply.usage } : {}),
+      },
+    ]);
   };
 
   return (
@@ -67,6 +82,14 @@ export function AiChatPanel() {
                 {turn.role === 'user' ? '사용자' : 'AI'}
               </div>
               {turn.text}
+              {turn.role === 'assistant' && turn.usage && (
+                <div
+                  className="mt-1.5 pt-1.5 border-t border-accent/20 text-[10.5px] text-fg-3 font-mono"
+                  data-testid="ai-usage-metric"
+                >
+                  {formatUsage(turn.usage)}
+                </div>
+              )}
             </div>
           ))}
           {complete.isPending && (

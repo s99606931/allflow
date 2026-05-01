@@ -19,6 +19,14 @@ const SUGGEST = [
 	"대시보드 위젯 추가",
 ];
 
+interface UsageMetric {
+	promptTokens: number;
+	completionTokens: number;
+	totalTokens: number;
+	costUSD: number | null;
+	model?: string;
+}
+
 interface ChatMessage {
 	id: string;
 	role: "ai" | "user";
@@ -27,6 +35,14 @@ interface ChatMessage {
 	citations?: unknown[];
 	toolCalls?: unknown[] | Record<string, unknown>;
 	streaming?: boolean;
+	usage?: UsageMetric;
+}
+
+function formatUsage(u: UsageMetric): string {
+	const tokens = `${u.promptTokens}↑ + ${u.completionTokens}↓ = ${u.totalTokens} tok`;
+	const cost = u.costUSD === null ? "비용 N/A" : `$${u.costUSD.toFixed(6)}`;
+	const model = u.model ? ` · ${u.model}` : "";
+	return `${tokens} · ${cost}${model}`;
 }
 
 const STARTER: ChatMessage = {
@@ -94,6 +110,14 @@ function Message({
 						<span>{message.citations.length}개 워크스페이스 문서 참조</span>
 					</div>
 				)}
+				{message.usage && (
+					<div
+						className="text-[10.5px] text-fg-3 font-mono"
+						data-testid="ai-usage-metric"
+					>
+						{formatUsage(message.usage)}
+					</div>
+				)}
 			</div>
 		</div>
 	);
@@ -152,9 +176,19 @@ export function AIPanel() {
 					prev.map((m) => (m.id === aiId ? { ...m, text: m.text + delta } : m)),
 				);
 			},
-			(citations) => {
+			({ citations, toolTrace, usage }) => {
 				setMsgs((prev) =>
-					prev.map((m) => (m.id === aiId ? { ...m, streaming: false, citations } : m)),
+					prev.map((m) =>
+						m.id === aiId
+							? {
+									...m,
+									streaming: false,
+									citations,
+									...(toolTrace.length > 0 ? { toolCalls: toolTrace } : {}),
+									...(usage ? { usage } : {}),
+								}
+							: m,
+					),
 				);
 			},
 		);
@@ -166,7 +200,15 @@ export function AIPanel() {
 		setInput("");
 		try {
 			const reply = await complete.mutateAsync(text);
-			setMsgs((prev) => [...prev, { id: `a-${Date.now()}`, role: "ai", text: reply }]);
+			setMsgs((prev) => [
+				...prev,
+				{
+					id: `a-${Date.now()}`,
+					role: "ai",
+					text: reply.text,
+					...(reply.usage ? { usage: reply.usage } : {}),
+				},
+			]);
 		} catch {
 			setMsgs((prev) => [
 				...prev,

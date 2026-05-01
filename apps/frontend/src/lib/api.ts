@@ -23,6 +23,20 @@ import { extendedApi } from './api/extended';
  * `./api/extended.ts`에서 정의하여 본 파일이 500 LOC를 초과하지 않도록 분리.
  */
 
+export interface AiUsageMetric {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  costUSD: number | null;
+  model?: string;
+}
+
+export interface AiCompleteResult {
+  text: string;
+  citations?: { kind: string; id: string }[];
+  usage?: AiUsageMetric;
+}
+
 const baseApi = {
   /* Health ----------------------------------------------------------------- */
   getHealth: async (): Promise<Health> =>
@@ -189,12 +203,24 @@ const baseApi = {
   },
 
   /* AI -------------------------------------------------------------------- */
-  aiComplete: async (prompt: string): Promise<string> => {
+  aiComplete: async (prompt: string): Promise<AiCompleteResult> => {
     if (USE_MOCK) {
       await sleep(600);
-      return `[MOCK] ${prompt} 에 대한 응답입니다.`;
+      return {
+        text: `[MOCK] ${prompt} 에 대한 응답입니다.`,
+        usage: {
+          promptTokens: prompt.length,
+          completionTokens: 12,
+          totalTokens: prompt.length + 12,
+          costUSD: 0,
+          model: 'mock',
+        },
+      };
     }
-    return http.post('ai/complete', { json: { prompt } }).json<{ text: string }>().then(r => r.text);
+    const r = await http
+      .post('ai/complete', { json: { prompt } })
+      .json<AiCompleteResult>();
+    return r;
   },
 
   aiExtractActions: async (input: {

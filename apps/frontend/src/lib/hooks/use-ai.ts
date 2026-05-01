@@ -34,47 +34,101 @@ export interface AiMessage {
 
 /* ----------------------------------------- AI Stream hook --------------- */
 
+export interface ToolTraceEntry {
+  id: string;
+  name: string;
+  arguments: string;
+  result: string;
+  iteration: number;
+  latencyMs: number;
+}
+
+export interface AiUsageInfo {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  costUSD: number | null;
+  model?: string;
+}
+
+export interface AiStreamDoneInfo {
+  citations: unknown[];
+  toolTrace: ToolTraceEntry[];
+  usage?: AiUsageInfo;
+}
+
+export interface AiStreamOptions {
+  context?: Record<string, unknown>;
+  /** 기본 true. RAG/MCP/Tool/Web search 도구 사용 여부. */
+  useTools?: boolean;
+}
+
 export function useAiStream() {
   const [streaming, setStreaming] = useState(false);
 
-  const streamComplete = useCallback(async (
-    prompt: string,
-    onDelta: (delta: string) => void,
-    onDone: (citations: unknown[]) => void,
-    context?: Record<string, unknown>,
-  ) => {
-    setStreaming(true);
-    try {
-      const res = await fetch('/api/v1/ai/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, stream: true, context }),
-        credentials: 'include',
-      });
-      if (!res.ok || !res.body) { onDone([]); return; }
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        const parts = buf.split('\n\n');
-        buf = parts.pop() ?? '';
-        for (const part of parts) {
-          const line = part.startsWith('data: ') ? part.slice(6) : part;
-          if (!line.trim()) continue;
-          try {
-            const parsed = JSON.parse(line) as { delta?: string; done?: boolean; citations?: unknown[] };
-            if (parsed.delta) onDelta(parsed.delta);
-            if (parsed.done) onDone(parsed.citations ?? []);
-          } catch { /* ignore malformed chunk */ }
+  const streamComplete = useCallback(
+    async (
+      prompt: string,
+      onDelta: (delta: string) => void,
+      onDone: (info: AiStreamDoneInfo) => void,
+      opts: AiStreamOptions = {},
+    ) => {
+      setStreaming(true);
+      try {
+        const res = await fetch('/api/v1/ai/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt,
+            stream: true,
+            ...(opts.context ? { context: opts.context } : {}),
+            useTools: opts.useTools !== false,
+          }),
+          credentials: 'include',
+        });
+        if (!res.ok || !res.body) {
+          onDone({ citations: [], toolTrace: [] });
+          return;
         }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() ?? '';
+          for (const part of parts) {
+            const line = part.startsWith('data: ') ? part.slice(6) : part;
+            if (!line.trim()) continue;
+            try {
+              const parsed = JSON.parse(line) as {
+                delta?: string;
+                done?: boolean;
+                citations?: unknown[];
+                toolTrace?: ToolTraceEntry[];
+                usage?: AiUsageInfo;
+              };
+              if (parsed.delta) onDelta(parsed.delta);
+              if (parsed.done) {
+                onDone({
+                  citations: parsed.citations ?? [],
+                  toolTrace: parsed.toolTrace ?? [],
+                  ...(parsed.usage ? { usage: parsed.usage } : {}),
+                });
+              }
+            } catch {
+              /* ignore malformed chunk */
+            }
+          }
+        }
+      } finally {
+        setStreaming(false);
       }
-    } finally {
-      setStreaming(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   return { streamComplete, streaming };
 }
