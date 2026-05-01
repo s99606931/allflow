@@ -949,7 +949,7 @@ components:
         color: { type: string }
         progress: { type: integer, minimum: 0, maximum: 100 }
         status: { $ref: '#/components/schemas/StatusKey' }
-        due: { type: string, format: date }
+        due: { type: [string, 'null'], format: date }
         members:
           type: array
           items: { type: string }

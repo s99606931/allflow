@@ -54,6 +54,16 @@ function toZod(node) {
   if (!node) return 'z.unknown()';
   if (node.$ref) return refName(node.$ref);
 
+  // OpenAPI 3.1: type: [X, 'null'] → X.nullable()
+  if (Array.isArray(node.type)) {
+    const nonNull = node.type.filter((t) => t !== 'null');
+    const isNullable = node.type.includes('null');
+    const inner = nonNull.length === 1
+      ? toZod({ ...node, type: nonNull[0] })
+      : 'z.unknown()';
+    return isNullable ? `${inner}.nullable()` : inner;
+  }
+
   if (Array.isArray(node.oneOf)) {
     const variants = node.oneOf.map(toZod);
     if (node.discriminator?.propertyName) {

@@ -26,7 +26,7 @@ export const Project = z.object({
   "color": z.string(),
   "progress": z.number().int().min(0).max(100),
   "status": StatusKey,
-  "due": z.string(),
+  "due": z.string().nullable(),
   "members": z.array(z.string()),
   "tasks": z.object({
   "total": z.number().int(),
@@ -63,9 +63,9 @@ export const Task = z.object({
   "due": z.string(),
   "priority": z.enum(["high", "med", "low"]),
   "tags": z.array(z.string()),
-  "startDate": z.unknown().optional(),
-  "endDate": z.unknown().optional(),
-  "parentTaskId": z.unknown().optional(),
+  "startDate": z.string().nullable().optional(),
+  "endDate": z.string().nullable().optional(),
+  "parentTaskId": z.string().nullable().optional(),
   "kind": TaskKind.optional(),
   "progress": z.number().int().min(0).max(100).optional()
 });
@@ -85,8 +85,8 @@ export const TaskPatch = z.object({
   "status": StatusKey.optional(),
   "assignee": z.string().optional(),
   "due": z.string().optional(),
-  "startDate": z.unknown().optional(),
-  "endDate": z.unknown().optional(),
+  "startDate": z.string().nullable().optional(),
+  "endDate": z.string().nullable().optional(),
   "kind": TaskKind.optional(),
   "progress": z.number().int().min(0).max(100).optional()
 });
@@ -111,9 +111,9 @@ export const GanttTask = z.object({
   "kind": TaskKind,
   "projectId": z.string(),
   "projectColor": z.string().optional(),
-  "assigneeId": z.unknown().optional(),
-  "startDate": z.unknown().optional(),
-  "endDate": z.unknown().optional(),
+  "assigneeId": z.string().nullable().optional(),
+  "startDate": z.string().nullable().optional(),
+  "endDate": z.string().nullable().optional(),
   "progress": z.number().int().min(0).max(100),
   "status": StatusKey,
   "priority": z.enum(["high", "med", "low"])
@@ -132,8 +132,8 @@ export type GanttResponse = z.infer<typeof GanttResponse>;
 
 export const GanttByAssignee = z.object({
   "groups": z.array(z.object({
-  "assigneeId": z.unknown(),
-  "assigneeName": z.unknown().optional(),
+  "assigneeId": z.string().nullable(),
+  "assigneeName": z.string().nullable().optional(),
   "tasks": z.array(GanttTask),
   "conflictCount": z.number().int().min(0).optional()
 }))

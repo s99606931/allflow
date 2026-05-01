@@ -94,13 +94,18 @@ export async function projectsRoutes(app: FastifyInstance): Promise<void> {
     // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
     const userId = req.user!.id;
 
+    const dueDate = input.due ? new Date(input.due) : undefined;
+    if (dueDate && isNaN(dueDate.getTime())) {
+      throw new ValidationError('잘못된 due 형식', [{ path: ['due'], message: 'YYYY-MM-DD 형식이어야 합니다', code: 'invalid_string' as const }]);
+    }
+
     const created = await app.prisma.project
       .create({
         data: {
           name: input.name,
           code: input.code,
           color: input.color ?? '#5B7FFF',
-          ...(input.due ? { due: new Date(input.due) } : {}),
+          ...(dueDate ? { due: dueDate } : {}),
           members: { create: { userId, role: 'owner' } },
         },
         include: {

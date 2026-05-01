@@ -27,7 +27,7 @@ export const ProjectSchema = z.object({
   color: z.string(),
   progress: z.number().int().min(0).max(100),
   status: StatusKeySchema,
-  due: z.string(),
+  due: z.string().nullable(),
   members: z.array(z.string()),
   tasks: z.object({ total: z.number().int(), done: z.number().int() }),
 });

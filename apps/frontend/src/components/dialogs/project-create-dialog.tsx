@@ -66,10 +66,12 @@ export function ProjectCreateDialog({ open, onOpenChange }: Props) {
           </DialogField>
         </div>
         <DialogField label="마감일" hint="선택">
-          <TextInput
+          <input
+            type="date"
+            aria-label="마감일"
             value={due}
             onChange={e => setDue(e.target.value)}
-            placeholder="2026-06-30 또는 자유 표현"
+            className="h-9 w-full rounded border border-border px-2 text-[13px] bg-surface text-fg"
           />
         </DialogField>
         <DialogFooter>
