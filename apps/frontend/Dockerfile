@@ -2,7 +2,7 @@
 # ALL-Flow Frontend — multistage Dockerfile (docker-compose-dev-2026-04-29).
 #
 # Stages:
-#   base  : node 22 alpine + pnpm 10 + tini + wget
+#   base  : node 24 alpine + pnpm 10 + tini + wget
 #   deps  : pnpm install --frozen-lockfile (cached)
 #   dev   : hot-reload (chokidar/watchpack polling for WSL2)
 #   build : next build (NODE_ENV=production)
@@ -26,7 +26,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm-fe,target=/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts
 
-FROM deps AS dev
+FROM base AS dev
 ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV CHOKIDAR_USEPOLLING=true

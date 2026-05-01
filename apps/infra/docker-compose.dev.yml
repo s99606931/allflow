@@ -82,17 +82,17 @@ services:
         # Container is Alpine; ensure musl variants are present in the pnpm virtual store.
         MUSL_OXIDE="/workspace/node_modules/.pnpm/@tailwindcss+oxide-linux-x64-musl@4.2.4/node_modules/@tailwindcss/oxide-linux-x64-musl/tailwindcss-oxide.linux-x64-musl.node"
         MUSL_LC="/workspace/node_modules/.pnpm/lightningcss@1.32.0/node_modules/lightningcss.linux-x64-musl.node"
-        if [ ! -f "$MUSL_OXIDE" ]; then
+        if [ ! -f "$$MUSL_OXIDE" ]; then
           echo "[musl-fix] Installing @tailwindcss/oxide-linux-x64-musl..."
           npm install --prefix /tmp/musl-fix @tailwindcss/oxide-linux-x64-musl@4.2.4 --ignore-scripts 2>/dev/null
-          mkdir -p "$(dirname "$MUSL_OXIDE")"
-          cp /tmp/musl-fix/node_modules/@tailwindcss/oxide-linux-x64-musl/tailwindcss-oxide.linux-x64-musl.node "$MUSL_OXIDE"
-          cp /tmp/musl-fix/node_modules/@tailwindcss/oxide-linux-x64-musl/package.json "$(dirname "$MUSL_OXIDE")/"
+          mkdir -p "$$(dirname "$$MUSL_OXIDE")"
+          cp /tmp/musl-fix/node_modules/@tailwindcss/oxide-linux-x64-musl/tailwindcss-oxide.linux-x64-musl.node "$$MUSL_OXIDE"
+          cp /tmp/musl-fix/node_modules/@tailwindcss/oxide-linux-x64-musl/package.json "$$(dirname "$$MUSL_OXIDE")/"
         fi
-        if [ ! -f "$MUSL_LC" ]; then
+        if [ ! -f "$$MUSL_LC" ]; then
           echo "[musl-fix] Installing lightningcss-linux-x64-musl..."
           npm install --prefix /tmp/musl-lc lightningcss-linux-x64-musl@1.32.0 --ignore-scripts 2>/dev/null
-          cp /tmp/musl-lc/node_modules/lightningcss-linux-x64-musl/lightningcss.linux-x64-musl.node "$MUSL_LC"
+          cp /tmp/musl-lc/node_modules/lightningcss-linux-x64-musl/lightningcss.linux-x64-musl.node "$$MUSL_LC"
         fi
         exec pnpm --filter ./apps/frontend exec next dev --webpack
     environment:
