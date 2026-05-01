@@ -694,3 +694,22 @@ model Doc {
 
   @@index([ownerId])
 }
+
+// =====================================================================
+// Org / Invitation
+// =====================================================================
+
+model Invitation {
+  id        String   @id @default(cuid())
+  email     String   @db.VarChar(200)
+  orgUnitId String   @map("org_unit_id") @db.VarChar(80)
+  role      String   @db.VarChar(80)
+  invitedBy String   @map("invited_by")
+  pending   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([email, orgUnitId])
+  @@index([email])
+  @@map("invitations")
+}

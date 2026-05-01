@@ -6,13 +6,9 @@ import { ValidationError } from '@all-flow/shared/errors';
  *   GET  /org/units          — 조직 단위 트리/목록 (시드 카탈로그)
  *   POST /org/invitations    — 구성원 초대 (email + orgUnitId + role)
  *
- * 현재 구현(BE-N7 1차):
- *  - in-memory OrgUnit 시드 + Invitation store (BE-N1~N6 동일 패턴).
- *  - audit log: `org.invite` (메일 발송 stub, 실제 SMTP 연동은 follow-up).
- *  - 멱등성: 동일 (email, orgUnitId) 재초대 시 기존 invitation id 반환 (200 OK).
- *  - orgUnitId 미존재 시 400 ValidationError.
- *
- * RBAC enforcement, 영속화(Prisma OrgUnit/Invitation), 토큰 만료, 메일 발송은 follow-up.
+ * Invitation 영속화: Prisma `invitations` 테이블 (T1 마이그레이션).
+ * 멱등성: 동일 (email, orgUnitId) 재초대 시 기존 invitation id 반환 (200 OK).
+ * orgUnitId 미존재 시 400 ValidationError.
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -22,16 +18,6 @@ interface OrgUnitRow {
   name: string;
   parentId: string | null;
   members: string[];
-}
-
-interface InvitationRow {
-  id: string;
-  email: string;
-  orgUnitId: string;
-  role: string;
-  invitedBy: string;
-  pending: true;
-  createdAt: string;
 }
 
 const ORG_UNITS_SEED: OrgUnitRow[] = [
@@ -49,26 +35,6 @@ const InviteUser = z
   })
   .strict();
 
-const invitations = new Map<string, InvitationRow>();
-let invSeq = 0;
-
-export function __resetOrgInvitationsForTests(): void {
-  invitations.clear();
-  invSeq = 0;
-}
-
-const newInvId = (): string => {
-  invSeq += 1;
-  return `inv-${invSeq.toString(36)}-${Date.now().toString(36)}`;
-};
-
-const findExisting = (email: string, orgUnitId: string): InvitationRow | undefined => {
-  for (const row of invitations.values()) {
-    if (row.email === email && row.orgUnitId === orgUnitId) return row;
-  }
-  return undefined;
-};
-
 export async function orgRoutes(app: FastifyInstance): Promise<void> {
   app.get('/org/units', { preHandler: [app.authenticate] }, async () => ORG_UNITS_SEED);
 
@@ -83,7 +49,10 @@ export async function orgRoutes(app: FastifyInstance): Promise<void> {
     // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
     const userId = req.user!.id;
 
-    const existing = findExisting(email, orgUnitId);
+    const existing = await app.prisma.invitation.findFirst({
+      where: { email, orgUnitId },
+    });
+
     if (existing) {
       app.log.info(
         {
@@ -99,16 +68,9 @@ export async function orgRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(200).send({ id: existing.id, pending: existing.pending });
     }
 
-    const row: InvitationRow = {
-      id: newInvId(),
-      email,
-      orgUnitId,
-      role,
-      invitedBy: userId,
-      pending: true,
-      createdAt: new Date().toISOString(),
-    };
-    invitations.set(row.id, row);
+    const row = await app.prisma.invitation.create({
+      data: { email, orgUnitId, role, invitedBy: userId },
+    });
 
     app.log.info(
       {

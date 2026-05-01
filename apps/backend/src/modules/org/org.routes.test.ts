@@ -1,16 +1,67 @@
 import { SignJWT } from 'jose';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
 import { resetEnvForTests } from '../../config/env.js';
 import { authPlugin } from '../../plugins/auth.js';
-import { __resetOrgInvitationsForTests, orgRoutes } from './org.routes.js';
+import { orgRoutes } from './org.routes.js';
 
 const TEST_AUTH = 'a'.repeat(16) + 'b'.repeat(16);
+
+// biome-ignore lint/suspicious/noExplicitAny: 테스트 mock 의 prisma 시그니처는 호출부 모양을 신뢰한다.
+type AnyArgs = any;
+
+interface InvitationRow {
+  id: string;
+  email: string;
+  orgUnitId: string;
+  role: string;
+  invitedBy: string;
+  pending: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+function makeInvitationStore() {
+  const rows = new Map<string, InvitationRow>();
+  let seq = 0;
+  return {
+    findFirst: async (args: AnyArgs) => {
+      const { email, orgUnitId } = args?.where ?? {};
+      for (const row of rows.values()) {
+        if (row.email === email && row.orgUnitId === orgUnitId) return row;
+      }
+      return null;
+    },
+    create: async (args: AnyArgs) => {
+      seq += 1;
+      const now = new Date();
+      const row: InvitationRow = {
+        id: `inv-${seq}`,
+        email: args.data.email,
+        orgUnitId: args.data.orgUnitId,
+        role: args.data.role,
+        invitedBy: args.data.invitedBy,
+        pending: true,
+        createdAt: now,
+        updatedAt: now,
+      };
+      rows.set(row.id, row);
+      return row;
+    },
+  };
+}
 
 async function buildTestApp() {
   resetEnvForTests();
   process.env.AUTH_SECRET = TEST_AUTH;
   const app = await buildApp({ logger: false });
+  const store = makeInvitationStore();
+  app.decorate('prisma', {
+    invitation: {
+      findFirst: store.findFirst,
+      create: store.create,
+    },
+  } as never);
   await app.register(authPlugin);
   await app.register(orgRoutes);
   return app;
@@ -31,9 +82,6 @@ describe('modules/org — BE-N7', () => {
   afterAll(() => {
     process.env.AUTH_SECRET = undefined;
     resetEnvForTests();
-  });
-  afterEach(() => {
-    __resetOrgInvitationsForTests();
   });
 
   it('인증 없으면 401 (GET /org/units)', async () => {
