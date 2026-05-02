@@ -24,6 +24,8 @@ export function TasksPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [filter, setFilter] = useState<'all' | 'mine' | 'today' | 'overdue'>('all');
   const [search, setSearch] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'med' | 'low'>('all');
   const { data: tasks = [] } = useTasks();
   const { data: projects = [] } = useProjects();
   const { update } = useTaskMutations();
@@ -33,6 +35,7 @@ export function TasksPage() {
     if (filter === 'mine' && t.assignee !== 'me') return false;
     if (filter === 'today' && t.due !== '오늘') return false;
     if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (priorityFilter !== 'all' && t.priority !== priorityFilter) return false;
     return true;
   });
 
@@ -57,7 +60,7 @@ export function TasksPage() {
               }`}>{c.label}</button>
           ))}
         </div>
-        <Button variant="secondary" size="sm"><Filter size={13} /> 필터</Button>
+        <Button variant={filterOpen ? 'primary' : 'secondary'} size="sm" onClick={() => setFilterOpen(v => !v)}><Filter size={13} /> 필터</Button>
         <div className="flex-1" />
         <div className="relative">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
@@ -68,6 +71,18 @@ export function TasksPage() {
           <Plus size={13} /> 새 태스크
         </Button>
       </div>
+
+      {filterOpen && (
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[11px] text-fg-3 font-semibold uppercase tracking-wider">우선순위:</span>
+          {(['all', 'high', 'med', 'low'] as const).map(p => (
+            <button key={p} onClick={() => setPriorityFilter(p)}
+              className={`px-2.5 h-7 rounded text-[12px] font-medium transition-colors border ${priorityFilter === p ? 'bg-accent-soft border-accent text-accent-strong' : 'border-border text-fg-2 hover:text-fg-1'}`}>
+              {p === 'all' ? '전체' : p === 'high' ? '높음' : p === 'med' ? '보통' : '낮음'}
+            </button>
+          ))}
+        </div>
+      )}
 
       <Tabs.Root value={tab} onValueChange={setTab}>
         <Tabs.List className="flex items-center gap-1 border-b border-border">
