@@ -2,7 +2,7 @@
 
 import { Card, CardBody, Button, IconButton } from '@/components/ui/primitives';
 import {
-  Users, Monitor, MapPin, Mic, Plus, ChevronLeft, ChevronRight, Search, Sparkles, Car, Box,
+  Users, Monitor, MapPin, Mic, Plus, ChevronLeft, ChevronRight, Search, Sparkles, Car, Box, CalendarPlus,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ResourceBookDialog } from '@/components/dialogs/resource-book-dialog';
@@ -166,13 +166,26 @@ export function ResourcesPage() {
                 const meta = TYPE_META[r.kind] ?? TYPE_META.room!;
                 const TypeIcon = meta.icon;
                 return (
-                  <div key={r.id} className="flex border-b border-border last:border-0 hover:bg-hover/40 transition-colors">
+                  <div key={r.id} className="group/row flex border-b border-border last:border-0 hover:bg-hover/40 transition-colors">
                     <div className="w-[220px] shrink-0 px-4 py-3 border-r border-border">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-6 h-6 rounded grid place-items-center text-white shrink-0" style={{ background: COLOR_BY_KIND[r.kind] }}>
                           <TypeIcon size={11} />
                         </div>
                         <span className="text-[12.5px] font-semibold text-fg truncate">{r.name}</span>
+                        <button
+                          type="button"
+                          title="지금 예약"
+                          onClick={() => {
+                            const nextHour = new Date().getHours() + 1;
+                            setBookPreselect({ resourceId: r.id, start: `${today}T${String(nextHour).padStart(2, '0')}:00` });
+                            setBookOpen(true);
+                          }}
+                          className="ml-auto opacity-0 group-hover/row:opacity-100 transition-opacity p-1 rounded text-fg-3 hover:text-accent hover:bg-bg-2"
+                          aria-label="지금 예약"
+                        >
+                          <CalendarPlus size={12} />
+                        </button>
                       </div>
                       <div className="flex items-center gap-2 text-[10.5px] text-fg-3">
                         {r.location && <><span className="flex items-center gap-0.5"><MapPin size={9} />{r.location}</span><span>·</span></>}
