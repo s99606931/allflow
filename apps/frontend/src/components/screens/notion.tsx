@@ -57,7 +57,7 @@ export function NotionPage() {
   return (
     <div className="p-6 space-y-5 max-w-[1280px] mx-auto">
       <AiGuideWidget
-        systemContext="Notion 연동 — Notion 데이터베이스 연결·동기화·AI 자동화 화면"
+        systemContext={`Notion 연동 — 연결된 워크스페이스 ${connections?.length ?? 0}개`}
         hints={['Notion 연동 설정 가이드해줘', '동기화 오류 해결 도와줘', '어떤 DB를 연결하면 좋을지 추천해줘']}
       />
       {/* Dev mode notice */}

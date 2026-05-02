@@ -51,7 +51,7 @@ export function ReportWeeklyPage() {
     <div className="p-6 grid grid-cols-12 gap-5 max-w-[1440px] mx-auto">
       <div className="col-span-12">
         <AiGuideWidget
-          systemContext="주간 보고 — 태스크 완료·이슈 현황·팀 진행률 주간 리포트 작성 화면"
+          systemContext={`주간 보고 — ${period.start} ~ ${period.end} 태스크 완료·이슈·팀 진행률 리포트`}
           hints={['이번 주 하이라이트 알려줘', '지연 항목 분석해줘', '보고서 작성 가이드해줘']}
         />
       </div>

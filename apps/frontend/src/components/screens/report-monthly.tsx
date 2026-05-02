@@ -36,7 +36,7 @@ export function ReportMonthlyPage() {
   return (
     <div className="p-6 max-w-[1100px] mx-auto space-y-5">
       <AiGuideWidget
-        systemContext="월간 보고 — 팀 성과·KPI·이슈 통계 월간 리포트 생성 화면"
+        systemContext={`월간 보고 — ${period.label} KPI·팀 성과·이슈 통계 임원진 리포트`}
         hints={['이번 달 핵심 성과 찾아줘', 'KPI 달성률 분석해줘', '개선 포인트 제안해줘']}
       />
       <div className="flex items-center gap-2">
