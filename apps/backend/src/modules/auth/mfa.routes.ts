@@ -1,20 +1,38 @@
 import { randomBytes } from 'node:crypto';
-import * as OTPAuth from 'otpauth';
-import type { FastifyInstance } from 'fastify';
-import { z } from 'zod';
 import { ValidationError } from '@all-flow/shared/errors';
+import type { FastifyInstance } from 'fastify';
+import * as OTPAuth from 'otpauth';
+import { z } from 'zod';
 
 const ISSUER = 'ALL-Flow';
 const RECOVERY_COUNT = 8;
 
 function generateRecoveryCodes(): string[] {
   return Array.from({ length: RECOVERY_COUNT }, () =>
-    randomBytes(5).toString('hex').toUpperCase().replace(/(.{4})/g, '$1-').slice(0, 9),
+    randomBytes(5)
+      .toString('hex')
+      .toUpperCase()
+      .replace(/(.{4})/g, '$1-')
+      .slice(0, 9),
   );
 }
 
-const VerifyBody = z.object({ code: z.string().length(6).regex(/^\d{6}$/) }).strict();
-const DisableBody = z.object({ code: z.string().length(6).regex(/^\d{6}$/) }).strict();
+const VerifyBody = z
+  .object({
+    code: z
+      .string()
+      .length(6)
+      .regex(/^\d{6}$/),
+  })
+  .strict();
+const DisableBody = z
+  .object({
+    code: z
+      .string()
+      .length(6)
+      .regex(/^\d{6}$/),
+  })
+  .strict();
 
 export async function mfaRoutes(app: FastifyInstance): Promise<void> {
   // Step 1: generate TOTP secret + QR URI (does not enable MFA yet)
