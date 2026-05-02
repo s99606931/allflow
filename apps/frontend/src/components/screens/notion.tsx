@@ -1,10 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Button } from '@/components/ui/primitives';
-import { Database, ExternalLink, Plus, Trash2, AlertCircle } from 'lucide-react';
-import { useNotionConnections, useConnectNotion, useDisconnectNotion } from '@/lib/hooks/use-notion';
+import { Database, ExternalLink, Plus, Trash2, AlertCircle, RefreshCw } from 'lucide-react';
+import { useNotionConnections, useConnectNotion, useDisconnectNotion, useSyncNotion } from '@/lib/hooks/use-notion';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+
+const SYNC_INTERVAL_KEY = 'notion_sync_interval';
+
+const INTERVAL_OPTIONS = [
+  { label: '수동', value: 'manual', ms: 0 },
+  { label: '5분', value: '5m', ms: 5 * 60 * 1000 },
+  { label: '15분', value: '15m', ms: 15 * 60 * 1000 },
+  { label: '1시간', value: '1h', ms: 60 * 60 * 1000 },
+] as const;
+
+type IntervalValue = (typeof INTERVAL_OPTIONS)[number]['value'];
+
+function getStoredInterval(): IntervalValue {
+  if (typeof window === 'undefined') return 'manual';
+  const stored = localStorage.getItem(SYNC_INTERVAL_KEY);
+  if (stored && INTERVAL_OPTIONS.some((o) => o.value === stored)) return stored as IntervalValue;
+  return 'manual';
+}
+
+function formatLastSync(ts: number | null): string {
+  if (!ts) return '없음';
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 60) return '방금 전';
+  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+  return `${Math.floor(diff / 3600)}시간 전`;
+}
 
 interface ConnectFormState {
   workspaceName: string;
@@ -17,12 +43,37 @@ export function NotionPage() {
   const { data: connections, isLoading, error } = useNotionConnections();
   const connectMutation = useConnectNotion();
   const disconnectMutation = useDisconnectNotion();
+  const syncMutation = useSyncNotion();
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<ConnectFormState>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
+  const [syncInterval, setSyncInterval] = useState<IntervalValue>(getStoredInterval);
+  const [lastSyncTs, setLastSyncTs] = useState<number | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const hasConnections = connections && connections.length > 0;
+
+  useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    const option = INTERVAL_OPTIONS.find((o) => o.value === syncInterval);
+    if (!option || option.ms === 0 || !hasConnections) return;
+    intervalRef.current = setInterval(() => {
+      syncMutation.mutate(undefined, { onSuccess: () => setLastSyncTs(Date.now()) });
+    }, option.ms);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [syncInterval, hasConnections]);
+
+  function handleIntervalChange(val: IntervalValue) {
+    setSyncInterval(val);
+    localStorage.setItem(SYNC_INTERVAL_KEY, val);
+  }
+
+  function handleManualSync() {
+    syncMutation.mutate(undefined, { onSuccess: () => setLastSyncTs(Date.now()) });
+  }
 
   function handleOpenForm() {
     setForm(EMPTY_FORM);
@@ -200,6 +251,54 @@ export function NotionPage() {
           )}
         </CardBody>
       </Card>
+
+      {hasConnections && (
+        <Card>
+          <CardHeader>
+            <CardTitle>자동 동기화</CardTitle>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleManualSync}
+              disabled={syncMutation.isPending}
+            >
+              <RefreshCw size={12} className={syncMutation.isPending ? 'animate-spin' : ''} />
+              지금 동기화
+            </Button>
+          </CardHeader>
+          <CardBody className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="text-[12.5px] text-fg-2 shrink-0">동기화 주기</span>
+              <div className="flex gap-1.5">
+                {INTERVAL_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => handleIntervalChange(opt.value)}
+                    className={[
+                      'px-3 py-1 rounded-full text-[11.5px] font-medium border transition-colors',
+                      syncInterval === opt.value
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-bg-elev text-fg-2 border-border hover:border-primary/60',
+                    ].join(' ')}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="text-[11.5px] text-fg-3">
+              마지막 자동 동기화:{' '}
+              <span className="text-fg-2">{formatLastSync(lastSyncTs)}</span>
+              {syncInterval !== 'manual' && (
+                <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                  {INTERVAL_OPTIONS.find((o) => o.value === syncInterval)?.label}마다 자동 동기화 활성
+                </span>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Planned features */}
       <Card>

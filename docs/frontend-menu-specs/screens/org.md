@@ -23,8 +23,8 @@
 |------|------|------|--------|--------|
 | 부서 목록 조회 | 전체 부서 트리 조회 | ✅ | 🔗 GET /org/units | 🧪 |
 | 부서 추가 | 새 부서 추가 다이얼로그 | ✅ | 🔗 POST /org/units | 🧪 |
-| 부서 편집 | 부서명·상위부서 수정 | ⚠️ | 🔗 PATCH /org/units/:id | ⬜ |
-| 부서 삭제 | sonner toast 확인 → DELETE | ⚠️ | 🔗 DELETE /org/units/:id | ⬜ |
+| 부서 편집 | 부서명·상위부서 수정 | ✅ | 🔗 PATCH /org/units/:id | 🧪 menus/org.spec.ts |
+| 부서 삭제 | sonner toast 확인 → DELETE | ✅ | 🔗 DELETE /org/units/:id | 🧪 menus/org.spec.ts |
 
 ### 3. 초대 관리
 

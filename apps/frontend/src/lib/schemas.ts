@@ -153,6 +153,7 @@ export const ApprovalCreateSchema = z.object({
   approver: z.string(),
   amount: z.number().optional(),
   reason: z.string().optional(),
+  attachments: z.array(z.string()).optional().default([]),
 });
 export const ApprovalDecisionSchema = z.object({
   decision: z.enum(['approved', 'rejected']),

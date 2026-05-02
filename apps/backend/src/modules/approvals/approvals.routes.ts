@@ -19,6 +19,7 @@ const ApprovalCreate = z
     approver: z.string().min(1).max(80),
     amount: z.number().finite().optional(),
     reason: z.string().min(1).max(2000).optional(),
+    attachments: z.array(z.string()).optional().default([]),
   })
   .strict();
 
@@ -53,6 +54,7 @@ interface ApprovalRow {
   status: ApprovalStatus;
   amount: number | null;
   reason: string | null;
+  attachments: string[];
   decidedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -66,6 +68,7 @@ const serialize = (row: ApprovalRow) => ({
   status: row.status,
   ...(row.amount !== null ? { amount: row.amount } : {}),
   ...(row.reason !== null ? { reason: row.reason } : {}),
+  ...(row.attachments.length > 0 ? { attachments: row.attachments } : {}),
   ...(row.decidedAt !== null ? { decidedAt: row.decidedAt.toISOString() } : {}),
   createdAt: row.createdAt.toISOString(),
 });
@@ -100,6 +103,7 @@ export async function approvalsRoutes(app: FastifyInstance): Promise<void> {
         approverId: parsed.data.approver,
         amount: parsed.data.amount ?? null,
         reason: parsed.data.reason ?? null,
+        attachments: parsed.data.attachments,
       },
     });
 

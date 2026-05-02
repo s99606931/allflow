@@ -21,6 +21,7 @@ interface ApprovalRow {
   decidedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  attachments: string[];
 }
 
 function makeStore() {
@@ -54,6 +55,7 @@ function makeStore() {
         amount: args.data.amount ?? null,
         reason: args.data.reason ?? null,
         decidedAt: null,
+        attachments: args.data.attachments ?? [],
         createdAt: now,
         updatedAt: now,
       };

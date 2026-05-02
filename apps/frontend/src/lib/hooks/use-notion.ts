@@ -52,3 +52,16 @@ export function useDisconnectNotion() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notion-connections'] }),
   });
 }
+
+export function useSyncNotion() {
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API}/integrations/notion/sync`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to sync');
+      return res.json() as Promise<{ synced: number }>;
+    },
+  });
+}

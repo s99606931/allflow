@@ -34,7 +34,7 @@
 | 결재 제목 입력 | 필수 텍스트 | ✅ | 🔗 | 🧪 |
 | 결재 내용 입력 | 텍스트에어리어 | ✅ | 🔗 | 🧪 |
 | 결재라인 설정 | ApprovalLineEditor로 순서·결재자 지정 | ✅ | 🔗 | 🧪 |
-| 첨부 파일 | 파일 첨부 지원 | ⚠️ | 🔗 POST /ai/attachments | ⬜ |
+| 첨부 파일 | 파일 첨부 지원 | ✅ | 🔗 POST /ai/attachments | 🧪 menus/approvals.spec.ts |
 
 ### 4. 결재라인 편집 (ApprovalLineEditor)
 

@@ -10,7 +10,7 @@
  */
 'use client';
 
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Button } from '@/components/ui/primitives';
 import { Dialog, DialogField, DialogFooter, Select, TextInput, Textarea } from '@/components/ui/dialog';
 import { useApprovalMutations, useUsers } from '@/lib/hooks/use-data';
@@ -34,6 +34,36 @@ export function ApprovalForm({ open, onOpenChange, onSuccess, extraSlot }: Props
   const [approver, setApprover] = useState('');
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
+  const [attachmentKeys, setAttachmentKeys] = useState<string[]>([]);
+  const [attachmentNames, setAttachmentNames] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/v1/ai/attachments', {
+        method: 'POST',
+        body: fd,
+        credentials: 'include',
+      });
+      const data = (await res.json()) as { storageKey: string; filename: string };
+      setAttachmentKeys(prev => [...prev, data.storageKey]);
+      setAttachmentNames(prev => [...prev, data.filename]);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachmentKeys(prev => prev.filter((_, i) => i !== index));
+    setAttachmentNames(prev => prev.filter((_, i) => i !== index));
+  };
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -43,10 +73,13 @@ export function ApprovalForm({ open, onOpenChange, onSuccess, extraSlot }: Props
       approver,
       amount: amount ? Number(amount.replace(/[^0-9.]/g, '')) : undefined,
       reason: reason.trim() || undefined,
+      attachments: attachmentKeys,
     });
     setTitle('');
     setAmount('');
     setReason('');
+    setAttachmentKeys([]);
+    setAttachmentNames([]);
     onOpenChange(false);
     onSuccess?.();
   };
@@ -102,6 +135,43 @@ export function ApprovalForm({ open, onOpenChange, onSuccess, extraSlot }: Props
             onChange={e => setReason(e.target.value)}
             placeholder="결재 사유 / 첨부 메모"
           />
+        </DialogField>
+        <DialogField label="파일 첨부">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,application/pdf,text/plain,text/csv"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {uploading ? '업로드 중…' : '파일 첨부'}
+          </Button>
+          {attachmentNames.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {attachmentNames.map((name, i) => (
+                <span
+                  key={attachmentKeys[i]}
+                  className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-xs"
+                >
+                  {name}
+                  <button
+                    type="button"
+                    aria-label="첨부 파일 제거"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => removeAttachment(i)}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </DialogField>
         {extraSlot}
         <DialogFooter>

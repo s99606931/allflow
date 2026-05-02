@@ -1308,6 +1308,7 @@ components:
         approver: { type: string }
         amount: { type: number }
         reason: { type: string }
+        attachments: { type: array, items: { type: string } }
 
     Client:
       type: object

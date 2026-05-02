@@ -25,7 +25,7 @@
 |------|------|------|--------|--------|
 | 다크/라이트 모드 | 테마 토글 | ✅ | 🔌 (zustand persist) | 🧪 ui-store.test.ts |
 | 레이아웃 밀도 | compact/comfortable 밀도 선택 | ✅ | 🔌 (zustand persist) | 🧪 menus/admin-notifications-settings.spec.ts |
-| 색상 테마 | 액센트 컬러 선택 | ⚠️ | 🔌 | ⬜ |
+| 색상 테마 | 액센트 컬러 선택 | ✅ | 🔌 | 🧪 menus/admin-notifications-settings.spec.ts |
 | DND(방해금지) 설정 | 알림 방해금지 시간 설정 | ✅ | 🔌 (zustand persist) | 🧪 menus/admin-notifications-settings.spec.ts |
 
 ### 3. 언어 (LanguageSection)
@@ -69,7 +69,7 @@
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
 | 단축키 목록 표시 | 전체 키보드 단축키 목록 | ✅ | 🔌 | 🧪 menus/admin-notifications-settings.spec.ts |
-| 단축키 커스터마이징 | 사용자 정의 단축키 | ⚠️ | 🔌 | ⬜ |
+| 단축키 커스터마이징 | 사용자 정의 단축키 | ✅ | 🔌 | 🧪 menus/admin-notifications-settings.spec.ts |
 
 ### 8. 계정 삭제 (DangerSection)
 

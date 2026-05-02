@@ -550,6 +550,7 @@ model Approval {
   status      ApprovalStatus @default(pending)
   amount      Float?
   reason      String?
+  attachments String[]       @default([])
   decidedAt   DateTime?      @map("decided_at")
 
   createdAt   DateTime       @default(now()) @map("created_at")

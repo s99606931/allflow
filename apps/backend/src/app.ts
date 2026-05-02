@@ -98,15 +98,20 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(healthRoutes);
   await app.register(healthRoutes, { prefix: '/api/v1' });
 
-  // OTel 진단 endpoint — DB/Auth 없이도 동작 (Step 8 default off 검증용).
   const otelState = options.otelState ?? {
     enabled: false,
     serviceName: env.OTEL_SERVICE_NAME ?? 'all-flow-backend',
     endpoint: null,
   };
+
+  // /otel/health is public (no auth/DB needed) — register unconditionally.
   await app.register(
     async (api) => {
-      await api.register(otelRoutes, { state: otelState });
+      api.get('/otel/health', async () => ({
+        enabled: otelState.enabled,
+        serviceName: otelState.serviceName,
+        endpoint: otelState.endpoint,
+      }));
     },
     { prefix: '/api/v1' },
   );
@@ -164,6 +169,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
         await api.register(notionRoutes);
         await api.register(auditLogRoutes);
         await api.register(hrRoutes);
+        await api.register(otelRoutes, { state: otelState });
       },
       { prefix: '/api/v1' },
     );

@@ -22,12 +22,6 @@ export interface OtelRouteOptions {
 const OTEL_DEFAULT_ID = 'default';
 
 export const otelRoutes: FastifyPluginAsync<OtelRouteOptions> = async (app, opts) => {
-  app.get('/otel/health', async () => ({
-    enabled: opts.state.enabled,
-    serviceName: opts.state.serviceName,
-    endpoint: opts.state.endpoint,
-  }));
-
   app.get('/otel/config', { preHandler: [app.authenticate] }, async () => {
     const row = await app.prisma.otelConfig.findUnique({ where: { id: OTEL_DEFAULT_ID } });
     if (row) {

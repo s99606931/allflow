@@ -2295,6 +2295,7 @@ export interface components {
             approver: string;
             amount?: number;
             reason?: string;
+            attachments?: string[];
         };
         Client: {
             id: string;
