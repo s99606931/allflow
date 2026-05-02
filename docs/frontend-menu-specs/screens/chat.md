@@ -16,7 +16,7 @@
 | 채널 목록 조회 | 워크스페이스 채널 목록 | ✅ | 🔗 GET /channels | 🧪 use-chat-messages.test.tsx |
 | 채널 검색 | 채널 이름 텍스트 검색 | ✅ | 🔌 (클라이언트 필터) | 🧪 menus/chat.spec.ts |
 | 채널 선택 | 채널 클릭 → 메시지 뷰 전환 | ✅ | 🔌 | 🧪 menus/chat.spec.ts |
-| 새 채널 생성 | 채널 생성 다이얼로그 | ⚠️ | 🔗 POST /channels | 🧪 menus/chat.spec.ts |
+| 새 채널 생성 | 채널 생성 다이얼로그 | ✅ | 🔗 POST /channels | 🧪 menus/chat.spec.ts |
 
 ### 2. 메시지 CRUD
 
@@ -54,7 +54,7 @@
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
 | 실시간 메시지 수신 | WebSocket 이벤트로 새 메시지 표시 | ✅ | 🔗 WebSocket /realtime | 🧪 use-realtime.test.tsx |
-| 읽음 표시 | 메시지 읽음 상태 | ⚠️ | 🔗 PATCH /channels/:id/messages/:id (read) | 🧪 menus/chat.spec.ts |
+| 읽음 표시 | 메시지 읽음 상태 | ✅ | 🔗 PATCH /channels/:id/messages/:id (read) | 🧪 menus/chat.spec.ts |
 
 ## 미구현 / 개선 필요 항목
 

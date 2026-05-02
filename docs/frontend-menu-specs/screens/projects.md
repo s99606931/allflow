@@ -44,7 +44,7 @@
 | 프로젝트 정보 조회 | 상세 정보 헤더 표시 | ✅ | 🔗 GET /projects/:id | 🧪 menus/projects.spec.ts |
 | 태스크 목록 (칸반) | 프로젝트 소속 태스크 칸반 뷰 | ✅ | 🔗 GET /tasks?projectId= | 🧪 menus/projects.spec.ts |
 | 태스크 생성 | 프로젝트 컨텍스트에서 새 태스크 | ✅ | 🔗 POST /tasks | 🧪 menus-crud.spec.ts |
-| 멤버 관리 | 프로젝트 멤버 추가/제거 | ⚠️ | 🔗 PATCH /projects/:id (members) | 🧪 menus/projects.spec.ts |
+| 멤버 관리 | 프로젝트 멤버 추가/제거 | ✅ | 🔗 PATCH /projects/:id (members) | 🧪 menus/projects.spec.ts |
 
 ### 5. AI 가이드 위젯
 

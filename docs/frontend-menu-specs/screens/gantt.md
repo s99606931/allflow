@@ -43,7 +43,7 @@
 |------|------|------|--------|--------|
 | 태스크 바 클릭 | 태스크 상세 오픈 | ✅ | 🔗 | 🧪 menus/calendar-progress-gantt.spec.ts |
 | 수평 스크롤 | 날짜 범위 이동 | ✅ | 🔌 | 🧪 menus/calendar-progress-gantt.spec.ts |
-| 줌 레벨 조절 | 일/주/월 단위 전환 | ⚠️ | 🔌 | 🧪 menus/calendar-progress-gantt.spec.ts |
+| 줌 레벨 조절 | 일/주/월 단위 전환 | ✅ | 🔌 | 🧪 menus/calendar-progress-gantt.spec.ts |
 
 ## 미구현 / 개선 필요 항목
 
