@@ -7,7 +7,7 @@ import { IssueCreateDialog } from '@/components/dialogs/issue-create-dialog';
 import { useIssues, useIssueMutations } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { Issue, IssueSev, IssuePrio, IssueStatus } from '@/lib/schemas';
-import { Plus, Search, Sparkles, LayoutList, KanbanSquare, Clock, BarChart3 } from 'lucide-react';
+import { Plus, Search, Sparkles, LayoutList, KanbanSquare, Clock, BarChart3, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SEV_TONE: Record<IssueSev, 'danger' | 'warning' | 'info' | 'neutral'> = {
@@ -289,6 +289,7 @@ function Toolbar({ onCreate, activeFilter, onFilterChange, search, onSearchChang
 function IssueList({ filter, search }: { filter: number; search: string }) {
   const { data: allIssues = [] } = useIssues();
   const userMap = useUserMap();
+  const { remove } = useIssueMutations();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const issues = allIssues.filter(iss => {
     if (search && !iss.title.toLowerCase().includes(search.toLowerCase())) return false;
@@ -306,7 +307,7 @@ function IssueList({ filter, search }: { filter: number; search: string }) {
       {issues.map(iss => {
         const u = userMap.get(iss.assignee);
         return (
-          <div key={iss.id} className="grid grid-cols-[36px_80px_1fr_140px_120px_90px_64px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors cursor-pointer">
+          <div key={iss.id} className="group relative grid grid-cols-[36px_80px_1fr_140px_120px_90px_64px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors cursor-pointer">
             <input type="checkbox" className="justify-self-center" checked={selectedIds.has(iss.id)} onClick={e => e.stopPropagation()} onChange={e => setSelectedIds(prev => { const next = new Set(prev); e.target.checked ? next.add(iss.id) : next.delete(iss.id); return next; })} />
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] mono font-bold px-1.5 py-0.5 rounded text-white" style={{ background: PRIO_COLOR[iss.prio] }}>{iss.prio}</span>
@@ -327,6 +328,14 @@ function IssueList({ filter, search }: { filter: number; search: string }) {
             </div>
             <div>{u && <div className="flex items-center gap-1.5"><Avatar user={u} size={20} /><span className="text-[11.5px] text-fg-1 truncate">{u.name}</span></div>}</div>
             <div className="text-right text-[11px] text-fg-3">{iss.created}</div>
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); if (window.confirm(`"${iss.title}" 이슈를 삭제하시겠습니까?`)) remove.mutate(iss.id); }}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded opacity-0 group-hover:opacity-100 text-fg-3 hover:text-danger hover:bg-bg-2 transition-opacity"
+              aria-label="이슈 삭제"
+            >
+              <Trash2 size={12} />
+            </button>
           </div>
         );
       })}

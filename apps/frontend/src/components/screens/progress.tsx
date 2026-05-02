@@ -49,12 +49,23 @@ function deriveHealth(projects: Project[]): HealthMetric[] {
   ];
 }
 
+/** Calculate where today falls in a 12-week window starting from the quarter start (0–100%). */
+function todayLinePercent(): number {
+  const now = new Date();
+  const qStartMonth = Math.floor(now.getMonth() / 3) * 3;
+  const qStart = new Date(now.getFullYear(), qStartMonth, 1);
+  const windowMs = 84 * 24 * 3600 * 1000; // 12 weeks
+  const elapsed = now.getTime() - qStart.getTime();
+  return Math.min(100, Math.max(0, (elapsed / windowMs) * 100));
+}
+
 export function ProgressPage() {
   const [tab, setTab] = useState('portfolio');
   const [createOpen, setCreateOpen] = useState(false);
   const { data: projects = [] } = useProjects();
   const { update: updateProject } = useProjectMutations();
   const PROJECTS = projects;
+  const todayPct = todayLinePercent();
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
@@ -162,8 +173,8 @@ export function ProgressPage() {
                 </div>
               </div>
             ))}
-            {/* today line */}
-            <div className="absolute top-0 bottom-0 w-px bg-danger" style={{ left: '46%' }} />
+            {/* today line — dynamic position in 12-week quarter window */}
+            <div className="absolute top-0 bottom-0 w-px bg-danger" style={{ left: `${todayPct}%` }} />
           </Card>
         </Tabs.Content>
 
