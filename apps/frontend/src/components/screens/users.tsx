@@ -50,7 +50,11 @@ export function UsersPage() {
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <AiGuideWidget
         systemContext={`사용자 관리 — 전체 ${users.length}명, 초대 대기 ${userMetrics?.pendingInvites ?? 0}건`}
-        hints={['비활성 사용자 찾아줘', '권한 설정 가이드해줘', '팀원 온보딩 체크리스트 알려줘']}
+        hints={[
+          (userMetrics?.pendingInvites ?? 0) > 0 ? `초대 대기 ${userMetrics!.pendingInvites}건 — 재발송 또는 취소 방법` : '비활성 사용자 찾아줘',
+          '권한 설정 가이드해줘',
+          '팀원 온보딩 체크리스트 알려줘',
+        ]}
       />
       <div className="grid grid-cols-4 gap-3">
         {[
