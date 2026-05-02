@@ -5,7 +5,7 @@ import { Card, CardBody, Avatar, Badge, Button, Progress, StatusDot } from '@/co
 import type { IssueSev, IssuePrio } from '@/lib/types';
 import { CheckCircle2, Filter, Loader2, Plus, Search, Sparkles, Trash2, X } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
-import { useIssues, useIssueMutations } from '@/lib/hooks/use-data';
+import { useIssues, useIssueMutations, useMe } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { IssueCreateDialog } from '@/components/dialogs/issue-create-dialog';
@@ -36,6 +36,7 @@ export function IssuesPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { streaming, streamComplete } = useAiStream();
   const { data: issues = [], isLoading, error } = useIssues();
+  const { data: me } = useMe();
   const { remove: removeIssue } = useIssueMutations();
   const userMap = useUserMap();
   const p0Count = issues.filter(i => i.prio === 'P0' && (i.status === 'open' || i.status === 'in-progress')).length;
@@ -47,13 +48,13 @@ export function IssuesPage() {
 
   const displayed = useMemo(() => {
     return issues.filter(i => {
-      if (activeFilter === '내 이슈') return false;
+      if (activeFilter === '내 이슈') return i.assignee === me?.id;
       if (activeFilter === '🔥 Critical') return i.sev === 'critical';
       if (activeFilter === 'Open') return i.status === 'open';
       if (activeFilter === '⏰ SLA 임박') return i.slaPct >= 80;
       return true;
     }).filter(i => !search || i.title.toLowerCase().includes(search.toLowerCase()) || i.id.toLowerCase().includes(search.toLowerCase()));
-  }, [issues, activeFilter, search]);
+  }, [issues, activeFilter, search, me]);
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
