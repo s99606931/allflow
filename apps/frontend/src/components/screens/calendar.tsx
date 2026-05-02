@@ -10,6 +10,7 @@ import { EventDetailPopover, type EventLike } from '@/components/dialogs/event-d
 import { CalendarLinkCard } from '@/components/dialogs/calendar-link-card';
 import { useEvents } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 const TYPE_COLOR_DEFAULT = 'oklch(0.62 0.18 255)';
 const HOURS = Array.from({ length: 11 }, (_, i) => 8 + i);
@@ -77,6 +78,10 @@ export function CalendarPage() {
 
   return (
     <div className="p-6 space-y-4 max-w-[1440px] mx-auto">
+      <AiGuideWidget
+        systemContext="캘린더 — 이벤트·회의 일정·리소스 예약·AI 일정 조정 화면"
+        hints={['이번 주 일정 요약해줘', '일정 충돌 확인해줘', '바쁜 시간대 분석해줘']}
+      />
       {/* Toolbar */}
       <div className="flex items-center gap-2">
         <Button variant="secondary" size="sm" onClick={() => { const now = new Date(); setWeekAnchor(now); setWeekWindow(computeWeekWindow(now)); }}>오늘</Button>

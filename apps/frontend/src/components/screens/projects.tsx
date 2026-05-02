@@ -7,6 +7,7 @@ import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { ProjectCreateDialog } from '@/components/dialogs/project-create-dialog';
 import { Loader2, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 export function ProjectsPage() {
   const [createOpen, setCreateOpen] = useState(false);
@@ -17,6 +18,10 @@ export function ProjectsPage() {
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
+      <AiGuideWidget
+        systemContext={`프로젝트 목록 — 활성 ${activeCount}개, 완료 ${doneCount}개, 전체 ${projects.length}개`}
+        hints={['위험 프로젝트 찾아줘', '팀 배치 최적화 제안해줘', '새 프로젝트 생성 도와줘']}
+      />
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-[18px] font-bold text-fg">프로젝트</h2>

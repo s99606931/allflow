@@ -30,7 +30,7 @@ export function DashboardPage() {
   return (
     <div className="p-6 space-y-6 max-w-[1440px] mx-auto">
       <AiGuideWidget
-        systemContext="대시보드 — 팀 전체 현황·태스크 요약·프로젝트 진행률·최근 활동 화면"
+        systemContext={`대시보드 — 처리할 태스크 ${todoCount}개, 진행 중 ${doingCount}건, 리뷰 대기 ${reviewCount}건, 프로젝트 ${projects.length}개`}
         hints={['오늘 우선순위 알려줘', '지연 위험 항목 찾아줘', '팀 현황 요약해줘']}
       />
       {/* Hero greeting */}

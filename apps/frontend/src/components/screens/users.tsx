@@ -6,6 +6,7 @@ import { MoreHorizontal, Search, Shield, UserPlus, Filter, Download, X, Mail, Co
 import { useUsers, useInviteUser, useUserMetrics } from '@/lib/hooks/use-data';
 import { toast } from 'sonner';
 import type { User } from '@/lib/schemas';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 function downloadCSV(users: User[]) {
   const header = 'ID,이름,이메일,역할,부서';
@@ -47,6 +48,10 @@ export function UsersPage() {
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
+      <AiGuideWidget
+        systemContext="사용자 관리 — 팀원 목록·역할·초대·권한 관리 화면"
+        hints={['비활성 사용자 찾아줘', '권한 설정 가이드해줘', '팀원 온보딩 체크리스트 알려줘']}
+      />
       <div className="grid grid-cols-4 gap-3">
         {[
           { l: '전체 사용자', v: userMetrics ? String(userMetrics.total) : String(users.length), sub: undefined },

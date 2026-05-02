@@ -55,7 +55,7 @@ export function IssuesPage() {
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <AiGuideWidget
-        systemContext="이슈 트래커 — SLA 관리·P0~P3 우선순위·이슈 배정·상태 전환 화면"
+        systemContext={`이슈 트래커 — 전체 ${issues.length}건, P0 진행 중 ${p0Count}건, SLA 위험 ${slaAtRisk}건, 오픈 ${newCount}건`}
         hints={['SLA 위반 위험 이슈 찾아줘', '미배정 이슈 정리해줘', 'Critical 이슈 대응방안 알려줘']}
       />
       <div className="grid grid-cols-6 gap-3">

@@ -6,6 +6,7 @@ import { useAuditLog } from '@/lib/hooks/use-admin';
 import { Activity, AlertCircle, Cpu, ShieldAlert } from 'lucide-react';
 import { LlmConnectionsPanel } from '@/components/admin/llm-connections-panel';
 import { McpConnectionsPanel } from '@/components/admin/mcp-connections-panel';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 /**
  * Format uptime seconds → "3d 4h 12m" / "6h 12m" / "12m" / "37s".
@@ -40,6 +41,10 @@ export function AdminPage() {
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
+      <AiGuideWidget
+        systemContext="관리자 — 시스템 상태·LLM 연결·MCP 서버·사용자 초대 관리 화면"
+        hints={['시스템 상태 점검해줘', 'LLM 연결 설정 가이드해줘', 'MCP 서버 추가 방법 알려줘']}
+      />
       {/* Real health (BE GET /health) */}
       <div className="grid grid-cols-3 gap-3">
         <Card>

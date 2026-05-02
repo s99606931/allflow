@@ -9,6 +9,7 @@ import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { Issue, IssueSev, IssuePrio, IssueStatus } from '@/lib/schemas';
 import { Plus, Search, Sparkles, LayoutList, KanbanSquare, Clock, BarChart3, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 const SEV_TONE: Record<IssueSev, 'danger' | 'warning' | 'info' | 'neutral'> = {
   critical: 'danger', high: 'warning', med: 'info', low: 'neutral',
@@ -60,6 +61,10 @@ export function IssuesPageFull() {
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
+      <AiGuideWidget
+        systemContext="이슈 심층 분석 — SLA 정책·칸반보드·분석 차트·AI 권장 액션 화면"
+        hints={['SLA 정책 최적화 제안해줘', '이슈 트렌드 분석해줘', 'P0 대응 플레이북 알려줘']}
+      />
       {/* KPI strip */}
       <div className="grid grid-cols-6 gap-3">
         {[

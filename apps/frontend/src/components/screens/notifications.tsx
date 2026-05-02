@@ -4,6 +4,7 @@ import { useMemo, useState, useCallback } from 'react';
 import { Card, Badge, Button, IconButton } from '@/components/ui/primitives';
 import { useNotifications, useNotificationMutations } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import {
   AlertCircle, AtSign, Bell, Sparkles,
   Filter, Settings2, MessageSquare, X as XIcon,
@@ -50,6 +51,10 @@ export function NotificationsPage() {
 
   return (
     <div className="p-6 max-w-[920px] mx-auto space-y-4">
+      <AiGuideWidget
+        systemContext="알림 센터 — 태스크·이슈·멘션·결재 요청·시스템 알림 관리 화면"
+        hints={['중요 알림 분류해줘', '읽지 않은 항목 요약해줘', '알림 설정 최적화 도와줘']}
+      />
       <div className="flex items-center gap-2">
         <h2 className="text-[18px] font-bold text-fg">알림 센터</h2>
         <Badge tone="danger">{unread.length}건 미확인</Badge>
