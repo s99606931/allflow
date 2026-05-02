@@ -33,6 +33,18 @@ const MOCK_CHANNELS = [
   },
 ];
 
+const MOCK_MESSAGE = {
+  id: 'msg-test-1',
+  content: '안녕하세요',
+  channelId: 'ch-general',
+  authorId: 'u1',
+  parentId: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  author: { id: 'u1', name: 'Test User', initials: 'TU', color: '#5b6cff' },
+  replies: [],
+};
+
 function makeMockPrisma() {
   return {
     channel: {
@@ -48,16 +60,22 @@ function makeMockPrisma() {
       }: {
         data: { content: string; channelId: string; authorId: string };
       }) => ({
-        id: 'msg-test-1',
+        ...MOCK_MESSAGE,
         content: data.content,
         channelId: data.channelId,
         authorId: data.authorId,
-        parentId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         author: { id: data.authorId, name: 'Test User', initials: 'TU', color: '#5b6cff' },
       }),
       findMany: async () => [],
+      findFirst: async ({ where }: { where: { id: string; channelId: string } }) =>
+        where.id === MOCK_MESSAGE.id && where.channelId === MOCK_MESSAGE.channelId
+          ? MOCK_MESSAGE
+          : null,
+      update: async ({ data }: { data: { content: string } }) => ({
+        ...MOCK_MESSAGE,
+        content: data.content,
+      }),
+      delete: async () => MOCK_MESSAGE,
     },
   };
 }
@@ -189,6 +207,70 @@ describe('modules/channels — BE-N6', () => {
     });
     expect(r.statusCode).toBe(200);
     expect(Array.isArray(r.json())).toBe(true);
+    await app.close();
+  });
+
+  it('PATCH → 작성자가 메시지 수정 성공', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/channels/ch-general/messages/msg-test-1',
+      headers: { authorization: `Bearer ${u1}` },
+      payload: { text: '수정된 메시지' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toMatchObject({ content: '수정된 메시지' });
+    await app.close();
+  });
+
+  it('PATCH → 다른 사용자가 수정 시 403', async () => {
+    const app = await buildTestApp();
+    const u2 = await makeJws('u2');
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/channels/ch-general/messages/msg-test-1',
+      headers: { authorization: `Bearer ${u2}` },
+      payload: { text: '수정 시도' },
+    });
+    expect(r.statusCode).toBe(403);
+    await app.close();
+  });
+
+  it('PATCH → 존재하지 않는 메시지 404', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/channels/ch-general/messages/missing',
+      headers: { authorization: `Bearer ${u1}` },
+      payload: { text: '수정 시도' },
+    });
+    expect(r.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('DELETE → 작성자가 메시지 삭제 성공 204', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    const r = await app.inject({
+      method: 'DELETE',
+      url: '/channels/ch-general/messages/msg-test-1',
+      headers: { authorization: `Bearer ${u1}` },
+    });
+    expect(r.statusCode).toBe(204);
+    await app.close();
+  });
+
+  it('DELETE → 다른 사용자가 삭제 시 403', async () => {
+    const app = await buildTestApp();
+    const u2 = await makeJws('u2');
+    const r = await app.inject({
+      method: 'DELETE',
+      url: '/channels/ch-general/messages/msg-test-1',
+      headers: { authorization: `Bearer ${u2}` },
+    });
+    expect(r.statusCode).toBe(403);
     await app.close();
   });
 });

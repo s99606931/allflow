@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import { Avatar, Button, IconButton } from '@/components/ui/primitives';
-import { Hash, Lock, Plus, Search, Sparkles, MessageSquare, Pin, X } from 'lucide-react';
+import { Hash, Lock, Plus, Search, Sparkles, MessageSquare, Pin, X, Pencil, Trash2, Check } from 'lucide-react';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { Composer } from '@/components/chat/composer';
 import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel';
 import { MentionPopover } from '@/components/chat/mention-popover';
 import { useChannels, useMe, useTaskMutations, useUsers } from '@/lib/hooks/use-data';
-import { useChatMessages, useSendMessage } from '@/lib/hooks/use-chat-messages';
+import { useChatMessages, useMessageMutations, useSendMessage } from '@/lib/hooks/use-chat-messages';
 import { useAiStream } from '@/lib/hooks/use-ai';
 import { useTranslation } from '@/lib/i18n';
 
@@ -30,6 +30,9 @@ export function ChatPage() {
   const sendMessage = useSendMessage();
 
   const { data: messages = [] } = useChatMessages(active || null);
+  const msgMutations = useMessageMutations(active);
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
 
   const [channelSearch, setChannelSearch] = useState('');
   const publicChannels = channels.filter(c => (c.kind === 'public' || c.kind === 'private') && (!channelSearch.trim() || c.name.toLowerCase().includes(channelSearch.toLowerCase())));
@@ -193,19 +196,56 @@ export function ChatPage() {
             const mine = m.authorId === me?.id;
             const displayUser = u ?? { name: m.author?.name ?? m.authorId, initials: m.author?.initials ?? '?', color: m.author?.color ?? '#888' };
             const msgTime = new Date(m.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+            const isEditing = editingMsgId === m.id;
             return (
-              <div key={m.id} className={`flex gap-2.5 ${mine ? 'flex-row-reverse' : ''}`}>
+              <div key={m.id} className={`group flex gap-2.5 ${mine ? 'flex-row-reverse' : ''}`}>
                 <Avatar user={displayUser} size={32} />
                 <div className={`flex-1 min-w-0 ${mine ? 'text-right' : ''}`}>
                   <div className={`flex items-baseline gap-2 ${mine ? 'justify-end' : ''}`}>
                     <span className="text-[12.5px] font-semibold text-fg">{displayUser.name}</span>
                     <span className="text-[10.5px] text-fg-3">{msgTime}</span>
+                    {mine && !isEditing && (
+                      <span className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => { setEditingMsgId(m.id); setEditingText(m.content); }}
+                          className="text-fg-3 hover:text-fg-1"
+                          aria-label="메시지 수정"
+                        ><Pencil size={11} /></button>
+                        <button
+                          type="button"
+                          onClick={() => msgMutations.remove.mutate(m.id)}
+                          className="text-fg-3 hover:text-danger"
+                          aria-label="메시지 삭제"
+                        ><Trash2 size={11} /></button>
+                      </span>
+                    )}
                   </div>
-                  <div className={`inline-block rounded-lg px-3 py-2 text-[13px] leading-relaxed mt-1 max-w-[600px] text-left ${
-                    mine ? 'bg-accent-soft text-fg' : 'bg-bg-1 border border-border text-fg-1'
-                  }`}>
-                    {m.content}
-                  </div>
+                  {isEditing ? (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <input
+                        autoFocus
+                        value={editingText}
+                        onChange={e => setEditingText(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            msgMutations.update.mutate({ msgId: m.id, text: editingText }, { onSuccess: () => setEditingMsgId(null) });
+                          }
+                          if (e.key === 'Escape') setEditingMsgId(null);
+                        }}
+                        className="flex-1 rounded-md border border-accent px-2 py-1 text-[13px] bg-bg-2 text-fg focus:outline-none"
+                        maxLength={4000}
+                      />
+                      <button type="button" onClick={() => msgMutations.update.mutate({ msgId: m.id, text: editingText }, { onSuccess: () => setEditingMsgId(null) })} className="text-success hover:text-success-strong"><Check size={13} /></button>
+                      <button type="button" onClick={() => setEditingMsgId(null)} className="text-fg-3 hover:text-fg"><X size={13} /></button>
+                    </div>
+                  ) : (
+                    <div className={`inline-block rounded-lg px-3 py-2 text-[13px] leading-relaxed mt-1 max-w-[600px] text-left ${
+                      mine ? 'bg-accent-soft text-fg' : 'bg-bg-1 border border-border text-fg-1'
+                    }`}>
+                      {m.content}
+                    </div>
+                  )}
                   {m.replyCount > 0 && (
                     <div className={`flex items-center gap-1.5 mt-1 text-[11px] text-accent-strong ${mine ? 'justify-end' : ''}`}>
                       <MessageSquare size={11} />

@@ -1,11 +1,13 @@
-import { ForbiddenError, ValidationError } from '@all-flow/shared/errors';
+import { ForbiddenError, NotFoundError, ValidationError } from '@all-flow/shared/errors';
 /**
  * channels 모듈 — 채팅 채널/메시지 도메인 (T1: DB 영속화).
  *
  * 라우트:
- *   GET  /channels                          — caller가 멤버인 채널 반환 (public/private 전체 공개)
- *   GET  /channels/:channelId/messages      — 메시지 히스토리 (최신 50건, createdAt asc)
- *   POST /channels/:channelId/messages      — 메시지 전송 + Prisma 영속화
+ *   GET    /channels                                — caller가 멤버인 채널 반환
+ *   GET    /channels/:channelId/messages            — 메시지 히스토리 (최신 50건)
+ *   POST   /channels/:channelId/messages            — 메시지 전송
+ *   PATCH  /channels/:channelId/messages/:msgId     — 메시지 수정 (작성자만)
+ *   DELETE /channels/:channelId/messages/:msgId     — 메시지 삭제 (작성자만)
  *
  * 채널 영속화: DB가 비어 있으면 4개 기본 채널을 자동 시드.
  */
@@ -20,6 +22,12 @@ const CHANNEL_SEED = [
 ];
 
 const MessageSend = z
+  .object({
+    text: z.string().min(1).max(4000),
+  })
+  .strict();
+
+const MessagePatch = z
   .object({
     text: z.string().min(1).max(4000),
   })
@@ -116,6 +124,60 @@ export async function channelsRoutes(app: FastifyInstance): Promise<void> {
         author: message.author,
         replyCount: 0,
       });
+    },
+  );
+
+  app.patch(
+    '/channels/:channelId/messages/:msgId',
+    { preHandler: [app.authenticate] },
+    async (req) => {
+      const { channelId, msgId } = req.params as { channelId: string; msgId: string };
+      const parsed = MessagePatch.safeParse(req.body);
+      if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+
+      // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+      const userId = req.user!.id;
+
+      const msg = await app.prisma.message.findFirst({ where: { id: msgId, channelId } });
+      if (!msg) throw new NotFoundError('메시지를 찾을 수 없습니다');
+      if (msg.authorId !== userId) throw new ForbiddenError('본인 메시지만 수정할 수 있습니다');
+
+      const updated = await app.prisma.message.update({
+        where: { id: msgId },
+        data: { content: parsed.data.text },
+        include: { author: { select: { id: true, name: true, initials: true, color: true } } },
+      });
+
+      return {
+        id: updated.id,
+        content: updated.content,
+        channelId: updated.channelId,
+        authorId: updated.authorId,
+        parentId: updated.parentId,
+        createdAt: updated.createdAt.toISOString(),
+        updatedAt: updated.updatedAt.toISOString(),
+        author: updated.author,
+        replyCount: 0,
+      };
+    },
+  );
+
+  app.delete(
+    '/channels/:channelId/messages/:msgId',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const { channelId, msgId } = req.params as { channelId: string; msgId: string };
+
+      // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+      const userId = req.user!.id;
+
+      const msg = await app.prisma.message.findFirst({ where: { id: msgId, channelId } });
+      if (!msg) throw new NotFoundError('메시지를 찾을 수 없습니다');
+      if (msg.authorId !== userId) throw new ForbiddenError('본인 메시지만 삭제할 수 있습니다');
+
+      await app.prisma.message.delete({ where: { id: msgId } });
+
+      return reply.code(204).send();
     },
   );
 }
