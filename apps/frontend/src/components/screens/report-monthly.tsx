@@ -71,8 +71,17 @@ export function ReportMonthlyPage() {
 
       {!report && (
         <Card>
-          <CardBody className="text-center py-16 text-[13px] text-fg-3">
-            {monthlyReport.isPending ? 'AI가 월간 보고서를 생성하고 있습니다...' : '&lsquo;AI 생성&rsquo;을 클릭하면 백엔드의 월간 데이터로 임원진 보고서를 생성합니다.'}
+          <CardBody className="text-center py-16 space-y-2">
+            {monthlyReport.isPending ? (
+              <div className="text-[13px] text-fg-3">AI가 월간 보고서를 생성하고 있습니다...</div>
+            ) : (
+              <>
+                <div className="text-[13px] font-semibold text-fg">월간 보고서가 없습니다</div>
+                <div className="text-[12px] text-fg-3 max-w-sm mx-auto">
+                  &lsquo;AI 생성&rsquo;을 클릭하면 {period.label} 데이터를 바탕으로 KPI·팀 성과·이슈 통계가 포함된 임원진 보고서를 생성합니다.
+                </div>
+              </>
+            )}
           </CardBody>
         </Card>
       )}

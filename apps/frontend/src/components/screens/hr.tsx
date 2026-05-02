@@ -17,10 +17,13 @@ type Tab = (typeof TABS)[number];
  */
 export function HRPage() {
   const [tab, setTab] = useState<Tab>('휴가 / 연차');
+  const { data: leaves = [] } = useLeaveRequests();
+  const pendingLeaves = leaves.filter(l => l.status === 'PENDING').length;
+  const approvedLeaves = leaves.filter(l => l.status === 'APPROVED').length;
   return (
     <div className="p-6 max-w-[1280px] mx-auto space-y-5">
       <AiGuideWidget
-        systemContext="HR 화면 — 휴가/연차 신청·승인·근태 관리·OKR 평가·1:1 미팅 관리"
+        systemContext={`HR — 휴가 신청 대기 ${pendingLeaves}건, 승인 ${approvedLeaves}건, 총 ${leaves.length}건`}
         hints={['연차 현황 알려줘', 'OKR 달성률 점검해줘', '1:1 미팅 준비 도와줘']}
       />
       <div className="flex items-center gap-2">

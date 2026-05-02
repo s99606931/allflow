@@ -43,7 +43,7 @@ export function OrgPage() {
   return (
     <div className="p-6 space-y-5 max-w-[1280px] mx-auto">
       <AiGuideWidget
-        systemContext="조직 관리 — 부서·팀원·역할 구조, 초대 및 권한 관리 화면"
+        systemContext={`조직 관리 — ${units.length}개 부서, 총 ${units.reduce((acc, u) => acc + u.members.length, 0)}명`}
         hints={['팀 구조 현황 알려줘', '인원 부족 부서 찾아줘', '온보딩 진행 현황 알려줘']}
       />
       <div className="flex items-center gap-2">
