@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardBody, Avatar, Badge, Button, IconButto
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import {
   FileSignature, Plus, Search, Inbox, Send, CheckCircle2, XCircle, Clock,
-  FileText, Stamp, Sparkles, MoreHorizontal, Undo2, Edit2,
+  FileText, Stamp, Sparkles, MoreHorizontal, Undo2, Edit2, X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ApprovalForm } from '@/components/dialogs/approval-form';
@@ -47,16 +47,23 @@ export function ApprovalsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editAmount, setEditAmount] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQ, setSearchQ] = useState('');
   const { data: approvals = [], isLoading, error } = useApprovals();
   const userMap = useUserMap();
   const { update: updateApproval } = useApprovalMutations();
 
   const list = useMemo(() => {
-    if (tab === 'inbox') return approvals.filter(a => a.status === 'pending');
-    if (tab === 'history') return approvals.filter(a => a.status === 'approved' || a.status === 'rejected');
-    if (tab === 'sent') return approvals.filter(a => a.requester === 'me');
-    return approvals;
-  }, [approvals, tab]);
+    let base = approvals;
+    if (tab === 'inbox') base = approvals.filter(a => a.status === 'pending');
+    else if (tab === 'history') base = approvals.filter(a => a.status === 'approved' || a.status === 'rejected');
+    else if (tab === 'sent') base = approvals.filter(a => a.requester === 'me');
+    if (searchQ.trim()) {
+      const q = searchQ.toLowerCase();
+      base = base.filter(a => a.title.toLowerCase().includes(q));
+    }
+    return base;
+  }, [approvals, tab, searchQ]);
 
   const counts = useMemo(() => ({
     inbox:   approvals.filter(a => a.status === 'pending').length,
@@ -76,9 +83,28 @@ export function ApprovalsPage() {
             <Button size="sm" variant="primary" onClick={() => setCreateOpen(true)}><Plus size={13} /> 새 결재</Button>
             <ApprovalForm open={createOpen} onOpenChange={setCreateOpen} />
           </div>
-          <button className="w-full h-8 px-2.5 rounded-md bg-bg-2 hover:bg-hover border border-border text-[12px] text-fg-3 flex items-center gap-2 transition-colors">
-            <Search size={13} /><span className="flex-1 text-left">결재 검색...</span>
-          </button>
+          {searchOpen ? (
+            <div className="relative">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
+              <input
+                autoFocus
+                value={searchQ}
+                onChange={e => setSearchQ(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Escape') { setSearchOpen(false); setSearchQ(''); } }}
+                placeholder="결재 제목 검색..."
+                className="w-full h-8 pl-8 pr-8 rounded-md bg-bg-2 border border-border text-[12px] focus:outline-none focus:border-accent"
+              />
+              {searchQ && (
+                <button onClick={() => setSearchQ('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-3 hover:text-fg">
+                  <X size={11} />
+                </button>
+              )}
+            </div>
+          ) : (
+            <button onClick={() => setSearchOpen(true)} className="w-full h-8 px-2.5 rounded-md bg-bg-2 hover:bg-hover border border-border text-[12px] text-fg-3 flex items-center gap-2 transition-colors">
+              <Search size={13} /><span className="flex-1 text-left">결재 검색...</span>
+            </button>
+          )}
         </div>
 
         <div className="flex border-b border-border bg-bg-1">

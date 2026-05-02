@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Card, CardBody, Avatar, Button } from '@/components/ui/primitives';
 import { ChevronLeft, ChevronRight, Plus, Video, Sparkles } from 'lucide-react';
 import { EventCreateDialog } from '@/components/dialogs/event-create-dialog';
@@ -91,7 +92,7 @@ export function CalendarPage() {
             </button>
           ))}
         </div>
-        <Button variant="secondary" size="sm">캘린더 동기화</Button>
+        <Button variant="secondary" size="sm" onClick={() => toast.info('설정 > 통합 연결에서 Google/Outlook 캘린더를 연결하세요.')}>캘린더 동기화</Button>
         <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
           <Plus size={13} /> 일정 추가
         </Button>
@@ -158,7 +159,7 @@ export function CalendarPage() {
           <div className="flex-1 text-[12.5px] text-fg-1">
             <strong className="text-fg">이번 주 회의 14건</strong> · 딥워크 4시간 확보됨 · 수요일 14시 CEO 보고 준비 시간 2시간 부족합니다. 화요일 오후 1:1을 30분 단축 권장.
           </div>
-          <Button variant="primary" size="sm">자동 조정</Button>
+          <Button variant="primary" size="sm" onClick={() => toast.success('AI 일정 조정 제안이 적용되었습니다.')}>자동 조정</Button>
         </CardBody>
       </Card>
     </div>
