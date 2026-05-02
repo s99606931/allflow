@@ -114,9 +114,9 @@ export function DashboardPage() {
             <IconButton size="sm"><MoreHorizontal size={14} /></IconButton>
           </CardHeader>
           <CardBody className="space-y-3">
-            <Insight tone="warning" title="결제 시스템 진척 둔화" body="지난 주 대비 진행률이 8%p 감소했어요. 차단된 태스크 2개가 원인입니다." cta="자세히 보기" />
-            <Insight tone="accent" title="회의록 5개 미정리" body="이번 주 미팅 중 5건이 액션 아이템으로 변환되지 않았어요." cta="자동 정리" />
-            <Insight tone="success" title="Q2 캠페인 91% 달성" body="목표 일정보다 3일 빠르게 마감 임박이에요. 좋은 흐름!" cta="보고서 생성" />
+            <Insight tone="warning" title="결제 시스템 진척 둔화" body="지난 주 대비 진행률이 8%p 감소했어요. 차단된 태스크 2개가 원인입니다." cta="자세히 보기" onCta={() => router.push('/projects')} />
+            <Insight tone="accent" title="회의록 5개 미정리" body="이번 주 미팅 중 5건이 액션 아이템으로 변환되지 않았어요." cta="자동 정리" onCta={() => router.push('/ai-auto')} />
+            <Insight tone="success" title="Q2 캠페인 91% 달성" body="목표 일정보다 3일 빠르게 마감 임박이에요. 좋은 흐름!" cta="보고서 생성" onCta={() => router.push('/reports')} />
           </CardBody>
         </Card>
 
@@ -197,7 +197,7 @@ export function DashboardPage() {
   );
 }
 
-function Insight({ tone, title, body, cta }: { tone: 'warning' | 'accent' | 'success'; title: string; body: string; cta: string }) {
+function Insight({ tone, title, body, cta, onCta }: { tone: 'warning' | 'accent' | 'success'; title: string; body: string; cta: string; onCta?: () => void }) {
   return (
     <div className="rounded-lg border border-border p-3 space-y-1.5">
       <div className="flex items-center gap-2">
@@ -205,7 +205,7 @@ function Insight({ tone, title, body, cta }: { tone: 'warning' | 'accent' | 'suc
         <div className="text-[12.5px] font-semibold text-fg">{title}</div>
       </div>
       <p className="text-[12px] text-fg-2 leading-relaxed">{body}</p>
-      <button className="text-[12px] text-accent-strong font-medium hover:underline mt-1">{cta} →</button>
+      <button type="button" onClick={onCta} className="text-[12px] text-accent-strong font-medium hover:underline mt-1">{cta} →</button>
     </div>
   );
 }
