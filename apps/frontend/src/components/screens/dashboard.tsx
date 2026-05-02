@@ -3,10 +3,12 @@
 import { Card, CardBody, CardHeader, CardTitle, Avatar, AvatarStack, Badge, Button, IconButton, Progress, StatusDot } from '@/components/ui/primitives';
 import { useMe, useProjects, useTasks } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
+import type { Task, Project } from '@/lib/schemas';
 import { CheckCircle2, Circle, MoreHorizontal, Sparkles, Plus, Loader2, Calendar } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { useState } from 'react';
 import { TaskCreateDialog } from '@/components/dialogs/task-create-dialog';
 
@@ -145,9 +147,9 @@ export function DashboardPage() {
             </div>
           </CardHeader>
           <CardBody className="space-y-3">
-            <Insight tone="warning" title="결제 시스템 진척 둔화" body="지난 주 대비 진행률이 8%p 감소했어요. 차단된 태스크 2개가 원인입니다." cta="자세히 보기" onCta={() => router.push('/projects')} />
-            <Insight tone="accent" title="회의록 5개 미정리" body="이번 주 미팅 중 5건이 액션 아이템으로 변환되지 않았어요." cta="자동 정리" onCta={() => router.push('/ai-auto')} />
-            <Insight tone="success" title="Q2 캠페인 91% 달성" body="목표 일정보다 3일 빠르게 마감 임박이에요. 좋은 흐름!" cta="보고서 생성" onCta={() => router.push('/reports')} />
+            {computeInsights(tasks, projects, insightPeriod, router).map((ins, idx) => (
+              <Insight key={idx} tone={ins.tone} title={ins.title} body={ins.body} cta={ins.cta} onCta={ins.onCta} />
+            ))}
           </CardBody>
         </Card>
 
@@ -229,6 +231,45 @@ export function DashboardPage() {
       </div>
     </div>
   );
+}
+
+type InsightItem = { tone: 'warning' | 'accent' | 'success'; title: string; body: string; cta: string; onCta: () => void };
+
+function computeInsights(tasks: Task[], projects: Project[], period: 'week' | 'month', router: AppRouterInstance): InsightItem[] {
+  const insights: InsightItem[] = [];
+  const today = new Date().toISOString().slice(0, 10);
+
+  const blocked = tasks.filter(t => t.status === 'blocked');
+  if (blocked.length > 0) {
+    insights.push({ tone: 'warning', title: `블록된 태스크 ${blocked.length}건`, body: `${blocked.map(t => t.title).slice(0, 2).join(', ')}${blocked.length > 2 ? ` 외 ${blocked.length - 2}건` : ''}이 블록 상태입니다. 원인을 확인하세요.`, cta: '태스크 보기', onCta: () => router.push('/tasks') });
+  }
+
+  const overdue = tasks.filter(t => t.status !== 'done' && t.due && t.due < today && /^\d{4}-\d{2}-\d{2}$/.test(t.due));
+  if (overdue.length > 0) {
+    insights.push({ tone: 'warning', title: `기한 초과 ${overdue.length}건`, body: `${overdue[0]?.title}${overdue.length > 1 ? ` 외 ${overdue.length - 1}건` : ''}이 마감일을 지났습니다.`, cta: '확인하기', onCta: () => router.push('/tasks') });
+  }
+
+  const reviewWaiting = tasks.filter(t => t.status === 'review');
+  if (reviewWaiting.length > 0) {
+    insights.push({ tone: 'accent', title: `리뷰 대기 ${reviewWaiting.length}건`, body: `${period === 'week' ? '이번 주' : '이번 달'} ${reviewWaiting.length}건이 리뷰를 기다리고 있어요. 빠른 피드백으로 팀 흐름을 이어가세요.`, cta: '리뷰하기', onCta: () => router.push('/tasks') });
+  }
+
+  const highPrio = tasks.filter(t => t.priority === 'high' && t.status !== 'done');
+  if (highPrio.length > 0 && insights.length < 3) {
+    insights.push({ tone: 'accent', title: `높음 우선순위 ${highPrio.length}건 진행 중`, body: `${highPrio.slice(0, 2).map(t => t.title).join(', ')}${highPrio.length > 2 ? ` 외 ${highPrio.length - 2}건` : ''}을 우선 처리하세요.`, cta: 'AI에게 요청', onCta: () => router.push('/ai-auto') });
+  }
+
+  const doneCount = tasks.filter(t => t.status === 'done').length;
+  if (doneCount > 0 && insights.length < 3) {
+    const rate = tasks.length > 0 ? Math.round((doneCount / tasks.length) * 100) : 0;
+    insights.push({ tone: 'success', title: `완료율 ${rate}%`, body: `전체 ${tasks.length}건 중 ${doneCount}건 완료. ${rate >= 70 ? '훌륭한 진행률이에요!' : '조금 더 파이팅!'}`, cta: '보고서 생성', onCta: () => router.push('/reports') });
+  }
+
+  if (insights.length === 0) {
+    insights.push({ tone: 'success', title: '모든 태스크 정상', body: `현재 블록·지연 없이 ${tasks.length}건이 진행 중이에요. 좋은 흐름!`, cta: '프로젝트 보기', onCta: () => router.push('/projects') });
+  }
+
+  return insights.slice(0, 3);
 }
 
 function Insight({ tone, title, body, cta, onCta }: { tone: 'warning' | 'accent' | 'success'; title: string; body: string; cta: string; onCta?: () => void }) {

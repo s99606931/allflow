@@ -209,7 +209,7 @@ export function IssuesPageFull() {
               </div>
             </CardHeader>
             <CardBody>
-              <TrendChart />
+              <TrendChart issues={issues} />
             </CardBody>
           </Card>
 
@@ -459,19 +459,35 @@ function Legend({ color, label }: { color: string; label: string }) {
   return <span className="inline-flex items-center gap-1 text-fg-2"><span className="w-2 h-2 rounded-full" style={{ background: color }} />{label}</span>;
 }
 
-// Deterministic pseudo-random in [0,1) — keeps SSR and CSR output identical.
-const det = (i: number, salt: number) => ((Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453) % 1 + 1) % 1;
+function TrendChart({ issues }: { issues: Issue[] }) {
+  const DAYS = 30;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-function TrendChart() {
-  const days = 30;
-  const newIs = Array.from({ length: days }, (_, i) => 4 + Math.round(Math.sin(i / 3) * 2 + det(i, 1) * 3));
-  const resolved = Array.from({ length: days }, (_, i) => 3 + Math.round(Math.cos(i / 4) * 2 + det(i, 2) * 2));
+  const newPerDay = Array.from({ length: DAYS }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (DAYS - 1 - i));
+    const dateStr = d.toISOString().slice(0, 10);
+    return issues.filter(iss => iss.created?.slice(0, 10) === dateStr).length;
+  });
+
+  const resolvedPerDay = Array.from({ length: DAYS }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (DAYS - 1 - i));
+    const dateStr = d.toISOString().slice(0, 10);
+    return issues.filter(iss => iss.resolved && iss.created?.slice(0, 10) === dateStr).length;
+  });
+
   const cum: number[] = [];
-  let acc = 12;
-  for (let i = 0; i < days; i++) { acc += newIs[i] - resolved[i]; cum.push(acc); }
-  const max = Math.max(...newIs, ...resolved, ...cum);
+  let acc = issues.filter(iss => {
+    const d = new Date(today); d.setDate(d.getDate() - DAYS);
+    return !iss.resolved && iss.created && new Date(iss.created) < d;
+  }).length;
+  for (let i = 0; i < DAYS; i++) { acc += newPerDay[i] - resolvedPerDay[i]; cum.push(Math.max(0, acc)); }
+
+  const max = Math.max(...newPerDay, ...resolvedPerDay, ...cum, 1);
   const W = 600, H = 180, P = 20;
-  const xs = (i: number) => P + (i / (days - 1)) * (W - 2 * P);
+  const xs = (i: number) => P + (i / (DAYS - 1)) * (W - 2 * P);
   const ys = (v: number) => H - P - (v / max) * (H - 2 * P);
   const line = (arr: number[]) => arr.map((v, i) => `${i === 0 ? 'M' : 'L'}${xs(i)},${ys(v)}`).join(' ');
 
@@ -482,8 +498,8 @@ function TrendChart() {
           stroke="var(--color-border)" strokeDasharray="2 4" />
       ))}
       <path d={line(cum)} fill="none" stroke="oklch(0.62 0.18 255)" strokeWidth="2" />
-      <path d={line(newIs)} fill="none" stroke="oklch(0.62 0.2 25)" strokeWidth="1.5" strokeOpacity="0.8" />
-      <path d={line(resolved)} fill="none" stroke="oklch(0.65 0.16 155)" strokeWidth="1.5" strokeOpacity="0.8" />
+      <path d={line(newPerDay)} fill="none" stroke="oklch(0.62 0.2 25)" strokeWidth="1.5" strokeOpacity="0.8" />
+      <path d={line(resolvedPerDay)} fill="none" stroke="oklch(0.65 0.16 155)" strokeWidth="1.5" strokeOpacity="0.8" />
     </svg>
   );
 }

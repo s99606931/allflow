@@ -33,9 +33,23 @@ export function TasksPage() {
   const { update } = useTaskMutations();
   const userMap = useUserMap();
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  function isDueToday(due: string): boolean {
+    return due === '오늘' || due === todayStr;
+  }
+
+  function isOverdue(due: string, status: string): boolean {
+    if (status === 'done') return false;
+    if (!due) return false;
+    if (due === '오늘' || due === '내일') return false;
+    return /^\d{4}-\d{2}-\d{2}$/.test(due) && due < todayStr;
+  }
+
   const filtered = tasks.filter(t => {
     if (filter === 'mine' && t.assignee !== me?.id) return false;
-    if (filter === 'today' && t.due !== '오늘') return false;
+    if (filter === 'today' && !isDueToday(t.due)) return false;
+    if (filter === 'overdue' && !isOverdue(t.due, t.status)) return false;
     if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (priorityFilter !== 'all' && t.priority !== priorityFilter) return false;
     return true;
@@ -44,8 +58,8 @@ export function TasksPage() {
   const filterCounts = {
     all: tasks.length,
     mine: tasks.filter(t => t.assignee === me?.id).length,
-    today: tasks.filter(t => t.due === '오늘').length,
-    overdue: tasks.filter(t => t.status !== 'done' && t.due && t.due < new Date().toISOString().slice(0, 10)).length,
+    today: tasks.filter(t => isDueToday(t.due)).length,
+    overdue: tasks.filter(t => isOverdue(t.due, t.status)).length,
   };
 
   const onCreate = () => setCreateOpen(true);
@@ -205,29 +219,78 @@ export function TasksPage() {
   );
 }
 
-function CalendarMini({ tasks, onTask }: { tasks: Array<{ id: string; title: string }>; onTask: (id: string) => void }) {
-  // Simplified month view — current week tasks scattered
-  const days = ['월', '화', '수', '목', '금', '토', '일'];
-  const cells = Array.from({ length: 35 }, (_, i) => i - 6); // pretend offset
+function parseDue(due: string, today: Date): { year: number; month: number; day: number } | null {
+  if (due === '오늘') return { year: today.getFullYear(), month: today.getMonth(), day: today.getDate() };
+  if (due === '내일') {
+    const t = new Date(today); t.setDate(t.getDate() + 1);
+    return { year: t.getFullYear(), month: t.getMonth(), day: t.getDate() };
+  }
+  const m = due.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return { year: +m[1], month: +m[2] - 1, day: +m[3] };
+  return null;
+}
+
+function CalendarMini({ tasks, onTask }: { tasks: Array<{ id: string; title: string; due: string }>; onTask: (id: string) => void }) {
+  const today = new Date();
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+
+  const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
+  const firstDaySun = new Date(viewYear, viewMonth, 1).getDay();
+  const mondayOffset = (firstDaySun + 6) % 7;
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const totalCells = Math.ceil((mondayOffset + daysInMonth) / 7) * 7;
+
+  const dayTaskMap = new Map<number, typeof tasks>();
+  for (const task of tasks) {
+    const parsed = parseDue(task.due, today);
+    if (parsed && parsed.year === viewYear && parsed.month === viewMonth) {
+      const existing = dayTaskMap.get(parsed.day) ?? [];
+      dayTaskMap.set(parsed.day, [...existing, task]);
+    }
+  }
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
+    else setViewMonth(m => m - 1);
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); }
+    else setViewMonth(m => m + 1);
+  }
 
   return (
     <Card>
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
+        <button onClick={prevMonth} className="p-1 rounded hover:bg-hover text-fg-2 text-lg leading-none">‹</button>
+        <span className="text-[13px] font-semibold text-fg">{viewYear}년 {viewMonth + 1}월</span>
+        <button onClick={nextMonth} className="p-1 rounded hover:bg-hover text-fg-2 text-lg leading-none">›</button>
+      </div>
       <div className="grid grid-cols-7 border-b border-border">
-        {days.map(d => <div key={d} className="px-3 py-2 text-[10.5px] uppercase tracking-wider font-semibold text-fg-3 text-center">{d}</div>)}
+        {DAY_LABELS.map(d => <div key={d} className="px-3 py-2 text-[10.5px] uppercase tracking-wider font-semibold text-fg-3 text-center">{d}</div>)}
       </div>
       <div className="grid grid-cols-7">
-        {cells.map(c => {
-          const day = c < 1 ? '' : c > 30 ? '' : c;
-          const taskHere = day ? tasks.find((t, i) => i % 5 === c % 5 && c > 5 && c < 25 && i < 5) : undefined;
+        {Array.from({ length: totalCells }, (_, i) => {
+          const dayNum = i - mondayOffset + 1;
+          const inMonth = dayNum >= 1 && dayNum <= daysInMonth;
+          const isToday = inMonth && viewYear === today.getFullYear() && viewMonth === today.getMonth() && dayNum === today.getDate();
+          const cellTasks = inMonth ? (dayTaskMap.get(dayNum) ?? []) : [];
           return (
-            <div key={c} className="min-h-[90px] border-b border-r border-border p-1.5 last:border-r-0">
-              <div className="text-[11px] mono text-fg-2">{day}</div>
-              {taskHere && (
-                <button onClick={() => onTask(taskHere.id)}
-                  className="block w-full mt-1 text-left text-[10.5px] px-1.5 py-1 rounded bg-accent-soft text-accent-strong truncate hover:bg-accent hover:text-accent-fg transition-colors">
-                  {taskHere.title}
-                </button>
-              )}
+            <div key={i} className={`min-h-[90px] border-b border-r border-border p-1.5 ${i % 7 === 6 ? 'border-r-0' : ''} ${!inMonth ? 'bg-bg-subtle opacity-40' : ''}`}>
+              <div className={`text-[11px] mono w-5 h-5 flex items-center justify-center rounded-full mb-0.5 ${isToday ? 'bg-accent text-accent-fg font-bold' : 'text-fg-2'}`}>
+                {inMonth ? dayNum : ''}
+              </div>
+              <div className="space-y-0.5">
+                {cellTasks.slice(0, 2).map(task => (
+                  <button key={task.id} onClick={() => onTask(task.id)}
+                    className="block w-full text-left text-[10.5px] px-1.5 py-0.5 rounded bg-accent-soft text-accent-strong truncate hover:bg-accent hover:text-accent-fg transition-colors">
+                    {task.title}
+                  </button>
+                ))}
+                {cellTasks.length > 2 && (
+                  <div className="text-[9.5px] text-fg-3 pl-1">+{cellTasks.length - 2}개 더</div>
+                )}
+              </div>
             </div>
           );
         })}
