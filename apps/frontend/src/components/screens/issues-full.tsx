@@ -417,12 +417,27 @@ function computeStats(issues: Issue[]) {
   };
 }
 
+function nextEscalationStatus(status: IssueStatus): IssueStatus {
+  if (status === 'open') return 'in-progress';
+  if (status === 'in-progress') return 'in-review';
+  return 'in-review';
+}
+
 function AISuggestion({ issues, onDismiss }: { issues: Issue[]; onDismiss: () => void }) {
+  const { transition } = useIssueMutations();
   const urgent = issues
     .filter(i => i.status !== 'resolved' && i.slaPct >= 80)
     .sort((a, b) => b.slaPct - a.slaPct)[0];
   if (!urgent) return null;
   const shortId = urgent.id.includes('-') ? urgent.id.split('-').slice(-1)[0] : urgent.id;
+  const escalate = async () => {
+    await transition.mutateAsync({
+      id: urgent.id,
+      input: { status: nextEscalationStatus(urgent.status), comment: `에스컬레이션: SLA ${urgent.slaPct}% 도달 — 즉각 대응 필요` },
+    });
+    toast.success(`#${shortId} 에스컬레이션 완료 — 상태 업데이트됨`);
+    onDismiss();
+  };
   return (
     <Card className="!bg-accent-soft border-accent/20">
       <CardBody className="flex items-start gap-3">
@@ -434,7 +449,7 @@ function AISuggestion({ issues, onDismiss }: { issues: Issue[]; onDismiss: () =>
             담당자 확인 및 에스컬레이션을 권장합니다.
           </p>
           <div className="flex gap-2 mt-2.5">
-            <Button variant="primary" size="sm" onClick={() => { toast.success(`#${shortId} 에스컬레이션 요청이 전송되었습니다.`); onDismiss(); }}>에스컬레이션</Button>
+            <Button variant="primary" size="sm" disabled={transition.isPending} onClick={escalate}>에스컬레이션</Button>
             <Button variant="ghost" size="sm" onClick={onDismiss}>무시</Button>
           </div>
         </div>
@@ -444,6 +459,7 @@ function AISuggestion({ issues, onDismiss }: { issues: Issue[]; onDismiss: () =>
 }
 
 function SlaAiActionCard({ issues }: { issues: Issue[] }) {
+  const { transition } = useIssueMutations();
   const urgent = issues
     .filter(i => i.status !== 'resolved' && i.slaPct >= 80)
     .sort((a, b) => b.slaPct - a.slaPct)[0];
@@ -461,6 +477,10 @@ function SlaAiActionCard({ issues }: { issues: Issue[] }) {
     );
   }
   const shortId = urgent.id.includes('-') ? urgent.id.split('-').slice(-1)[0] : urgent.id;
+  const escalate = () => transition.mutate({
+    id: urgent.id,
+    input: { status: nextEscalationStatus(urgent.status), comment: `에스컬레이션: SLA ${urgent.slaPct}% 도달 — 즉각 대응 필요` },
+  }, { onSuccess: () => toast.success(`#${shortId} 에스컬레이션 완료`) });
   return (
     <Card className="!bg-accent-soft border-accent/20">
       <CardBody className="space-y-2">
@@ -471,7 +491,7 @@ function SlaAiActionCard({ issues }: { issues: Issue[] }) {
         <p className="text-[12px] text-fg-1 leading-relaxed">
           <strong>#{shortId}</strong> ({urgent.prio}) SLA {urgent.slaPct}% 도달. 즉각 대응 및 에스컬레이션을 권장합니다.
         </p>
-        <Button variant="primary" size="sm" onClick={() => toast.success(`#${shortId} 에스컬레이션 요청이 전송되었습니다.`)}>에스컬레이션</Button>
+        <Button variant="primary" size="sm" disabled={transition.isPending} onClick={escalate}>에스컬레이션</Button>
       </CardBody>
     </Card>
   );

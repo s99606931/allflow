@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Card, CardBody, Avatar, Button } from '@/components/ui/primitives';
-import { ChevronLeft, ChevronRight, Plus, Video, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Video, Sparkles, X } from 'lucide-react';
 import { EventCreateDialog } from '@/components/dialogs/event-create-dialog';
 import { EventDetailPopover, type EventLike } from '@/components/dialogs/event-detail-popover';
 import { CalendarLinkCard } from '@/components/dialogs/calendar-link-card';
 import { useEvents } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { api } from '@/lib/api';
 
 const TYPE_COLOR_DEFAULT = 'oklch(0.62 0.18 255)';
 const HOURS = Array.from({ length: 11 }, (_, i) => 8 + i);
@@ -40,6 +41,8 @@ export function CalendarPage() {
   const [view, setView] = useState<'week' | 'month'>('week');
   const [createOpen, setCreateOpen] = useState(false);
   const [detail, setDetail] = useState<EventLike | null>(null);
+  const [autoAdjusting, setAutoAdjusting] = useState(false);
+  const [autoAdjustResult, setAutoAdjustResult] = useState<string | null>(null);
 
   const [weekAnchor, setWeekAnchor] = useState<Date | null>(null);
   const [weekWindow, setWeekWindow] = useState<ReturnType<typeof computeWeekWindow> | null>(null);
@@ -71,6 +74,22 @@ export function CalendarPage() {
   }, 0);
   const workHoursInWeek = 5 * 8;
   const freeWorkHours = Math.max(0, workHoursInWeek - totalMeetingHours);
+
+  const runAutoAdjust = async () => {
+    setAutoAdjusting(true);
+    setAutoAdjustResult(null);
+    try {
+      const summary = events.map(e => `• ${e.title} (${e.start.slice(11, 16)}~${e.end.slice(11, 16)})`).join('\n');
+      const result = await api.aiComplete(
+        `이번 주 캘린더 일정:\n${summary || '(일정 없음)'}\n총 회의 ${Math.round(totalMeetingHours)}시간, 여유 ${Math.round(freeWorkHours)}시간.\n\n이 일정을 분석하여 집중 시간 확보와 일정 최적화를 위한 구체적인 3가지 조정 제안을 간결하게 알려주세요.`,
+      );
+      setAutoAdjustResult(result.text);
+    } catch {
+      toast.error('AI 일정 조정 요청에 실패했습니다.');
+    } finally {
+      setAutoAdjusting(false);
+    }
+  };
 
   /** Compute grid placement for an event (gridRow + gridColumn + length). */
   const placed = events.map(e => {
@@ -186,9 +205,24 @@ export function CalendarPage() {
               </>
             )}
           </div>
-          <Button variant="primary" size="sm" onClick={() => toast.success('AI 일정 조정 제안이 적용되었습니다.')}>자동 조정</Button>
+          <Button variant="primary" size="sm" disabled={autoAdjusting} onClick={runAutoAdjust}>
+            {autoAdjusting ? 'AI 분석 중…' : '자동 조정'}
+          </Button>
         </CardBody>
       </Card>
+      {autoAdjustResult && (
+        <Card className="border-accent/30 bg-accent-soft/20">
+          <CardBody className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[12.5px] font-semibold text-accent-strong">
+                <Sparkles size={13} /> AI 일정 최적화 제안
+              </div>
+              <button type="button" onClick={() => setAutoAdjustResult(null)} className="text-fg-3 hover:text-fg"><X size={13} /></button>
+            </div>
+            <p className="text-[12.5px] text-fg-1 leading-relaxed whitespace-pre-line">{autoAdjustResult}</p>
+          </CardBody>
+        </Card>
+      )}
     </div>
   );
 }
