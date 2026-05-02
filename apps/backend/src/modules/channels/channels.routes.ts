@@ -180,4 +180,77 @@ export async function channelsRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(204).send();
     },
   );
+
+  app.get('/channels/:channelId/pins', { preHandler: [app.authenticate] }, async (req) => {
+    const { channelId } = req.params as { channelId: string };
+    const channel = await app.prisma.channel.findUnique({ where: { id: channelId } });
+    if (!channel) throw new NotFoundError('채널', channelId);
+
+    const pins = await app.prisma.pinnedMessage.findMany({
+      where: { channelId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        message: {
+          include: { author: { select: { id: true, name: true, initials: true, color: true } } },
+        },
+        pinner: { select: { id: true, name: true } },
+      },
+    });
+
+    return pins.map((p) => ({
+      id: p.id,
+      channelId: p.channelId,
+      messageId: p.messageId,
+      pinnedBy: p.pinnedBy,
+      pinnedAt: p.createdAt.toISOString(),
+      pinner: p.pinner,
+      message: {
+        id: p.message.id,
+        content: p.message.content,
+        authorId: p.message.authorId,
+        createdAt: p.message.createdAt.toISOString(),
+        author: p.message.author,
+      },
+    }));
+  });
+
+  app.post(
+    '/channels/:channelId/messages/:msgId/pin',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const { channelId, msgId } = req.params as { channelId: string; msgId: string };
+      // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+      const userId = req.user!.id;
+
+      const msg = await app.prisma.message.findFirst({ where: { id: msgId, channelId } });
+      if (!msg) throw new NotFoundError('메시지를 찾을 수 없습니다');
+
+      const pin = await app.prisma.pinnedMessage.upsert({
+        where: { channelId_messageId: { channelId, messageId: msgId } },
+        create: { channelId, messageId: msgId, pinnedBy: userId },
+        update: {},
+      });
+
+      return reply.code(201).send({ id: pin.id, channelId, messageId: msgId, pinnedAt: pin.createdAt.toISOString() });
+    },
+  );
+
+  app.delete(
+    '/channels/:channelId/messages/:msgId/pin',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const { channelId, msgId } = req.params as { channelId: string; msgId: string };
+
+      const pin = await app.prisma.pinnedMessage.findUnique({
+        where: { channelId_messageId: { channelId, messageId: msgId } },
+      });
+      if (!pin) throw new NotFoundError('고정된 메시지를 찾을 수 없습니다');
+
+      await app.prisma.pinnedMessage.delete({
+        where: { channelId_messageId: { channelId, messageId: msgId } },
+      });
+
+      return reply.code(204).send();
+    },
+  );
 }

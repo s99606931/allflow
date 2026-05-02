@@ -3,12 +3,11 @@
 import { useMemo, useState } from 'react';
 import { Avatar, Button, IconButton } from '@/components/ui/primitives';
 import { Hash, Lock, Plus, Search, Sparkles, MessageSquare, Pin, X, Pencil, Trash2, Check } from 'lucide-react';
-import { toast } from 'sonner';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { Composer } from '@/components/chat/composer';
 import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel';
 import { MentionPopover } from '@/components/chat/mention-popover';
-import { useChannels, useMe, useTaskMutations, useUsers } from '@/lib/hooks/use-data';
+import { useChannels, useMe, useTaskMutations, useUsers, usePins, usePinMutations } from '@/lib/hooks/use-data';
 import { useChatMessages, useMessageMutations, useSendMessage } from '@/lib/hooks/use-chat-messages';
 import { useAiStream } from '@/lib/hooks/use-ai';
 import { useTranslation } from '@/lib/i18n';
@@ -38,6 +37,9 @@ export function ChatPage() {
   const [channelSearch, setChannelSearch] = useState('');
   const [msgSearch, setMsgSearch] = useState('');
   const [msgSearchOpen, setMsgSearchOpen] = useState(false);
+  const [pinsOpen, setPinsOpen] = useState(false);
+  const { data: pins = [] } = usePins(active || null);
+  const pinMutations = usePinMutations(active || null);
   const publicChannels = channels.filter(c => (c.kind === 'public' || c.kind === 'private') && (!channelSearch.trim() || c.name.toLowerCase().includes(channelSearch.toLowerCase())));
   const dmChannels = channels.filter(c => c.kind === 'dm' && (!channelSearch.trim() || c.name.toLowerCase().includes(channelSearch.toLowerCase())));
   const activeChannel = channels.find(c => c.id === active) ?? null;
@@ -149,7 +151,7 @@ export function ChatPage() {
           <h2 className="text-[14px] font-bold text-fg">{activeChannel?.name ?? '채널 선택'}</h2>
           {activeChannel && <span className="text-[12px] text-fg-3">· {activeChannel.members.length}명</span>}
           <div className="flex-1" />
-          <IconButton size="sm" onClick={() => toast.info("고정 메시지 목록은 준비 중입니다.")}><Pin size={13} /></IconButton>
+          <IconButton size="sm" onClick={() => setPinsOpen(v => !v)} aria-pressed={pinsOpen} aria-label="고정 메시지"><Pin size={13} /></IconButton>
           {msgSearchOpen && (
             <div className="relative">
               <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
@@ -168,6 +170,23 @@ export function ChatPage() {
             <Sparkles size={12} /> {summarizing ? '요약 중...' : '대화 요약'}
           </Button>
         </header>
+
+        {pinsOpen && (
+          <div className="mx-4 mt-3 p-3 rounded-lg border border-border bg-bg-elev">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5 text-[12px] font-semibold text-fg-1"><Pin size={12} /> 고정 메시지 ({pins.length})</div>
+              <IconButton size="sm" onClick={() => setPinsOpen(false)}><X size={12} /></IconButton>
+            </div>
+            {pins.length === 0 && <div className="text-[11.5px] text-fg-3">고정된 메시지가 없습니다.</div>}
+            {pins.map(p => (
+              <div key={p.id} className="flex items-start gap-2 py-1.5 border-b border-border last:border-0">
+                <div className="flex-1 text-[12px] text-fg truncate">{p.message.content}</div>
+                <div className="text-[10.5px] text-fg-3 shrink-0">{p.message.author.name}</div>
+                <IconButton size="sm" onClick={() => pinMutations.unpin.mutate(p.messageId)} disabled={pinMutations.unpin.isPending}><X size={11} /></IconButton>
+              </div>
+            ))}
+          </div>
+        )}
 
         {summaryOpen && chatSummary && (
           <div className="mx-4 mt-3 p-3 rounded-lg border border-accent/20 bg-accent-soft text-[12.5px] text-fg-1 leading-relaxed flex gap-2">
@@ -227,20 +246,29 @@ export function ChatPage() {
                   <div className={`flex items-baseline gap-2 ${mine ? 'justify-end' : ''}`}>
                     <span className="text-[12.5px] font-semibold text-fg">{displayUser.name}</span>
                     <span className="text-[10.5px] text-fg-3">{msgTime}</span>
-                    {mine && !isEditing && (
+                    {!isEditing && (
                       <span className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
                         <button
                           type="button"
-                          onClick={() => { setEditingMsgId(m.id); setEditingText(m.content); }}
+                          onClick={() => pinMutations.pin.mutate(m.id)}
                           className="text-fg-3 hover:text-fg-1"
-                          aria-label="메시지 수정"
-                        ><Pencil size={11} /></button>
-                        <button
-                          type="button"
-                          onClick={() => msgMutations.remove.mutate(m.id)}
-                          className="text-fg-3 hover:text-danger"
-                          aria-label="메시지 삭제"
-                        ><Trash2 size={11} /></button>
+                          aria-label="메시지 고정"
+                          disabled={pinMutations.pin.isPending}
+                        ><Pin size={11} /></button>
+                        {mine && <>
+                          <button
+                            type="button"
+                            onClick={() => { setEditingMsgId(m.id); setEditingText(m.content); }}
+                            className="text-fg-3 hover:text-fg-1"
+                            aria-label="메시지 수정"
+                          ><Pencil size={11} /></button>
+                          <button
+                            type="button"
+                            onClick={() => msgMutations.remove.mutate(m.id)}
+                            className="text-fg-3 hover:text-danger"
+                            aria-label="메시지 삭제"
+                          ><Trash2 size={11} /></button>
+                        </>}
                       </span>
                     )}
                   </div>

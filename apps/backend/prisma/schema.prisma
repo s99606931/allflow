@@ -121,6 +121,7 @@ model User {
   notifications     Notification[]
   reports           Report[]          @relation("ReportAuthor")
   messages          Message[]         @relation("MessageAuthor")
+  pinnedMessages    PinnedMessage[]   @relation("PinnedBy")
   auditLogs         AuditLog[]        @relation("AuditLogActor")
   leaveRequests     LeaveRequest[]    @relation("LeaveRequester")
   approvedLeaves    LeaveRequest[]    @relation("LeaveApprover")
@@ -393,7 +394,8 @@ model Channel {
   createdAt DateTime    @default(now()) @map("created_at")
   updatedAt DateTime    @updatedAt @map("updated_at")
 
-  messages  Message[]
+  messages      Message[]
+  pinnedMessages PinnedMessage[]
 
   @@index([kind])
   @@map("channels")
@@ -413,11 +415,29 @@ model Message {
   author  User     @relation("MessageAuthor", fields: [authorId], references: [id])
   parent  Message? @relation("MessageThread", fields: [parentId], references: [id])
   replies Message[] @relation("MessageThread")
+  pins    PinnedMessage[]
 
   @@index([channelId, createdAt])
   @@index([authorId])
   @@index([parentId])
   @@map("messages")
+}
+
+model PinnedMessage {
+  id        String   @id @default(cuid())
+  channelId String   @map("channel_id")
+  messageId String   @map("message_id")
+  pinnedBy  String   @map("pinned_by")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  pinner  User    @relation("PinnedBy", fields: [pinnedBy], references: [id])
+
+  @@unique([channelId, messageId])
+  @@index([channelId])
+  @@map("pinned_messages")
 }
 
 // =====================================================================

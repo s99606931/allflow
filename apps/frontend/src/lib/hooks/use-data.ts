@@ -21,7 +21,7 @@ import type {
   IssueTransition, ProfilePatch, ProjectCreate, ProjectPatch, TaskCreate, TaskPatch, BulkMarkRead,
   InviteUser, RevokeToken, MessageSend, DocCreate, ResourceBooking,
 } from '@/lib/schemas';
-import type { LlmConnection, LlmConnectionInput, McpConnection, McpConnectionInput } from '@/lib/api/extended';
+import type { LlmConnection, LlmConnectionInput, McpConnection, McpConnectionInput, PinnedMessageItem } from '@/lib/api/extended';
 
 const onError = (err: unknown) => {
   toast.error(toastMessage(err));
@@ -138,6 +138,32 @@ export function useDocs() {
 export function useChannels() {
   return useQuery({ queryKey: keys.channels.list(), queryFn: () => api.listChannels() });
 }
+
+export function usePins(channelId: string | null) {
+  return useQuery({
+    queryKey: ['pins', channelId],
+    queryFn: () => api.listPins(channelId!),
+    enabled: !!channelId,
+  });
+}
+
+export function usePinMutations(channelId: string | null) {
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['pins', channelId] });
+  const pin = useMutation({
+    mutationFn: (msgId: string) => api.pinMessage(channelId!, msgId),
+    onSuccess: () => { invalidate(); toast.success('메시지가 고정되었습니다'); },
+    onError,
+  });
+  const unpin = useMutation({
+    mutationFn: (msgId: string) => api.unpinMessage(channelId!, msgId),
+    onSuccess: () => { invalidate(); toast.success('고정이 해제되었습니다'); },
+    onError,
+  });
+  return { pin, unpin };
+}
+
+export type { PinnedMessageItem };
 
 export function useOrgUnits() {
   return useQuery({ queryKey: keys.orgUnits.list(), queryFn: () => api.listOrgUnits() });

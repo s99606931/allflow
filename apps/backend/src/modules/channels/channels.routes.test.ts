@@ -46,6 +46,7 @@ const MOCK_MESSAGE = {
 };
 
 function makeMockPrisma() {
+  const pins = new Map<string, { id: string; channelId: string; messageId: string; pinnedBy: string; createdAt: Date }>();
   return {
     channel: {
       count: async () => MOCK_CHANNELS.length,
@@ -76,6 +77,31 @@ function makeMockPrisma() {
         content: data.content,
       }),
       delete: async () => MOCK_MESSAGE,
+    },
+    pinnedMessage: {
+      findMany: async () => pins.size === 0 ? [] : [...pins.values()].map(p => ({
+        ...p,
+        pinner: { id: p.pinnedBy, name: 'Test User' },
+        message: { ...MOCK_MESSAGE, author: MOCK_MESSAGE.author },
+      })),
+      findUnique: async ({ where }: { where: { channelId_messageId: { channelId: string; messageId: string } } }) => {
+        const k = `${where.channelId_messageId.channelId}:${where.channelId_messageId.messageId}`;
+        return pins.get(k) ?? null;
+      },
+      upsert: async ({ where, create }: { where: { channelId_messageId: { channelId: string; messageId: string } }; create: { channelId: string; messageId: string; pinnedBy: string }; update: object }) => {
+        const k = `${where.channelId_messageId.channelId}:${where.channelId_messageId.messageId}`;
+        const existing = pins.get(k);
+        if (existing) return existing;
+        const pin = { id: `pin-${Date.now()}`, ...create, createdAt: new Date() };
+        pins.set(k, pin);
+        return pin;
+      },
+      delete: async ({ where }: { where: { channelId_messageId: { channelId: string; messageId: string } } }) => {
+        const k = `${where.channelId_messageId.channelId}:${where.channelId_messageId.messageId}`;
+        const pin = pins.get(k);
+        pins.delete(k);
+        return pin;
+      },
     },
   };
 }
@@ -271,6 +297,33 @@ describe('modules/channels — BE-N6', () => {
       headers: { authorization: `Bearer ${u2}` },
     });
     expect(r.statusCode).toBe(403);
+    await app.close();
+  });
+
+  it('GET /channels/:id/pins → 200 + 빈 배열 (초기)', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    const r = await app.inject({ method: 'GET', url: '/channels/ch-general/pins', headers: { authorization: `Bearer ${u1}` } });
+    expect(r.statusCode).toBe(200);
+    expect(Array.isArray(r.json())).toBe(true);
+    await app.close();
+  });
+
+  it('POST /channels/:id/messages/:msgId/pin → 201 + pin id', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    const r = await app.inject({ method: 'POST', url: '/channels/ch-general/messages/msg-test-1/pin', headers: { authorization: `Bearer ${u1}` } });
+    expect(r.statusCode).toBe(201);
+    expect(typeof (r.json() as { id: string }).id).toBe('string');
+    await app.close();
+  });
+
+  it('DELETE /channels/:id/messages/:msgId/pin → 204', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    await app.inject({ method: 'POST', url: '/channels/ch-general/messages/msg-test-1/pin', headers: { authorization: `Bearer ${u1}` } });
+    const r = await app.inject({ method: 'DELETE', url: '/channels/ch-general/messages/msg-test-1/pin', headers: { authorization: `Bearer ${u1}` } });
+    expect(r.statusCode).toBe(204);
     await app.close();
   });
 });

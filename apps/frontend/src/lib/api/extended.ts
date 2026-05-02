@@ -174,6 +174,16 @@ export const extendedApi = {
     http.post(`channels/${input.channelId}/messages`, { json: { text: input.text } })
       .json<{ id: string }>(),
 
+  listPins: async (channelId: string): Promise<PinnedMessageItem[]> =>
+    http.get(`channels/${channelId}/pins`).json<PinnedMessageItem[]>(),
+
+  pinMessage: async (channelId: string, msgId: string): Promise<{ id: string }> =>
+    http.post(`channels/${channelId}/messages/${msgId}/pin`).json<{ id: string }>(),
+
+  unpinMessage: async (channelId: string, msgId: string): Promise<void> => {
+    await http.delete(`channels/${channelId}/messages/${msgId}/pin`);
+  },
+
   /* Org / RBAC ------------------------------------------------------------ */
   listOrgUnits: async (): Promise<OrgUnit[]> =>
     parsed(http.get('org/units').json(), z.array(OrgUnitSchema)),
@@ -363,6 +373,23 @@ export interface ReportSummary {
   tldr: string;
   kpis: unknown[];
   sections: unknown[];
+}
+
+/* Pinned Message types ---------------------------------------------------- */
+export interface PinnedMessageItem {
+  id: string;
+  channelId: string;
+  messageId: string;
+  pinnedBy: string;
+  pinnedAt: string;
+  pinner: { id: string; name: string };
+  message: {
+    id: string;
+    content: string;
+    authorId: string;
+    createdAt: string;
+    author: { id: string; name: string; initials: string; color: string };
+  };
 }
 
 /* MCP Connection types ---------------------------------------------------- */
