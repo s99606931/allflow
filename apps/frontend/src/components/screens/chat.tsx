@@ -298,6 +298,12 @@ export function ChatPage() {
               pins.length > 0 ? `고정 메시지 ${pins.length}건 정리해줘` : '액션 아이템 추출해줘',
               '중요 결정 사항 찾아줘',
             ]}
+            quickActions={[
+              { label: '대화 요약', onClick: summarizeChat },
+              { label: '채널 만들기', onClick: () => setNewChannelOpen(true) },
+              { label: 'DM 보내기', onClick: () => setDmPickerOpen(true) },
+              ...(pins.length > 0 ? [{ label: `고정 ${pins.length}건`, onClick: () => setPinsOpen(v => !v) }] : []),
+            ]}
           />
         </div>
         {summaryOpen && chatSummary && (
