@@ -50,6 +50,32 @@ export function useCreateLeave() {
   });
 }
 
+export interface LeavePatchInput {
+  type?: LeaveRequest['type'];
+  startDate?: string;
+  endDate?: string;
+  reason?: string;
+}
+
+export function useUpdateLeave() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: LeavePatchInput }) => {
+      const res = await fetch(`${API}/hr/leave/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Failed to update leave request');
+      return res.json() as Promise<LeaveRequest>;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hr-leave'] });
+    },
+  });
+}
+
 export function useCancelLeave() {
   const qc = useQueryClient();
   return useMutation({

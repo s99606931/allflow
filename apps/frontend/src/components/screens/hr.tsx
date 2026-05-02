@@ -2,9 +2,9 @@
 
 import { Badge, Button, Card, CardBody, CardHeader, CardTitle } from '@/components/ui/primitives';
 import { DateInput } from '@/components/ui/dialog';
-import { useCancelLeave, useCreateLeave, useLeaveRequests, type LeaveRequest } from '@/lib/hooks/use-hr';
+import { useCancelLeave, useCreateLeave, useLeaveRequests, useUpdateLeave, type LeaveRequest } from '@/lib/hooks/use-hr';
 import { useMe, useOrgUnits } from '@/lib/hooks/use-data';
-import { Award, Briefcase, CalendarClock, Plane, Plus, Users, X } from 'lucide-react';
+import { Award, Briefcase, CalendarClock, Plane, Plus, Users, X, Pencil, Check } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import { useState } from 'react';
 
@@ -268,8 +268,56 @@ interface LeaveRowProps {
 }
 
 function LeaveRow({ leave, cancelLeave, onReapply }: LeaveRowProps) {
+  const updateLeave = useUpdateLeave();
+  const [editing, setEditing] = useState(false);
+  const [editStart, setEditStart] = useState(leave.startDate.slice(0, 10));
+  const [editEnd, setEditEnd] = useState(leave.endDate.slice(0, 10));
+  const [editReason, setEditReason] = useState(leave.reason ?? '');
   const start = leave.startDate.slice(0, 10);
   const end = leave.endDate.slice(0, 10);
+
+  if (editing) {
+    return (
+      <div className="rounded-md border border-accent/40 bg-accent-soft/20 px-3 py-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-[11.5px] font-semibold text-fg">{LEAVE_TYPE_LABEL[leave.type]} 수정</span>
+          <button type="button" onClick={() => setEditing(false)} className="ml-auto text-fg-3 hover:text-fg"><X size={12} /></button>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <div className="text-[10.5px] text-fg-3 mb-1">시작일</div>
+            <DateInput value={editStart} onChange={e => setEditStart(e.target.value)} className="w-full" />
+          </div>
+          <div>
+            <div className="text-[10.5px] text-fg-3 mb-1">종료일</div>
+            <DateInput value={editEnd} onChange={e => setEditEnd(e.target.value)} className="w-full" />
+          </div>
+        </div>
+        <input
+          type="text"
+          value={editReason}
+          onChange={e => setEditReason(e.target.value)}
+          placeholder="사유 (선택)"
+          className="w-full h-8 px-2.5 rounded border border-border bg-bg text-[12px] text-fg focus:outline-none focus:border-accent"
+        />
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>취소</Button>
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={updateLeave.isPending}
+            onClick={async () => {
+              await updateLeave.mutateAsync({ id: leave.id, data: { startDate: editStart, endDate: editEnd, reason: editReason || undefined } });
+              setEditing(false);
+            }}
+          >
+            <Check size={12} /> 저장
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-3 px-3 py-2.5 rounded-md border border-border bg-bg-2">
       <Badge tone={STATUS_TONE[leave.status]}>{STATUS_LABEL[leave.status]}</Badge>
@@ -286,13 +334,22 @@ function LeaveRow({ leave, cancelLeave, onReapply }: LeaveRowProps) {
         </span>
       )}
       {leave.status === 'PENDING' && (
-        <button
-          onClick={() => cancelLeave.mutate(leave.id)}
-          disabled={cancelLeave.isPending}
-          className="text-[11px] text-danger hover:underline"
-        >
-          취소
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="text-[11px] text-accent hover:underline flex items-center gap-1"
+          >
+            <Pencil size={10} /> 수정
+          </button>
+          <button
+            onClick={() => cancelLeave.mutate(leave.id)}
+            disabled={cancelLeave.isPending}
+            className="text-[11px] text-danger hover:underline"
+          >
+            취소
+          </button>
+        </>
       )}
       {leave.status === 'REJECTED' && (
         <button
