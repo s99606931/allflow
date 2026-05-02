@@ -181,6 +181,9 @@ export const extendedApi = {
   inviteUser: async (input: InviteUser): Promise<{ id: string; pending: true }> =>
     http.post('org/invitations', { json: input }).json<{ id: string; pending: true }>(),
 
+  createOrgUnit: async (input: { name: string; parentId?: string | null }): Promise<OrgUnit> =>
+    parsed(http.post('org/units', { json: input }).json(), OrgUnitSchema),
+
   revokeToken: async (input: RevokeToken): Promise<{ id: string; revoked: true }> =>
     http.post('auth/tokens/revoke', { json: input }).json<{ id: string; revoked: true }>(),
 

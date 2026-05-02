@@ -333,6 +333,7 @@ export function useMessageMutations() {
 }
 
 export function useOrgMutations() {
+  const qc = useQueryClient();
   const invite = useMutation({
     mutationFn: (input: InviteUser) => api.inviteUser(input),
     onSuccess: () => toast.success('초대 메일이 전송되었습니다'),
@@ -343,7 +344,15 @@ export function useOrgMutations() {
     onSuccess: () => toast.success('토큰이 회수되었습니다'),
     onError,
   });
-  return { invite, revokeToken };
+  const createUnit = useMutation({
+    mutationFn: (input: { name: string; parentId?: string | null }) => api.createOrgUnit(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.orgUnits.all() });
+      toast.success('부서가 추가되었습니다');
+    },
+    onError,
+  });
+  return { invite, revokeToken, createUnit };
 }
 
 export function useNotificationMutations() {

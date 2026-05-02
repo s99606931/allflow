@@ -10,6 +10,7 @@ const TEST_AUTH = 'a'.repeat(16) + 'b'.repeat(16);
 // biome-ignore lint/suspicious/noExplicitAny: 테스트 mock 의 prisma 시그니처는 호출부 모양을 신뢰한다.
 type AnyArgs = any;
 
+interface OrgUnitRow { id: string; name: string; parentId: string | null; members: string[] }
 interface InvitationRow {
   id: string;
   email: string;
@@ -19,6 +20,26 @@ interface InvitationRow {
   pending: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+const SEED_UNITS: OrgUnitRow[] = [
+  { id: 'org-root', name: '본사', parentId: null, members: ['u1', 'u2', 'u3', 'u4', 'u5'] },
+  { id: 'org-eng', name: '엔지니어링', parentId: 'org-root', members: ['u1', 'u2'] },
+  { id: 'org-design', name: '디자인', parentId: 'org-root', members: ['u3'] },
+  { id: 'org-platform', name: '플랫폼', parentId: 'org-eng', members: ['u1'] },
+];
+
+function makeOrgUnitStore() {
+  const rows = new Map<string, OrgUnitRow>(SEED_UNITS.map(u => [u.id, u]));
+  return {
+    findMany: async () => [...rows.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    findUnique: async (args: AnyArgs) => rows.get(args?.where?.id) ?? null,
+    create: async (args: AnyArgs) => {
+      const row: OrgUnitRow = { id: args.data.id, name: args.data.name, parentId: args.data.parentId ?? null, members: [] };
+      rows.set(row.id, row);
+      return row;
+    },
+  };
 }
 
 function makeInvitationStore() {
@@ -55,11 +76,17 @@ async function buildTestApp() {
   resetEnvForTests();
   process.env.AUTH_SECRET = TEST_AUTH;
   const app = await buildApp({ logger: false });
-  const store = makeInvitationStore();
+  const orgStore = makeOrgUnitStore();
+  const invStore = makeInvitationStore();
   app.decorate('prisma', {
+    orgUnit: {
+      findMany: orgStore.findMany,
+      findUnique: orgStore.findUnique,
+      create: orgStore.create,
+    },
     invitation: {
-      findFirst: store.findFirst,
-      create: store.create,
+      findFirst: invStore.findFirst,
+      create: invStore.create,
     },
   } as never);
   await app.register(authPlugin);
@@ -121,6 +148,36 @@ describe('modules/org — BE-N7', () => {
     const eng = list.find((u) => u.id === 'org-eng');
     expect(eng?.parentId).toBe('org-root');
     expect(Array.isArray(eng?.members)).toBe(true);
+    await app.close();
+  });
+
+  it('POST /org/units → 201 신규 부서 생성', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'POST',
+      url: '/org/units',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { id: 'org-new', name: '신규팀', parentId: 'org-root' },
+    });
+    expect(r.statusCode).toBe(201);
+    const body = r.json() as { id: string; name: string; parentId: string | null };
+    expect(body.id).toBe('org-new');
+    expect(body.name).toBe('신규팀');
+    expect(body.parentId).toBe('org-root');
+    await app.close();
+  });
+
+  it('POST /org/units → 존재하지 않는 parentId 400', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'POST',
+      url: '/org/units',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: '고아팀', parentId: 'org-missing' },
+    });
+    expect(r.statusCode).toBe(400);
     await app.close();
   });
 

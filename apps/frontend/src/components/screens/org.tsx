@@ -3,17 +3,20 @@
 import { useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button } from '@/components/ui/primitives';
 import { useOrgMutations, useOrgUnits } from '@/lib/hooks/use-data';
-import { toast } from 'sonner';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
-import { Plus, Search, UserPlus } from 'lucide-react';
+
+import { Plus, Search, UserPlus, X } from 'lucide-react';
 
 export function OrgPage() {
   const { data: units = [], isLoading, error } = useOrgUnits();
-  const { invite } = useOrgMutations();
+  const { invite, createUnit } = useOrgMutations();
   const userMap = useUserMap();
   const [email, setEmail] = useState('');
   const [activeUnitId, setActiveUnitId] = useState<string>('');
   const [search, setSearch] = useState('');
+  const [addUnitOpen, setAddUnitOpen] = useState(false);
+  const [newUnitName, setNewUnitName] = useState('');
+  const [newUnitParentId, setNewUnitParentId] = useState('');
 
   const filteredUnits = search.trim()
     ? units.filter(u => u.name.toLowerCase().includes(search.toLowerCase()))
@@ -26,6 +29,14 @@ export function OrgPage() {
     if (!email || !targetUnitId) return;
     invite.mutate({ email, orgUnitId: targetUnitId, role: 'member' });
     setEmail('');
+  };
+
+  const onAddUnit = () => {
+    if (!newUnitName.trim()) return;
+    createUnit.mutate(
+      { name: newUnitName.trim(), parentId: newUnitParentId || null },
+      { onSuccess: () => { setAddUnitOpen(false); setNewUnitName(''); setNewUnitParentId(''); } },
+    );
   };
 
   return (
@@ -55,8 +66,37 @@ export function OrgPage() {
         >
           <UserPlus size={13} /> {invite.isPending ? '전송 중...' : '초대'}
         </Button>
-        <Button variant="secondary" size="sm" onClick={() => toast.info('부서 추가 기능은 관리자 페이지에서 지원 예정입니다.')}><Plus size={13} /> 부서 추가</Button>
+        <Button variant="secondary" size="sm" onClick={() => setAddUnitOpen(v => !v)}><Plus size={13} /> 부서 추가</Button>
       </div>
+
+      {addUnitOpen && (
+        <Card>
+          <CardBody className="!p-4 flex items-center gap-2 flex-wrap">
+            <input
+              autoFocus
+              value={newUnitName}
+              onChange={e => setNewUnitName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && onAddUnit()}
+              placeholder="부서명 입력..."
+              className="h-8 flex-1 min-w-[160px] px-3 rounded-md border border-border bg-bg text-[13px] text-fg focus:outline-none focus:ring-1 focus:ring-accent"
+            />
+            <select
+              value={newUnitParentId}
+              onChange={e => setNewUnitParentId(e.target.value)}
+              className="h-8 px-2 rounded-md border border-border bg-bg text-[12.5px] text-fg"
+            >
+              <option value="">최상위 (없음)</option>
+              {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+            <Button variant="primary" size="sm" disabled={!newUnitName.trim() || createUnit.isPending} onClick={onAddUnit}>
+              {createUnit.isPending ? '추가 중...' : '추가'}
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => { setAddUnitOpen(false); setNewUnitName(''); setNewUnitParentId(''); }}>
+              <X size={12} />
+            </Button>
+          </CardBody>
+        </Card>
+      )}
 
       {isLoading && <div className="py-12 text-center text-[12px] text-fg-3">불러오는 중...</div>}
       {error && <div className="py-12 text-center text-[12px] text-danger">조직 정보를 불러오지 못했습니다.</div>}

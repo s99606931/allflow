@@ -713,6 +713,15 @@ model Doc {
 // Org / Invitation
 // =====================================================================
 
+model OrgUnit {
+  id       String   @id @db.VarChar(80)
+  name     String   @db.VarChar(80)
+  parentId String?  @map("parent_id") @db.VarChar(80)
+  members  String[]
+
+  @@map("org_units")
+}
+
 model Invitation {
   id        String   @id @default(cuid())
   email     String   @db.VarChar(200)
