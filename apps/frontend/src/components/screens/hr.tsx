@@ -24,7 +24,11 @@ export function HRPage() {
     <div className="p-6 max-w-[1280px] mx-auto space-y-5">
       <AiGuideWidget
         systemContext={`HR — 휴가 신청 대기 ${pendingLeaves}건, 승인 ${approvedLeaves}건, 총 ${leaves.length}건`}
-        hints={['연차 현황 알려줘', 'OKR 달성률 점검해줘', '1:1 미팅 준비 도와줘']}
+        hints={[
+          pendingLeaves > 0 ? `휴가 승인 대기 ${pendingLeaves}건 처리 방법` : '연차 현황 알려줘',
+          'OKR 달성률 점검해줘',
+          '1:1 미팅 준비 도와줘',
+        ]}
       />
       <div className="flex items-center gap-2">
         <h2 className="text-[18px] font-bold text-fg">인사 / HR</h2>

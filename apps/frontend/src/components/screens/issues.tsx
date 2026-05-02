@@ -56,7 +56,11 @@ export function IssuesPage() {
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <AiGuideWidget
         systemContext={`이슈 트래커 — 전체 ${issues.length}건, P0 진행 중 ${p0Count}건, SLA 위험 ${slaAtRisk}건, 오픈 ${newCount}건`}
-        hints={['SLA 위반 위험 이슈 찾아줘', '미배정 이슈 정리해줘', 'Critical 이슈 대응방안 알려줘']}
+        hints={[
+          slaAtRisk > 0 ? `SLA 임박 ${slaAtRisk}건 우선 처리 방법` : 'SLA 위반 위험 이슈 찾아줘',
+          p0Count > 0 ? `P0 이슈 ${p0Count}건 대응 플레이북 알려줘` : '미배정 이슈 정리해줘',
+          'Critical 이슈 대응방안 알려줘',
+        ]}
       />
       <div className="grid grid-cols-6 gap-3">
         {[
@@ -167,7 +171,12 @@ export function IssuesPage() {
         {isLoading && <div className="px-4 py-12 text-center text-[12px] text-fg-3">불러오는 중...</div>}
         {error && <div className="px-4 py-12 text-center text-[12px] text-danger">이슈를 불러오지 못했습니다.</div>}
         {!isLoading && !error && displayed.length === 0 && (
-          <div className="px-4 py-12 text-center text-[12px] text-fg-3">표시할 이슈가 없습니다.</div>
+          <div className="px-4 py-12 text-center space-y-2">
+            <div className="text-[13px] font-semibold text-fg">이슈가 없습니다</div>
+            <div className="text-[12px] text-fg-3 max-w-xs mx-auto">
+              {activeFilter !== '전체' ? `"${activeFilter}" 필터에 해당하는 이슈가 없습니다. 필터를 해제해 보세요.` : '우상단 "새 이슈" 버튼을 눌러 이슈를 등록하세요.'}
+            </div>
+          </div>
         )}
         {displayed.map(iss => {
           const u = userMap.get(iss.assignee);

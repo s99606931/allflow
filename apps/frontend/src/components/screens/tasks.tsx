@@ -53,7 +53,11 @@ export function TasksPage() {
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <AiGuideWidget
         systemContext={`태스크 관리 — 전체 ${filterCounts.all}건, 오늘 마감 ${filterCounts.today}건, 기한 초과 ${filterCounts.overdue}건`}
-        hints={['마감 임박 태스크 알려줘', '우선순위 재조정 제안해줘', '블로킹 태스크 찾아줘']}
+        hints={[
+          filterCounts.overdue > 0 ? `기한 초과 ${filterCounts.overdue}건 처리 방법 알려줘` : '마감 임박 태스크 알려줘',
+          filterCounts.today > 0 ? `오늘 마감 ${filterCounts.today}건 우선순위 정해줘` : '우선순위 재조정 제안해줘',
+          '블로킹 태스크 찾아줘',
+        ]}
       />
       {/* Filter chips */}
       <div className="flex items-center gap-2 flex-wrap">

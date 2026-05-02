@@ -31,7 +31,11 @@ export function DashboardPage() {
     <div className="p-6 space-y-6 max-w-[1440px] mx-auto">
       <AiGuideWidget
         systemContext={`대시보드 — 처리할 태스크 ${todoCount}개, 진행 중 ${doingCount}건, 리뷰 대기 ${reviewCount}건, 프로젝트 ${projects.length}개`}
-        hints={['오늘 우선순위 알려줘', '지연 위험 항목 찾아줘', '팀 현황 요약해줘']}
+        hints={[
+          todoCount > 5 ? `오늘 ${todoCount}개 태스크 우선순위 정해줘` : '오늘 우선순위 알려줘',
+          reviewCount > 0 ? `리뷰 대기 ${reviewCount}건 빠른 처리 방법` : '지연 위험 항목 찾아줘',
+          '팀 현황 요약해줘',
+        ]}
       />
       {/* Hero greeting */}
       <div className="flex items-end justify-between flex-wrap gap-4">
@@ -55,12 +59,12 @@ export function DashboardPage() {
       {/* Top metrics row */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: '오늘 완료', value: String(doneToday) },
-          { label: '진행 중', value: String(doingCount) },
-          { label: '리뷰 대기', value: String(reviewCount) },
-          { label: '전체 프로젝트', value: String(projects.length) },
+          { label: '오늘 완료', value: String(doneToday), href: '/tasks' },
+          { label: '진행 중', value: String(doingCount), href: '/tasks' },
+          { label: '리뷰 대기', value: String(reviewCount), href: '/tasks' },
+          { label: '전체 프로젝트', value: String(projects.length), href: '/projects' },
         ].map(m => (
-          <Card key={m.label}>
+          <Card key={m.label} className="cursor-pointer hover:border-accent/40 transition-colors" onClick={() => router.push(m.href)}>
             <CardBody>
               <div className="text-[12px] text-fg-2">{m.label}</div>
               <div className="flex items-end gap-2 mt-1">
@@ -86,7 +90,11 @@ export function DashboardPage() {
               </div>
             )}
             {!tasksLoading && tasks.length === 0 && (
-              <div className="px-5 py-8 text-center text-fg-3 text-[12.5px]">표시할 태스크가 없습니다.</div>
+              <div className="px-5 py-8 text-center space-y-3">
+                <div className="text-[13px] font-semibold text-fg">태스크가 없습니다</div>
+                <div className="text-[12px] text-fg-3">첫 태스크를 만들어 팀과 함께 시작하세요.</div>
+                <Button variant="secondary" size="sm" onClick={() => setTaskDialogOpen(true)}><Plus size={12} /> 태스크 추가</Button>
+              </div>
             )}
             {tasks.slice(0, 5).map(t => {
               const proj = projects.find(p => p.id === t.proj);

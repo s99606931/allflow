@@ -87,7 +87,11 @@ export function ApprovalsPage() {
           </div>
           <AiGuideWidget
             systemContext={`전자결재 — 대기중 ${counts.inbox}건, 상신 ${counts.sent}건, 처리완료 ${counts.history}건, 전체 ${approvals.length}건`}
-            hints={['대기 중인 결재 요약해줘', '에스컬레이션 위험 찾아줘', '결재 프로세스 가이드해줘']}
+            hints={[
+              counts.inbox > 0 ? `대기 결재 ${counts.inbox}건 빠른 처리 방법` : '대기 중인 결재 요약해줘',
+              '에스컬레이션 위험 찾아줘',
+              '결재 프로세스 가이드해줘',
+            ]}
             className="mx-0 my-2 rounded-lg"
           />
           {searchOpen ? (
