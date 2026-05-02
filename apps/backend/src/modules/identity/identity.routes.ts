@@ -59,6 +59,7 @@ const USER_SELECT = {
   bio: true,
   userStatus: true,
   avatarUrl: true,
+  mfaEnabled: true,
 } as const;
 
 interface UserRow {
@@ -72,6 +73,7 @@ interface UserRow {
   bio: string | null;
   userStatus: string | null;
   avatarUrl: string | null;
+  mfaEnabled: boolean;
 }
 
 function serializeUser(user: UserRow): unknown {

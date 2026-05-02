@@ -104,7 +104,11 @@ export function DocsPage() {
         <div className="max-w-[760px] mx-auto px-10 py-8">
           <AiGuideWidget
             systemContext={`문서 관리 — 총 ${docs.length}건, 최근 7일 수정 ${recentDocsCount}건`}
-            hints={['문서 구조 개선 제안해줘', '오래된 문서 찾아줘', '이 문서 요약해줘']}
+            hints={[
+              activeDoc ? `"${activeDoc.title}" 문서 요약해줘` : docs.length === 0 ? '첫 문서 작성 가이드해줘' : '중요 문서 찾아줘',
+              recentDocsCount === 0 ? '7일 이상 미수정 문서 정리 제안해줘' : `최근 수정 ${recentDocsCount}건 내용 요약해줘`,
+              starredIds.size > 0 ? `즐겨찾기 ${starredIds.size}건 구조 개선 제안해줘` : '문서 구조 개선 제안해줘',
+            ]}
             className="mb-6"
           />
           {!activeDoc && (

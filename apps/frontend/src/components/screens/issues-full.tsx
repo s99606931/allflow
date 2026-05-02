@@ -63,7 +63,11 @@ export function IssuesPageFull() {
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <AiGuideWidget
         systemContext={`이슈 심층 분석 — 전체 ${issues.length}건, P0 ${stats.p0}건, SLA 준수 ${stats.slaRate}%, 해결 ${stats.resolvedCount}건`}
-        hints={['SLA 정책 최적화 제안해줘', '이슈 트렌드 분석해줘', 'P0 대응 플레이북 알려줘']}
+        hints={[
+          stats.p0 > 0 ? `P0 진행중 ${stats.p0}건 긴급 대응 플레이북 알려줘` : 'SLA 정책 최적화 제안해줘',
+          stats.slaRate < 80 ? `SLA 준수율 ${stats.slaRate}% 개선 방법 알려줘` : '이슈 트렌드 분석해줘',
+          stats.unassigned > 0 ? `미할당 ${stats.unassigned}건 담당자 배정 도와줘` : 'Critical 이슈 예방 전략 알려줘',
+        ]}
       />
       {/* KPI strip */}
       <div className="grid grid-cols-6 gap-3">

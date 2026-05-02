@@ -21,6 +21,7 @@ export const UserSchema = z.object({
   bio: z.string().optional(),
   userStatus: z.string().optional(),
   avatarUrl: z.string().optional(),
+  mfaEnabled: z.boolean().optional(),
 });
 
 export const ProjectSchema = z.object({

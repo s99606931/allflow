@@ -941,6 +941,7 @@ components:
         bio: { type: string }
         userStatus: { type: string }
         avatarUrl: { type: string }
+        mfaEnabled: { type: boolean }
 
     Project:
       type: object

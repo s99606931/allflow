@@ -49,10 +49,10 @@ export function UsersPage() {
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <AiGuideWidget
-        systemContext={`사용자 관리 — 전체 ${users.length}명, 초대 대기 ${userMetrics?.pendingInvites ?? 0}건`}
+        systemContext={`사용자 관리 — 전체 ${users.length}명, MFA 활성 ${users.filter(u => u.mfaEnabled).length}명, 초대 대기 ${userMetrics?.pendingInvites ?? 0}건`}
         hints={[
           (userMetrics?.pendingInvites ?? 0) > 0 ? `초대 대기 ${userMetrics!.pendingInvites}건 — 재발송 또는 취소 방법` : '비활성 사용자 찾아줘',
-          '권한 설정 가이드해줘',
+          users.filter(u => !u.mfaEnabled).length > 0 ? `MFA 미설정 ${users.filter(u => !u.mfaEnabled).length}명 보안 강화 방법` : '권한 설정 가이드해줘',
           '팀원 온보딩 체크리스트 알려줘',
         ]}
       />
@@ -60,7 +60,7 @@ export function UsersPage() {
         {[
           { l: '전체 사용자', v: userMetrics ? String(userMetrics.total) : String(users.length), sub: undefined },
           { l: '활성', v: String(users.length), sub: undefined },
-          { l: 'MFA 활성', v: '—', sub: '미지원' },
+          { l: 'MFA 활성', v: String(users.filter(u => u.mfaEnabled).length), sub: `/ ${users.length}명` },
           { l: '대기 초대', v: userMetrics ? String(userMetrics.pendingInvites) : '—', sub: undefined },
         ].map(m => (
           <Card key={m.l}>
@@ -179,7 +179,7 @@ export function UsersPage() {
                 </span>
               )}
             </div>
-            <div><Badge tone="neutral">—</Badge></div>
+            <div><Badge tone={u.mfaEnabled ? 'success' : 'neutral'}>{u.mfaEnabled ? 'ON' : '—'}</Badge></div>
             <div>
               <span className="inline-flex items-center gap-1 text-[11.5px]">
                 <span className="w-1.5 h-1.5 rounded-full bg-success" /> 활성

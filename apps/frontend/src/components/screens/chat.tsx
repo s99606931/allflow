@@ -192,7 +192,11 @@ export function ChatPage() {
         <div className="px-4 pt-2">
           <AiGuideWidget
             systemContext={`팀 채팅 — ${channels.length}개 채널, 현재 채널 ${messages.length}건 메시지`}
-            hints={['이 채널 대화 요약해줘', '액션 아이템 추출해줘', '중요 결정 사항 찾아줘']}
+            hints={[
+              messages.length > 20 ? `${messages.length}건 대화 핵심 요약해줘` : activeChannel ? `#${activeChannel.name} 채널 대화 요약해줘` : '대화 요약해줘',
+              pins.length > 0 ? `고정 메시지 ${pins.length}건 정리해줘` : '액션 아이템 추출해줘',
+              '중요 결정 사항 찾아줘',
+            ]}
           />
         </div>
         {summaryOpen && chatSummary && (
