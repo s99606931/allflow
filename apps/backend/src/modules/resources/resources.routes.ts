@@ -82,11 +82,13 @@ export async function resourcesRoutes(app: FastifyInstance): Promise<void> {
     return rows.map(serializeResource);
   });
 
-  const ResourcePatch = z.object({
-    name: z.string().min(1).max(120).optional(),
-    capacity: z.number().int().positive().nullable().optional(),
-    location: z.string().max(120).nullable().optional(),
-  }).strict();
+  const ResourcePatch = z
+    .object({
+      name: z.string().min(1).max(120).optional(),
+      capacity: z.number().int().positive().nullable().optional(),
+      location: z.string().max(120).nullable().optional(),
+    })
+    .strict();
 
   app.patch('/resources/:id', { preHandler: [app.authenticate] }, async (req) => {
     const { id } = req.params as { id: string };
@@ -118,7 +120,7 @@ export async function resourcesRoutes(app: FastifyInstance): Promise<void> {
       where: { start: { gte: dayStart }, end: { lte: dayEnd } },
       orderBy: { start: 'asc' },
     });
-    return rows.map(r => ({
+    return rows.map((r) => ({
       id: r.id,
       resourceId: r.resourceId,
       start: r.start.toISOString(),

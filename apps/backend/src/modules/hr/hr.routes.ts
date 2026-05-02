@@ -65,7 +65,8 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
     const existing = await app.prisma.leaveRequest.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError('LeaveRequest', id);
     if (existing.requesterId !== userId) throw new NotFoundError('LeaveRequest', id);
-    if (existing.status !== 'PENDING') throw new ValidationError('대기 중인 신청만 수정할 수 있습니다');
+    if (existing.status !== 'PENDING')
+      throw new ValidationError('대기 중인 신청만 수정할 수 있습니다');
     return app.prisma.leaveRequest.update({
       where: { id },
       data: {
