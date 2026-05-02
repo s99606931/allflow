@@ -27,6 +27,7 @@ export const Project = z.object({
   "progress": z.number().int().min(0).max(100),
   "status": StatusKey,
   "due": z.string().nullable(),
+  "budget": z.number().int().nullable().optional(),
   "members": z.array(z.string()),
   "tasks": z.object({
   "total": z.number().int(),
@@ -39,7 +40,8 @@ export const ProjectCreate = z.object({
   "name": z.string(),
   "code": z.string(),
   "color": z.string().optional(),
-  "due": z.string().optional()
+  "due": z.string().optional(),
+  "budget": z.number().int().optional()
 });
 export type ProjectCreate = z.infer<typeof ProjectCreate>;
 
@@ -47,7 +49,8 @@ export const ProjectPatch = z.object({
   "name": z.string().optional(),
   "progress": z.number().int().optional(),
   "status": StatusKey.optional(),
-  "due": z.string().optional()
+  "due": z.string().optional(),
+  "budget": z.number().int().optional()
 });
 export type ProjectPatch = z.infer<typeof ProjectPatch>;
 

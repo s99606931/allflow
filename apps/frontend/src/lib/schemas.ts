@@ -26,6 +26,7 @@ export const ProjectSchema = z.object({
   code: z.string(),
   color: z.string(),
   progress: z.number().int().min(0).max(100),
+  budget: z.number().int().nullable().optional(),
   status: StatusKeySchema,
   due: z.string().nullable(),
   members: z.array(z.string()),
@@ -36,6 +37,7 @@ export const ProjectCreateSchema = z.object({
   code: z.string().min(1),
   color: z.string().optional(),
   due: z.string().optional(),
+  budget: z.number().int().min(0).optional(),
 });
 export const ProjectPatchSchema = ProjectCreateSchema.partial().extend({
   progress: z.number().int().min(0).max(100).optional(),

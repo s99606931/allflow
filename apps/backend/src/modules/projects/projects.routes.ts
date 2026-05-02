@@ -32,6 +32,7 @@ interface ProjectRow {
   code: string;
   color: string;
   progress: number;
+  budget: number | null;
   status: 'todo' | 'doing' | 'review' | 'done' | 'blocked';
   due: Date | null;
   members: { userId: string }[];
@@ -45,6 +46,7 @@ function toApiProject(p: ProjectRow, doneCount: number): unknown {
     code: p.code,
     color: p.color,
     progress: p.progress,
+    budget: p.budget,
     status: p.status,
     due: p.due ? p.due.toISOString().slice(0, 10) : null,
     members: p.members.map((m) => m.userId),
@@ -106,6 +108,7 @@ export async function projectsRoutes(app: FastifyInstance): Promise<void> {
           code: input.code,
           color: input.color ?? '#5B7FFF',
           ...(dueDate ? { due: dueDate } : {}),
+          ...(input.budget !== undefined ? { budget: input.budget } : {}),
           members: { create: { userId, role: 'owner' } },
         },
         include: {
@@ -157,6 +160,7 @@ export async function projectsRoutes(app: FastifyInstance): Promise<void> {
             ...(patch.status !== undefined ? { status: patch.status } : {}),
             ...(patch.progress !== undefined ? { progress: patch.progress } : {}),
             ...(patch.due !== undefined ? { due: patch.due ? new Date(patch.due) : null } : {}),
+            ...(patch.budget !== undefined ? { budget: patch.budget } : {}),
           },
           include: {
             members: { select: { userId: true } },

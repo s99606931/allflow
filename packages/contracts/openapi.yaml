@@ -950,6 +950,7 @@ components:
         progress: { type: integer, minimum: 0, maximum: 100 }
         status: { $ref: '#/components/schemas/StatusKey' }
         due: { type: [string, 'null'], format: date }
+        budget: { type: [integer, 'null'] }
         members:
           type: array
           items: { type: string }
@@ -968,6 +969,7 @@ components:
         code: { type: string }
         color: { type: string }
         due: { type: string, format: date }
+        budget: { type: integer }
 
     ProjectPatch:
       type: object
@@ -976,6 +978,7 @@ components:
         progress: { type: integer }
         status: { $ref: '#/components/schemas/StatusKey' }
         due: { type: string, format: date }
+        budget: { type: integer }
 
     Task:
       type: object

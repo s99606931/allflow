@@ -8,9 +8,6 @@ import { useProjects, useProjectMutations } from '@/lib/hooks/use-data';
 import type { Project, StatusKey } from '@/lib/schemas';
 import { LayoutGrid, GanttChart, HeartPulse, Plus } from 'lucide-react';
 
-/** 예산 소진 샘플 기준값 (Project 스키마에 budget 필드 없음) */
-const SAMPLE_BUDGET_BASE = 62;
-const SAMPLE_BUDGET_SPREAD = 20;
 
 const PROJECT_STATUS_OPTIONS: { value: StatusKey; label: string }[] = [
   { value: 'todo', label: '대기' },
@@ -114,8 +111,9 @@ export function ProgressPage() {
                   <div><Progress value={p.progress} tone={p.status === 'done' ? 'success' : 'accent'} /><div className="text-[10.5px] mono text-fg-1 mt-0.5 font-semibold">{p.progress}%</div></div>
                   <div className={`mono text-[12px] font-semibold ${diff < -5 ? 'text-danger' : diff < 0 ? 'text-warning' : 'text-success'}`}>{diff > 0 ? '+' : ''}{diff}%p</div>
                   <div>
-                    <Progress value={SAMPLE_BUDGET_BASE + (p.code.charCodeAt(p.code.length - 1) % SAMPLE_BUDGET_SPREAD)} tone="warning" />
-                    <div className="text-[10.5px] mono text-fg-3 mt-0.5">샘플 데이터</div>
+                    {p.budget != null
+                      ? <><Progress value={Math.min(100, Math.round((p.progress / 100) * p.budget))} tone="warning" /><div className="text-[10.5px] mono text-fg-3 mt-0.5">{(p.budget / 1000000).toFixed(1)}M</div></>
+                      : <div className="text-[10.5px] text-fg-3">미설정</div>}
                   </div>
                   <div className="flex items-center gap-1">
                     <select

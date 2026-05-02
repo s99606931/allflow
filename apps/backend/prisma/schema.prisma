@@ -137,6 +137,7 @@ model Project {
   code      String    @unique
   color     String
   progress  Int       @default(0)
+  budget    Int?
   status    StatusKey @default(doing)
   due       DateTime? @db.Date
 
