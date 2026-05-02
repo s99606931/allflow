@@ -8,7 +8,7 @@ import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import {
   AlertCircle, AtSign, Bell, Sparkles,
-  Filter, Settings2, MessageSquare, X as XIcon,
+  Filter, Settings2, MessageSquare, X as XIcon, ArrowRight,
 } from 'lucide-react';
 
 type FilterKey = 'all' | 'mention' | 'sla' | 'ai' | 'comment';
@@ -133,7 +133,7 @@ export function NotificationsPage() {
                 if (!n.read) markRead.mutate(n.id);
                 if (n.href) router.push(n.href);
               }}
-              className={`w-full text-left flex items-start gap-3 px-5 py-3.5 border-b border-border last:border-0 hover:bg-hover transition-colors ${
+              className={`group w-full text-left flex items-start gap-3 px-5 py-3.5 border-b border-border last:border-0 hover:bg-hover transition-colors ${
                 !n.read && 'bg-accent-soft/30'
               }`}
             >
@@ -155,7 +155,7 @@ export function NotificationsPage() {
                     {new Date(n.time).toLocaleString('ko-KR')}
                   </span>
                 </div>
-                <div className="text-[13px] text-fg-1 mt-0.5 leading-relaxed">{n.title}</div>
+                <div className={`text-[13px] text-fg-1 mt-0.5 leading-relaxed ${n.href ? 'group-hover:underline group-hover:text-accent' : ''}`}>{n.title}</div>
                 {n.body && (
                   <div className="text-[12px] text-fg-2 mt-1 leading-relaxed">{n.body}</div>
                 )}
@@ -166,6 +166,9 @@ export function NotificationsPage() {
                   </div>
                 )}
               </div>
+              {n.href && (
+                <ArrowRight size={14} className="shrink-0 text-fg-3 opacity-0 group-hover:opacity-100 transition-opacity self-center" />
+              )}
             </button>
           );
         })}

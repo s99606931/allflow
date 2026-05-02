@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Card, Avatar, Badge, Button } from '@/components/ui/primitives';
 import { useTasks, useTaskMutations, useProjects, useMe } from '@/lib/hooks/use-data';
@@ -8,7 +9,7 @@ import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { StatusKey } from '@/lib/schemas';
 import { TaskDetailDialog } from './task-detail';
 import { TaskCreateDialog } from '@/components/dialogs/task-create-dialog';
-import { CheckCircle2, Circle, Filter, KanbanSquare, LayoutList, Plus, Search, CalendarDays, X } from 'lucide-react';
+import { CheckCircle2, Circle, Filter, KanbanSquare, LayoutList, Plus, Search, CalendarDays, X, Check } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 const COLS: { id: StatusKey; label: string; color: string }[] = [
@@ -20,6 +21,7 @@ const COLS: { id: StatusKey; label: string; color: string }[] = [
 ];
 
 export function TasksPage() {
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState('list');
   const [openTask, setOpenTask] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -27,6 +29,13 @@ export function TasksPage() {
   const [search, setSearch] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'med' | 'low'>('all');
+  const [assigneeFilter, setAssigneeFilter] = useState<string | null>(null);
+
+  useEffect(() => {
+    const a = searchParams.get('assignee');
+    if (a) setAssigneeFilter(a);
+  }, [searchParams]);
+
   const { data: tasks = [] } = useTasks();
   const { data: projects = [] } = useProjects();
   const { data: me } = useMe();
@@ -47,6 +56,7 @@ export function TasksPage() {
   }
 
   const filtered = tasks.filter(t => {
+    if (assigneeFilter && t.assignee !== assigneeFilter) return false;
     if (filter === 'mine' && t.assignee !== me?.id) return false;
     if (filter === 'today' && !isDueToday(t.due)) return false;
     if (filter === 'overdue' && !isOverdue(t.due, t.status)) return false;
@@ -62,7 +72,7 @@ export function TasksPage() {
     overdue: tasks.filter(t => isOverdue(t.due, t.status)).length,
   };
 
-  const isFiltersActive = priorityFilter !== 'all' || search !== '' || filter !== 'all';
+  const isFiltersActive = priorityFilter !== 'all' || search !== '' || filter !== 'all' || !!assigneeFilter;
 
   const statusCounts = Object.fromEntries(
     COLS.map(col => [col.id, filtered.filter(t => t.status === col.id).length])
@@ -138,9 +148,15 @@ export function TasksPage() {
                 </span>
               </div>
             ))}
+            {assigneeFilter && (
+              <div className="flex items-center gap-1.5 px-2.5 h-7 rounded bg-accent-soft border border-accent/40 text-[12px] text-accent-strong">
+                담당자 필터 활성
+                <button type="button" onClick={() => setAssigneeFilter(null)} className="hover:text-accent ml-1"><X size={10} /></button>
+              </div>
+            )}
             {isFiltersActive && (
               <Button variant="ghost" size="sm"
-                onClick={() => { setPriorityFilter('all'); setSearch(''); setFilter('all'); }}
+                onClick={() => { setPriorityFilter('all'); setSearch(''); setFilter('all'); setAssigneeFilter(null); }}
                 className="ml-auto text-fg-3 hover:text-fg">
                 <X size={12} /> 필터 초기화
               </Button>
@@ -169,8 +185,15 @@ export function TasksPage() {
               const u = userMap.get(t.assignee);
               return (
                 <div key={t.id}
-                  className="grid grid-cols-[20px_80px_1fr_130px_70px_100px_24px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors">
-                  {t.status === 'done' ? <CheckCircle2 size={16} className="text-success" /> : <Circle size={16} className="text-fg-3" />}
+                  className="group grid grid-cols-[20px_80px_1fr_130px_70px_100px_44px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors">
+                  <button
+                    type="button"
+                    aria-label={t.status === 'done' ? '완료 취소' : '완료로 표시'}
+                    onClick={() => update.mutate({ id: t.id, patch: { status: t.status === 'done' ? 'todo' : 'done' } })}
+                    className="text-left"
+                  >
+                    {t.status === 'done' ? <CheckCircle2 size={16} className="text-success" /> : <Circle size={16} className="text-fg-3 hover:text-success transition-colors" />}
+                  </button>
                   <span className="mono text-[11px] text-fg-3">{t.id}</span>
                   <button type="button" onClick={() => setOpenTask(t.id)} className="text-fg truncate font-medium text-left hover:underline">
                     {t.title}
@@ -191,7 +214,19 @@ export function TasksPage() {
                   </select>
                   {t.priority === 'high' ? <Badge tone="danger">높음</Badge> : t.priority === 'med' ? <Badge tone="warning">중간</Badge> : <Badge tone="neutral">낮음</Badge>}
                   <span className="mono text-fg-2 text-[11.5px]">{t.due}</span>
-                  {u && <Avatar user={u} size={20} />}
+                  <div className="flex items-center gap-1.5 justify-end">
+                    {u && <Avatar user={u} size={20} />}
+                    {t.status !== 'done' && (
+                      <button
+                        type="button"
+                        aria-label="완료로 표시"
+                        onClick={() => update.mutate({ id: t.id, patch: { status: 'done' } })}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 rounded bg-success/10 text-success hover:bg-success/20 grid place-items-center"
+                      >
+                        <Check size={11} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}

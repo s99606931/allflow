@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardBody, Avatar, Badge, Button } from '@/components/ui/primitives';
-import { MoreHorizontal, Search, Shield, UserPlus, Filter, Download, X, Mail, Copy } from 'lucide-react';
+import { MoreHorizontal, Search, Shield, UserPlus, Filter, Download, X, Mail, Copy, ListTodo } from 'lucide-react';
 import { useUsers, useInviteUser, useUserMetrics, useMe } from '@/lib/hooks/use-data';
 import { toast } from 'sonner';
 import type { User } from '@/lib/schemas';
@@ -21,6 +22,7 @@ function downloadCSV(users: User[]) {
 }
 
 export function UsersPage() {
+  const router = useRouter();
   const { data: users = [], isLoading, error } = useUsers();
   const { data: me } = useMe();
   const inviteMutation = useInviteUser();
@@ -185,13 +187,19 @@ export function UsersPage() {
             className="grid grid-cols-[36px_1fr_140px_100px_80px_100px_28px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover"
           >
             <input type="checkbox" className="justify-self-center" checked={selectedIds.has(u.id)} onChange={e => setSelectedIds(prev => { const next = new Set(prev); e.target.checked ? next.add(u.id) : next.delete(u.id); return next; })} />
-            <div className="flex items-center gap-2.5 min-w-0">
+            <button
+              type="button"
+              onClick={() => router.push(`/tasks?assignee=${u.id}`)}
+              className="flex items-center gap-2.5 min-w-0 group/nav text-left"
+              title="담당 태스크 보기"
+            >
               <Avatar user={u} size={28} />
               <div className="min-w-0">
-                <div className="text-fg font-medium truncate">{u.name}</div>
+                <div className="text-fg font-medium truncate group-hover/nav:underline group-hover/nav:text-accent">{u.name}</div>
                 <div className="text-[11px] text-fg-3 truncate">{u.email ?? '—'}</div>
               </div>
-            </div>
+              <ListTodo size={12} className="text-fg-3 opacity-0 group-hover/nav:opacity-100 shrink-0 transition-opacity" />
+            </button>
             <div>
               <Badge tone="neutral">{u.role}</Badge>
               {u.id === me?.id && (
