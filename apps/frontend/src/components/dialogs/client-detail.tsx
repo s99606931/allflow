@@ -1,9 +1,3 @@
-/**
- * ClientDetail — slide-over panel showing a single CRM account.
- *
- * Owns local activity state (mock backend) so the user can demo the full
- * lifecycle: add note → change stage → see timeline update.
- */
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
@@ -12,7 +6,7 @@ import { Button } from '@/components/ui/primitives';
 import { Dialog, DialogField, DialogFooter, Select, Textarea } from '@/components/ui/dialog';
 import { ActivityTimeline, type CrmActivity, type CrmStage } from './activity-timeline';
 import { useTranslation } from '@/lib/i18n';
-import { useMe } from '@/lib/hooks/use-data';
+import { useClientActivities, useCreateClientActivity, useMe } from '@/lib/hooks/use-data';
 
 interface Props {
   client: { id: string | number; name: string; code: string; tier: string } | null;
@@ -21,50 +15,69 @@ interface Props {
 
 const STAGE_OPTIONS: CrmStage[] = ['lead', 'qualified', 'active', 'churned'];
 
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff / 60_000);
+  if (min < 1) return '방금';
+  if (min < 60) return `${min}분 전`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}시간 전`;
+  return `${Math.floor(hr / 24)}일 전`;
+}
+
 export function ClientDetail({ client, onClose }: Props) {
+  const clientId = client ? String(client.id) : null;
   const { data: me } = useMe();
   const { t } = useTranslation();
   const [stage, setStage] = useState<CrmStage>('active');
-  const [activities, setActivities] = useState<CrmActivity[]>([]);
+  const [stageActivities, setStageActivities] = useState<CrmActivity[]>([]);
   const [composeOpen, setComposeOpen] = useState(false);
-  const [draftKind, setDraftKind] = useState<CrmActivity['kind']>('note');
+  const [draftKind, setDraftKind] = useState<'note' | 'call' | 'meeting' | 'email'>('note');
   const [draftText, setDraftText] = useState('');
+
+  const { data: apiActivities = [] } = useClientActivities(clientId);
+  const createActivity = useCreateClientActivity(clientId);
+
+  const activities: CrmActivity[] = useMemo(() => {
+    const fromApi: CrmActivity[] = apiActivities.map(a => ({
+      id: a.id,
+      kind: a.kind as CrmActivity['kind'],
+      at: relativeTime(a.createdAt),
+      by: a.author.name,
+      text: a.text,
+    }));
+    return [...stageActivities, ...fromApi].sort((a, b) => {
+      if (a.kind === 'stage' && b.kind !== 'stage') return -1;
+      if (b.kind === 'stage' && a.kind !== 'stage') return 1;
+      return 0;
+    });
+  }, [apiActivities, stageActivities]);
 
   const stats = useMemo(
     () => [
       { label: '업종', value: client?.tier ?? '—' },
-      { label: '활동', value: `${activities.length}건` },
+      { label: '활동', value: `${apiActivities.length}건` },
       { label: '단계', value: t(`crm.stage.${stage}`) },
     ],
-    [activities.length, client?.tier, stage, t],
+    [apiActivities.length, client?.tier, stage, t],
   );
 
   if (!client) return null;
 
-  const onSubmit = (event: FormEvent) => {
+  const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const text = draftText.trim();
     if (!text) return;
-    setActivities(prev => [
-      {
-        id: `a-${Date.now()}`,
-        kind: draftKind,
-        at: '방금',
-        by: me?.name ?? '—',
-        text,
-      },
-      ...prev,
-    ]);
+    await createActivity.mutateAsync({ kind: draftKind, text });
     setDraftText('');
     setComposeOpen(false);
   };
 
   const changeStage = (next: CrmStage) => {
     if (next === stage) return;
-    setStage(next);
-    setActivities(prev => [
+    setStageActivities(prev => [
       {
-        id: `a-${Date.now()}`,
+        id: `stage-${Date.now()}`,
         kind: 'stage',
         at: '방금',
         by: me?.name ?? '—',
@@ -73,6 +86,7 @@ export function ClientDetail({ client, onClose }: Props) {
       },
       ...prev,
     ]);
+    setStage(next);
   };
 
   return (
@@ -121,10 +135,11 @@ export function ClientDetail({ client, onClose }: Props) {
       <Dialog open={composeOpen} onOpenChange={setComposeOpen} title={t('crm.activity.add')} size="sm">
         <form onSubmit={onSubmit} className="space-y-3">
           <DialogField label="유형" required>
-            <Select value={draftKind} onChange={e => setDraftKind(e.target.value as CrmActivity['kind'])}>
+            <Select value={draftKind} onChange={e => setDraftKind(e.target.value as typeof draftKind)}>
               <option value="note">{t('crm.activity.note')}</option>
               <option value="call">{t('crm.activity.call')}</option>
               <option value="meeting">{t('crm.activity.meeting')}</option>
+              <option value="email">이메일</option>
             </Select>
           </DialogField>
           <DialogField label="내용" required>
@@ -134,8 +149,8 @@ export function ClientDetail({ client, onClose }: Props) {
             <Button type="button" variant="ghost" onClick={() => setComposeOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" variant="primary">
-              {t('common.save')}
+            <Button type="submit" variant="primary" disabled={createActivity.isPending}>
+              {createActivity.isPending ? '저장 중...' : t('common.save')}
             </Button>
           </DialogFooter>
         </form>

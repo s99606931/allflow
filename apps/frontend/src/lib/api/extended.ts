@@ -136,6 +136,34 @@ export const extendedApi = {
   updateClient: async (id: string, patch: { name?: string; contact?: string; email?: string; phone?: string; industry?: string }): Promise<Client> =>
     parsed(http.patch(`clients/${id}`, { json: patch }).json(), ClientSchema),
 
+  listClientActivities: async (clientId: string) =>
+    parsed(
+      http.get(`clients/${clientId}/activities`).json(),
+      z.array(z.object({
+        id: z.string(),
+        clientId: z.string(),
+        authorId: z.string(),
+        kind: z.enum(['note', 'call', 'meeting', 'email']),
+        text: z.string(),
+        createdAt: z.string(),
+        author: z.object({ id: z.string(), name: z.string() }),
+      })),
+    ),
+
+  createClientActivity: async (clientId: string, input: { kind: 'note' | 'call' | 'meeting' | 'email'; text: string }) =>
+    parsed(
+      http.post(`clients/${clientId}/activities`, { json: input }).json(),
+      z.object({
+        id: z.string(),
+        clientId: z.string(),
+        authorId: z.string(),
+        kind: z.enum(['note', 'call', 'meeting', 'email']),
+        text: z.string(),
+        createdAt: z.string(),
+        author: z.object({ id: z.string(), name: z.string() }),
+      }),
+    ),
+
   /* Schedule events ------------------------------------------------------- */
   listEvents: async (filters?: { from?: string; to?: string }): Promise<Event[]> =>
     parsed(

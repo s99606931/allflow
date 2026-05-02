@@ -305,6 +305,26 @@ export function useClientMutations() {
   return { create, remove, update };
 }
 
+export function useClientActivities(clientId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['client-activities', clientId],
+    queryFn: () => api.listClientActivities(clientId!),
+    enabled: !!clientId,
+  });
+}
+
+export function useCreateClientActivity(clientId: string | null | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { kind: 'note' | 'call' | 'meeting' | 'email'; text: string }) =>
+      api.createClientActivity(clientId!, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['client-activities', clientId] });
+    },
+    onError,
+  });
+}
+
 export function useEventMutations() {
   const qc = useQueryClient();
   const invalidate = () => qc.invalidateQueries({ queryKey: keys.events.all() });

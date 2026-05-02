@@ -136,4 +136,41 @@ export async function clientsRoutes(app: FastifyInstance): Promise<void> {
     reply.code(204);
     return null;
   });
+
+  app.get('/clients/:id/activities', { preHandler: [app.authenticate] }, async (req) => {
+    const { id } = req.params as { id: string };
+    const existing = await app.prisma.client.findUnique({ where: { id, deletedAt: null } });
+    if (!existing) throw new NotFoundError('Client', id);
+    return app.prisma.clientActivity.findMany({
+      where: { clientId: id },
+      orderBy: { createdAt: 'desc' },
+      include: { author: { select: { id: true, name: true } } },
+    });
+  });
+
+  app.post('/clients/:id/activities', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const parsed = z
+      .object({
+        kind: z.enum(['note', 'call', 'meeting', 'email']),
+        text: z.string().min(1).max(5000),
+      })
+      .strict()
+      .safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+    const existing = await app.prisma.client.findUnique({ where: { id, deletedAt: null } });
+    if (!existing) throw new NotFoundError('Client', id);
+    const activity = await app.prisma.clientActivity.create({
+      data: {
+        clientId: id,
+        authorId: userId,
+        kind: parsed.data.kind,
+        text: parsed.data.text,
+      },
+      include: { author: { select: { id: true, name: true } } },
+    });
+    return reply.code(201).send(activity);
+  });
 }

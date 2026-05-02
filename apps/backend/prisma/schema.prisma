@@ -132,8 +132,9 @@ model User {
   leaveRequests     LeaveRequest[]    @relation("LeaveRequester")
   approvedLeaves    LeaveRequest[]    @relation("LeaveApprover")
   notionConnections NotionConnection[] @relation("NotionConnections")
-  docs      Doc[]
-  sessions  Session[]
+  docs              Doc[]
+  sessions          Session[]
+  clientActivities  ClientActivity[]
 
   @@index([deletedAt])
   @@map("users")
@@ -573,9 +574,26 @@ model Client {
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
+  activities ClientActivity[]
+
   @@index([ownerId])
   @@index([deletedAt])
   @@map("clients")
+}
+
+model ClientActivity {
+  id         String   @id @default(cuid())
+  clientId   String   @map("client_id") @db.VarChar(30)
+  authorId   String   @map("author_id") @db.VarChar(30)
+  kind       String   @db.VarChar(20) // note | call | meeting | email
+  text       String   @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  author     User     @relation(fields: [authorId], references: [id])
+
+  @@index([clientId])
+  @@map("client_activities")
 }
 
 enum EventSource {
