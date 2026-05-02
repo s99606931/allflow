@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, Badge, Button, IconButton } from '@/components/ui/primitives';
 import { useNotifications, useNotificationMutations } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
@@ -34,6 +35,7 @@ const FILTERS: { id: FilterKey; label: string }[] = [
 ];
 
 export function NotificationsPage() {
+  const router = useRouter();
   const { data: notifs = [], isLoading } = useNotifications();
   const { markRead, markAll } = useNotificationMutations();
   const userMap = useUserMap();
@@ -127,8 +129,10 @@ export function NotificationsPage() {
             <button
               key={n.id}
               type="button"
-              disabled={n.read || markRead.isPending}
-              onClick={() => !n.read && markRead.mutate(n.id)}
+              onClick={() => {
+                if (!n.read) markRead.mutate(n.id);
+                if (n.href) router.push(n.href);
+              }}
               className={`w-full text-left flex items-start gap-3 px-5 py-3.5 border-b border-border last:border-0 hover:bg-hover transition-colors ${
                 !n.read && 'bg-accent-soft/30'
               }`}
