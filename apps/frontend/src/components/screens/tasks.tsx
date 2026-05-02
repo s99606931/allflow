@@ -8,7 +8,7 @@ import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { StatusKey } from '@/lib/schemas';
 import { TaskDetailDialog } from './task-detail';
 import { TaskCreateDialog } from '@/components/dialogs/task-create-dialog';
-import { CheckCircle2, Circle, Filter, KanbanSquare, LayoutList, Plus, Search, CalendarDays } from 'lucide-react';
+import { CheckCircle2, Circle, Filter, KanbanSquare, LayoutList, Plus, Search, CalendarDays, X } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 const COLS: { id: StatusKey; label: string; color: string }[] = [
@@ -62,6 +62,12 @@ export function TasksPage() {
     overdue: tasks.filter(t => isOverdue(t.due, t.status)).length,
   };
 
+  const isFiltersActive = priorityFilter !== 'all' || search !== '' || filter !== 'all';
+
+  const statusCounts = Object.fromEntries(
+    COLS.map(col => [col.id, filtered.filter(t => t.status === col.id).length])
+  ) as Record<string, number>;
+
   const onCreate = () => setCreateOpen(true);
 
   return (
@@ -111,14 +117,35 @@ export function TasksPage() {
       </div>
 
       {filterOpen && (
-        <div className="flex items-center gap-2 px-1">
-          <span className="text-[11px] text-fg-3 font-semibold uppercase tracking-wider">우선순위:</span>
-          {(['all', 'high', 'med', 'low'] as const).map(p => (
-            <button key={p} onClick={() => setPriorityFilter(p)}
-              className={`px-2.5 h-7 rounded text-[12px] font-medium transition-colors border ${priorityFilter === p ? 'bg-accent-soft border-accent text-accent-strong' : 'border-border text-fg-2 hover:text-fg-1'}`}>
-              {p === 'all' ? '전체' : p === 'high' ? '높음' : p === 'med' ? '보통' : '낮음'}
-            </button>
-          ))}
+        <div className="space-y-2 px-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] text-fg-3 font-semibold uppercase tracking-wider">우선순위:</span>
+            {(['all', 'high', 'med', 'low'] as const).map(p => (
+              <button key={p} onClick={() => setPriorityFilter(p)}
+                className={`px-2.5 h-7 rounded text-[12px] font-medium transition-colors border ${priorityFilter === p ? 'bg-accent-soft border-accent text-accent-strong' : 'border-border text-fg-2 hover:text-fg-1'}`}>
+                {p === 'all' ? '전체' : p === 'high' ? '높음' : p === 'med' ? '보통' : '낮음'}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] text-fg-3 font-semibold uppercase tracking-wider">상태별:</span>
+            {COLS.map(col => (
+              <div key={col.id} className="flex items-center gap-1.5 px-2.5 h-7 rounded border border-border text-[12px] text-fg-2">
+                <span className="w-2 h-2 rounded-full" style={{ background: col.color }} />
+                <span>{col.label}</span>
+                <span className="text-[10.5px] mono font-semibold px-1.5 py-0.5 rounded-full bg-bg-subtle text-fg-2">
+                  {statusCounts[col.id] ?? 0}
+                </span>
+              </div>
+            ))}
+            {isFiltersActive && (
+              <Button variant="ghost" size="sm"
+                onClick={() => { setPriorityFilter('all'); setSearch(''); setFilter('all'); }}
+                className="ml-auto text-fg-3 hover:text-fg">
+                <X size={12} /> 필터 초기화
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -180,7 +207,7 @@ export function TasksPage() {
                   <div className="px-3 py-2.5 border-b border-border flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full" style={{ background: col.color }} />
                     <span className="text-[12px] font-semibold text-fg">{col.label}</span>
-                    <span className="text-[11px] mono text-fg-3 ml-auto">{items.length}</span>
+                    <span className="ml-auto text-[10.5px] mono font-semibold px-1.5 py-0.5 rounded-full bg-bg-subtle text-fg-2">{items.length}</span>
                   </div>
                   <div className="p-2 space-y-2">
                     {items.map(t => {

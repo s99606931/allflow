@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Avatar, Button, IconButton } from '@/components/ui/primitives';
-import { Hash, Lock, Plus, Search, Sparkles, MessageSquare, Pin, X, Pencil, Trash2, Check } from 'lucide-react';
+import { AtSign, Hash, Lock, Plus, Search, Sparkles, MessageSquare, Pin, X, Pencil, Trash2, Check } from 'lucide-react';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { Composer } from '@/components/chat/composer';
 import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel';
@@ -181,6 +181,13 @@ export function ChatPage() {
             </div>
           )}
           <IconButton size="sm" onClick={() => { setMsgSearchOpen(v => !v); if (msgSearchOpen) setMsgSearch(''); }}><Search size={13} /></IconButton>
+          <IconButton
+            size="sm"
+            aria-pressed={msgSearch === '@'}
+            aria-label="멘션 필터"
+            onClick={() => setMsgSearch(prev => prev === '@' ? '' : '@')}
+            className={msgSearch === '@' ? 'text-accent-strong bg-accent-soft' : ''}
+          ><AtSign size={13} /></IconButton>
           <Button variant={summaryOpen ? 'primary' : 'secondary'} size="sm" onClick={summarizeChat} disabled={summarizing || messages.length === 0}>
             <Sparkles size={12} /> {summarizing ? '요약 중...' : '대화 요약'}
           </Button>

@@ -77,7 +77,10 @@ export function ProjectsPage() {
                     <Progress value={p.progress} tone={p.status === 'done' ? 'success' : 'accent'} />
                   </div>
                   <div className="flex items-center justify-between pt-1">
-                    <AvatarStack users={p.members.map(id => userMap.get(id)!).filter(Boolean)} size={22} />
+                    <div className="flex items-center gap-1.5">
+                      <AvatarStack users={p.members.map(id => userMap.get(id)!).filter(Boolean)} size={22} />
+                      <span className="text-[10px] text-fg-3">{p.members.length}명</span>
+                    </div>
                     <div className="text-[11px] text-fg-2 mono">{p.tasks.done}/{p.tasks.total} 태스크</div>
                   </div>
                 </CardBody>
