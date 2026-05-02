@@ -13,9 +13,13 @@ export function OrgPage() {
   const userMap = useUserMap();
   const [email, setEmail] = useState('');
   const [activeUnitId, setActiveUnitId] = useState<string>('');
+  const [search, setSearch] = useState('');
 
-  const rootUnits = units.filter(u => u.parentId === null);
-  const childUnits = units.filter(u => u.parentId !== null);
+  const filteredUnits = search.trim()
+    ? units.filter(u => u.name.toLowerCase().includes(search.toLowerCase()))
+    : units;
+  const rootUnits = filteredUnits.filter(u => u.parentId === null);
+  const childUnits = filteredUnits.filter(u => u.parentId !== null);
   const targetUnitId = activeUnitId || childUnits[0]?.id || rootUnits[0]?.id || '';
 
   const onInvite = () => {
@@ -29,7 +33,12 @@ export function OrgPage() {
       <div className="flex items-center gap-2">
         <div className="relative flex-1 max-w-sm">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
-          <input placeholder="사람/팀 검색..." className="w-full h-8 pl-8 pr-3 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="사람/팀 검색..."
+            className="w-full h-8 pl-8 pr-3 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent"
+          />
         </div>
         <input
           type="email"
