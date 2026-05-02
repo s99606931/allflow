@@ -191,7 +191,7 @@ export function ChatPage() {
 
         <div className="px-4 pt-2">
           <AiGuideWidget
-            systemContext="팀 채팅 — 채널 메시지·스레드·고정 메시지·멘션·번역 화면"
+            systemContext={`팀 채팅 — ${channels.length}개 채널, 현재 채널 ${messages.length}건 메시지`}
             hints={['이 채널 대화 요약해줘', '액션 아이템 추출해줘', '중요 결정 사항 찾아줘']}
           />
         </div>

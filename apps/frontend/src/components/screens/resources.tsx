@@ -65,7 +65,7 @@ export function ResourcesPage() {
   return (
     <div className="p-6 max-w-[1440px] mx-auto space-y-5">
       <AiGuideWidget
-        systemContext="회의실·리소스 예약 — 주간 예약 현황·가용 자원·충돌 관리 화면"
+        systemContext={`회의실·리소스 예약 — 총 ${resources.length}개 자원, 사용률 ${utilizationRate}%, 내 예약 ${myBookingsToday}건`}
         hints={['예약 충돌 확인해줘', '빈 자원 찾아줘', '이번 주 예약 현황 요약해줘']}
       />
       <div className="flex items-center gap-2">

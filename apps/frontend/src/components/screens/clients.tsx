@@ -53,7 +53,7 @@ export function ClientsPage() {
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <AiGuideWidget
-        systemContext="고객사 관리 — 계약·이벤트·담당자·파이프라인 관리 화면"
+        systemContext={`고객사 관리 — 전체 ${clients.length}개, 이번달 신규 ${newThisMonth}개, 업종 ${industrySet.size}개`}
         hints={['팔로업 필요한 고객사 찾아줘', '계약 갱신 임박 알려줘', '고객사 현황 요약해줘']}
       />
       <div className="grid grid-cols-4 gap-3">
