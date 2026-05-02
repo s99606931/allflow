@@ -41,6 +41,9 @@ export function IssuesPage() {
   const p0Count = issues.filter(i => i.prio === 'P0' && (i.status === 'open' || i.status === 'in-progress')).length;
   const newCount = issues.filter(i => i.status === 'open').length;
   const slaAtRisk = issues.filter(i => i.slaPct >= 80).length;
+  const resolvedCount = issues.filter(i => i.resolved).length;
+  const resolvedPct = issues.length > 0 ? Math.round((resolvedCount / issues.length) * 100) : 0;
+  const criticalCount = issues.filter(i => i.sev === 'critical' && i.status !== 'resolved').length;
 
   const displayed = useMemo(() => {
     return issues.filter(i => {
@@ -68,8 +71,8 @@ export function IssuesPage() {
           { l: 'P0 진행중', v: String(p0Count), t: p0Count > 0 ? '!' : '' },
           { l: '전체', v: String(issues.length), t: '' },
           { l: 'SLA 임박', v: String(slaAtRisk), t: '' },
-          { l: '평균 해결', v: '—', t: '' },
-          { l: '재발생', v: '—', t: '' },
+          { l: '해결률', v: `${resolvedPct}%`, t: '' },
+          { l: 'Critical', v: String(criticalCount), t: criticalCount > 0 ? '!' : '' },
         ].map(m => (
           <Card key={m.l}>
             <CardBody className="!p-3.5">

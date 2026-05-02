@@ -231,7 +231,9 @@ export async function channelsRoutes(app: FastifyInstance): Promise<void> {
         update: {},
       });
 
-      return reply.code(201).send({ id: pin.id, channelId, messageId: msgId, pinnedAt: pin.createdAt.toISOString() });
+      return reply
+        .code(201)
+        .send({ id: pin.id, channelId, messageId: msgId, pinnedAt: pin.createdAt.toISOString() });
     },
   );
 

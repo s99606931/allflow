@@ -44,7 +44,11 @@ export function OrgPage() {
     <div className="p-6 space-y-5 max-w-[1280px] mx-auto">
       <AiGuideWidget
         systemContext={`조직 관리 — ${units.length}개 부서, 총 ${units.reduce((acc, u) => acc + u.members.length, 0)}명`}
-        hints={['팀 구조 현황 알려줘', '인원 부족 부서 찾아줘', '온보딩 진행 현황 알려줘']}
+        hints={[
+          units.length === 0 ? '조직 구조 처음 설정하는 방법 알려줘' : '팀 구조 현황 알려줘',
+          units.some(u => u.members.length < 2) ? '인원 1명 이하 부서 확인해줘' : '인원 부족 부서 찾아줘',
+          '온보딩 진행 현황 알려줘',
+        ]}
       />
       <div className="flex items-center gap-2">
         <div className="relative flex-1 max-w-sm">

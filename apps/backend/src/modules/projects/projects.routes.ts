@@ -98,7 +98,9 @@ export async function projectsRoutes(app: FastifyInstance): Promise<void> {
 
     const dueDate = input.due ? new Date(input.due) : undefined;
     if (dueDate && isNaN(dueDate.getTime())) {
-      throw new ValidationError('잘못된 due 형식', [{ path: ['due'], message: 'YYYY-MM-DD 형식이어야 합니다', code: 'invalid_string' as const }]);
+      throw new ValidationError('잘못된 due 형식', [
+        { path: ['due'], message: 'YYYY-MM-DD 형식이어야 합니다', code: 'invalid_string' as const },
+      ]);
     }
 
     const created = await app.prisma.project

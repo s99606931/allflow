@@ -16,11 +16,18 @@ export function ProjectsPage() {
   const activeCount = projects.filter(p => p.status !== 'done').length;
   const doneCount = projects.filter(p => p.status === 'done').length;
 
+  const blockedCount = projects.filter(p => p.status === 'blocked').length;
+  const overdueCount = projects.filter(p => p.status !== 'done' && p.due && p.due < new Date().toISOString().slice(0, 10)).length;
+
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <AiGuideWidget
-        systemContext={`프로젝트 목록 — 활성 ${activeCount}개, 완료 ${doneCount}개, 전체 ${projects.length}개`}
-        hints={['위험 프로젝트 찾아줘', '팀 배치 최적화 제안해줘', '새 프로젝트 생성 도와줘']}
+        systemContext={`프로젝트 목록 — 활성 ${activeCount}개, 완료 ${doneCount}개, 차단 ${blockedCount}개, 기한초과 ${overdueCount}개`}
+        hints={[
+          blockedCount > 0 ? `차단된 프로젝트 ${blockedCount}개 해결 방법 알려줘` : overdueCount > 0 ? `기한 초과 ${overdueCount}개 대처 방법` : '위험 프로젝트 찾아줘',
+          activeCount > 5 ? `활성 프로젝트 ${activeCount}개 우선순위 정리해줘` : '팀 배치 최적화 제안해줘',
+          '새 프로젝트 생성 도와줘',
+        ]}
       />
       <div className="flex items-center justify-between">
         <div>

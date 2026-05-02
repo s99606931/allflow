@@ -42,8 +42,12 @@ export function AdminPage() {
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <AiGuideWidget
-        systemContext={`관리자 — 시스템 ${health?.status ?? '확인중'}, 감사로그 ${auditLogQuery.data?.total ?? 0}건`}
-        hints={['시스템 상태 점검해줘', 'LLM 연결 설정 가이드해줘', 'MCP 서버 추가 방법 알려줘']}
+        systemContext={`관리자 — 시스템 ${health?.status ?? '확인중'}, 업타임 ${health?.uptime ? formatUptime(health.uptime) : '—'}, 감사로그 ${auditLogQuery.data?.total ?? 0}건`}
+        hints={[
+          health?.status !== 'ok' ? '시스템 이상 원인 분석해줘' : '시스템 상태 점검해줘',
+          (auditLogQuery.data?.total ?? 0) > 100 ? `감사로그 ${auditLogQuery.data!.total}건 이상징후 찾아줘` : 'LLM 연결 설정 가이드해줘',
+          'MCP 서버 추가 방법 알려줘',
+        ]}
       />
       {/* Real health (BE GET /health) */}
       <div className="grid grid-cols-3 gap-3">

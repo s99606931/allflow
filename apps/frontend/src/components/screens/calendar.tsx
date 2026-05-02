@@ -87,7 +87,11 @@ export function CalendarPage() {
     <div className="p-6 space-y-4 max-w-[1440px] mx-auto">
       <AiGuideWidget
         systemContext={`캘린더 — 이번 주 ${events.length}건 일정, 총 ${Math.round(totalMeetingHours)}시간 회의, 집중 가능 ${Math.round(freeWorkHours)}시간`}
-        hints={['이번 주 일정 요약해줘', '일정 충돌 확인해줘', '바쁜 시간대 분석해줘']}
+        hints={[
+          totalMeetingHours > 20 ? `회의 ${Math.round(totalMeetingHours)}시간 — 집중 시간 확보 방법 알려줘` : '이번 주 일정 요약해줘',
+          freeWorkHours < 10 ? `집중 가능 ${Math.round(freeWorkHours)}시간 — 일정 최적화 방법` : '일정 충돌 확인해줘',
+          '바쁜 시간대 분석해줘',
+        ]}
       />
       {/* Toolbar */}
       <div className="flex items-center gap-2">

@@ -57,7 +57,11 @@ export function ProjectDetail({ projectId }: Props) {
     <div className="p-6 max-w-[1200px] mx-auto space-y-5">
       <AiGuideWidget
         systemContext={`프로젝트 ${project.name} — 진행률 ${project.progress}%, 태스크 ${doneTasks}/${tasks.length} 완료, 기한초과 ${overdueTasks}건`}
-        hints={['이 프로젝트 리스크 분석해줘', '블로킹 태스크 찾아줘', '다음 마일스톤 준비 도와줘']}
+        hints={[
+          overdueTasks > 0 ? `기한 초과 태스크 ${overdueTasks}건 우선순위 재설정해줘` : '이 프로젝트 리스크 분석해줘',
+          project.progress < 30 ? `진행률 ${project.progress}% — 속도 높이는 방법 알려줘` : '블로킹 태스크 찾아줘',
+          '다음 마일스톤 준비 도와줘',
+        ]}
       />
       <div className="flex items-center gap-3">
         <Link href="/projects" className="inline-flex items-center gap-1.5 text-[12.5px] text-fg-2 hover:text-fg-1">

@@ -21,8 +21,24 @@ interface UserRow {
 }
 
 const SAMPLE_USERS: UserRow[] = [
-  { id: 'u1', name: '김지우', role: 'BE', dept: '백엔드', initials: '김', color: '#21C077', email: 'jw@example.com' },
-  { id: 'u2', name: '박서연', role: 'PM', dept: '플랫폼', initials: '박', color: '#5B7FFF', email: null },
+  {
+    id: 'u1',
+    name: '김지우',
+    role: 'BE',
+    dept: '백엔드',
+    initials: '김',
+    color: '#21C077',
+    email: 'jw@example.com',
+  },
+  {
+    id: 'u2',
+    name: '박서연',
+    role: 'PM',
+    dept: '플랫폼',
+    initials: '박',
+    color: '#5B7FFF',
+    email: null,
+  },
 ];
 
 interface PrismaUserMock {
@@ -183,7 +199,7 @@ describe('modules/identity — POST /users/invite', () => {
 
   it('이미 등록된 이메일 → 400 VALIDATION_FAILED', async () => {
     const app = await buildTestApp({
-      user: { findFirst: async () => ({ id: 'u-existing' } as { id: string }) },
+      user: { findFirst: async () => ({ id: 'u-existing' }) as { id: string } },
     });
     const token = await makeJws('u1');
     const r = await app.inject({
@@ -254,7 +270,12 @@ describe('modules/identity — POST /users/me/avatar', () => {
   });
 
   // Fastify inject + @fastify/multipart 호환 multipart payload 생성.
-  function multipartBody(boundary: string, filename: string, mimetype: string, content: Buffer): Buffer {
+  function multipartBody(
+    boundary: string,
+    filename: string,
+    mimetype: string,
+    content: Buffer,
+  ): Buffer {
     const head = Buffer.from(
       `--${boundary}\r\n` +
         `Content-Disposition: form-data; name="file"; filename="${filename}"\r\n` +
@@ -341,8 +362,13 @@ describe('modules/identity — POST /users/me/avatar', () => {
 });
 
 describe('modules/identity — DELETE /users/me', () => {
-  beforeAll(() => { process.env.AUTH_SECRET = TEST_AUTH; });
-  afterAll(() => { process.env.AUTH_SECRET = undefined; resetEnvForTests(); });
+  beforeAll(() => {
+    process.env.AUTH_SECRET = TEST_AUTH;
+  });
+  afterAll(() => {
+    process.env.AUTH_SECRET = undefined;
+    resetEnvForTests();
+  });
 
   it('인증 없으면 401', async () => {
     const app = await buildTestApp({ user: {} });
@@ -352,9 +378,20 @@ describe('modules/identity — DELETE /users/me', () => {
   });
 
   it('존재하지 않는 사용자 → 404', async () => {
-    const app = await buildTestApp({ user: { findFirst: async () => null, update: async () => { throw new Error('should not be called'); } } });
+    const app = await buildTestApp({
+      user: {
+        findFirst: async () => null,
+        update: async () => {
+          throw new Error('should not be called');
+        },
+      },
+    });
     const token = await makeJws('u-missing');
-    const r = await app.inject({ method: 'DELETE', url: '/users/me', headers: { authorization: `Bearer ${token}` } });
+    const r = await app.inject({
+      method: 'DELETE',
+      url: '/users/me',
+      headers: { authorization: `Bearer ${token}` },
+    });
     expect(r.statusCode).toBe(404);
     await app.close();
   });
@@ -364,11 +401,18 @@ describe('modules/identity — DELETE /users/me', () => {
     const app = await buildTestApp({
       user: {
         findFirst: async () => ({ id: 'u1' }),
-        update: async (args: AnyArgs) => { captured = args; return SAMPLE_USERS[0]; },
+        update: async (args: AnyArgs) => {
+          captured = args;
+          return SAMPLE_USERS[0];
+        },
       },
     });
     const token = await makeJws('u1');
-    const r = await app.inject({ method: 'DELETE', url: '/users/me', headers: { authorization: `Bearer ${token}` } });
+    const r = await app.inject({
+      method: 'DELETE',
+      url: '/users/me',
+      headers: { authorization: `Bearer ${token}` },
+    });
     expect(r.statusCode).toBe(204);
     expect(captured!.data.deletedAt).toBeInstanceOf(Date);
     expect(captured!.data.name).toBe('탈퇴한 사용자');

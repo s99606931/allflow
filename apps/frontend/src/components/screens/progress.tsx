@@ -67,10 +67,20 @@ export function ProgressPage() {
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
-      <AiGuideWidget
-        systemContext={`프로젝트 현황 — 전체 ${projects.length}개, 진행중 ${projects.filter(p => p.status === 'doing').length}개, 완료 ${projects.filter(p => p.status === 'done').length}개`}
-        hints={['예산 초과 위험 프로젝트 찾아줘', '일정 지연 프로젝트 알려줘', '프로젝트 현황 요약해줘']}
-      />
+      {(() => {
+        const blockedProjects = projects.filter(p => p.status === 'blocked').length;
+        const lowProgress = projects.filter(p => p.status === 'doing' && p.progress < 30).length;
+        return (
+          <AiGuideWidget
+            systemContext={`프로젝트 현황 — 전체 ${projects.length}개, 진행중 ${projects.filter(p => p.status === 'doing').length}개, 완료 ${projects.filter(p => p.status === 'done').length}개, 차단 ${blockedProjects}개`}
+            hints={[
+              blockedProjects > 0 ? `차단 프로젝트 ${blockedProjects}개 원인 분석해줘` : '예산 초과 위험 프로젝트 찾아줘',
+              lowProgress > 0 ? `진행률 30% 미만 프로젝트 ${lowProgress}개 가속 방법` : '일정 지연 프로젝트 알려줘',
+              '프로젝트 현황 요약해줘',
+            ]}
+          />
+        );
+      })()}
       <Tabs.Root value={tab} onValueChange={setTab}>
         <div className="flex items-center justify-between border-b border-border">
           <Tabs.List className="flex items-center gap-1">
