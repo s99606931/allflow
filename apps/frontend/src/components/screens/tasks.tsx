@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
-import { Card, Avatar, Badge, Button, StatusDot } from '@/components/ui/primitives';
+import { Card, Avatar, Badge, Button } from '@/components/ui/primitives';
 import { useTasks, useTaskMutations, useProjects, useMe } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { StatusKey } from '@/lib/schemas';
@@ -141,16 +141,31 @@ export function TasksPage() {
             {filtered.map(t => {
               const u = userMap.get(t.assignee);
               return (
-                <button key={t.id} onClick={() => setOpenTask(t.id)}
-                  className="w-full grid grid-cols-[20px_80px_1fr_120px_70px_100px_24px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors text-left">
+                <div key={t.id}
+                  className="grid grid-cols-[20px_80px_1fr_130px_70px_100px_24px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors">
                   {t.status === 'done' ? <CheckCircle2 size={16} className="text-success" /> : <Circle size={16} className="text-fg-3" />}
                   <span className="mono text-[11px] text-fg-3">{t.id}</span>
-                  <span className="text-fg truncate font-medium">{t.title}</span>
-                  <StatusDot status={t.status} />
+                  <button type="button" onClick={() => setOpenTask(t.id)} className="text-fg truncate font-medium text-left hover:underline">
+                    {t.title}
+                  </button>
+                  <select
+                    aria-label={`${t.id} 상태 변경`}
+                    value={t.status}
+                    disabled={update.isPending}
+                    onClick={e => e.stopPropagation()}
+                    onChange={e => update.mutate({ id: t.id, patch: { status: e.target.value as StatusKey } })}
+                    className="h-6 text-[11px] rounded bg-bg-1 border border-border px-1.5 focus:outline-none focus:border-accent w-full"
+                  >
+                    <option value="todo">대기</option>
+                    <option value="doing">진행중</option>
+                    <option value="review">리뷰</option>
+                    <option value="done">완료</option>
+                    <option value="blocked">블록</option>
+                  </select>
                   {t.priority === 'high' ? <Badge tone="danger">높음</Badge> : t.priority === 'med' ? <Badge tone="warning">중간</Badge> : <Badge tone="neutral">낮음</Badge>}
                   <span className="mono text-fg-2 text-[11.5px]">{t.due}</span>
                   {u && <Avatar user={u} size={20} />}
-                </button>
+                </div>
               );
             })}
           </Card>
