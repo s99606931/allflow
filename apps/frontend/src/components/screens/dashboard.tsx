@@ -3,8 +3,7 @@
 import { Card, CardBody, CardHeader, CardTitle, Avatar, AvatarStack, Badge, Button, IconButton, Progress, StatusDot } from '@/components/ui/primitives';
 import { useMe, useProjects, useTasks } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
-import { CheckCircle2, Circle, MoreHorizontal, Sparkles, Plus, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { CheckCircle2, Circle, MoreHorizontal, Sparkles, Plus, Loader2, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -16,6 +15,8 @@ export function DashboardPage() {
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
   const userMap = useUserMap();
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [insightPeriod, setInsightPeriod] = useState<'week' | 'month'>('week');
+  const [insightMenuOpen, setInsightMenuOpen] = useState(false);
   const router = useRouter();
 
   const todoCount = tasks.filter(t => t.status !== 'done').length;
@@ -111,8 +112,24 @@ export function DashboardPage() {
         {/* AI insights */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-1.5"><Sparkles size={14} className="text-accent" /> AI 인사이트</CardTitle>
-            <IconButton size="sm" onClick={() => toast.info("AI 인사이트 설정은 준비 중입니다.")}><MoreHorizontal size={14} /></IconButton>
+            <CardTitle className="flex items-center gap-1.5">
+              <Sparkles size={14} className="text-accent" /> AI 인사이트
+              <span className="text-[11px] text-fg-3 font-normal ml-1">{insightPeriod === 'week' ? '이번 주' : '이번 달'}</span>
+            </CardTitle>
+            <div className="relative">
+              <IconButton size="sm" onClick={() => setInsightMenuOpen(v => !v)} aria-label="인사이트 설정"><MoreHorizontal size={14} /></IconButton>
+              {insightMenuOpen && (
+                <div className="absolute right-0 top-7 z-50 w-36 rounded-lg border border-border bg-bg-elev shadow-pop py-1" onMouseLeave={() => setInsightMenuOpen(false)}>
+                  <div className="px-3 py-1.5 text-[10.5px] text-fg-3 uppercase tracking-wider font-semibold">기간</div>
+                  {([['week', '이번 주'], ['month', '이번 달']] as const).map(([val, label]) => (
+                    <button key={val} type="button" onClick={() => { setInsightPeriod(val); setInsightMenuOpen(false); }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-[12.5px] hover:bg-hover ${insightPeriod === val ? 'text-accent font-semibold' : 'text-fg-1'}`}>
+                      <Calendar size={12} /> {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardBody className="space-y-3">
             <Insight tone="warning" title="결제 시스템 진척 둔화" body="지난 주 대비 진행률이 8%p 감소했어요. 차단된 태스크 2개가 원인입니다." cta="자세히 보기" onCta={() => router.push('/projects')} />

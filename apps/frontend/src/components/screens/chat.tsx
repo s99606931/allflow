@@ -36,9 +36,15 @@ export function ChatPage() {
   const [editingText, setEditingText] = useState('');
 
   const [channelSearch, setChannelSearch] = useState('');
+  const [msgSearch, setMsgSearch] = useState('');
+  const [msgSearchOpen, setMsgSearchOpen] = useState(false);
   const publicChannels = channels.filter(c => (c.kind === 'public' || c.kind === 'private') && (!channelSearch.trim() || c.name.toLowerCase().includes(channelSearch.toLowerCase())));
   const dmChannels = channels.filter(c => c.kind === 'dm' && (!channelSearch.trim() || c.name.toLowerCase().includes(channelSearch.toLowerCase())));
   const activeChannel = channels.find(c => c.id === active) ?? null;
+  const displayedMessages = useMemo(
+    () => msgSearch.trim() ? messages.filter(m => m.content.toLowerCase().includes(msgSearch.toLowerCase())) : messages,
+    [messages, msgSearch],
+  );
 
   const threadParent = useMemo<ThreadMessage | null>(() => {
     const found = messages.find(m => m.id === openThreadId);
@@ -144,7 +150,20 @@ export function ChatPage() {
           {activeChannel && <span className="text-[12px] text-fg-3">· {activeChannel.members.length}명</span>}
           <div className="flex-1" />
           <IconButton size="sm" onClick={() => toast.info("고정 메시지 목록은 준비 중입니다.")}><Pin size={13} /></IconButton>
-          <IconButton size="sm" onClick={() => toast.info("채널 내 검색은 준비 중입니다.")}><Search size={13} /></IconButton>
+          {msgSearchOpen && (
+            <div className="relative">
+              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
+              <input
+                autoFocus
+                value={msgSearch}
+                onChange={e => setMsgSearch(e.target.value)}
+                onKeyDown={e => e.key === 'Escape' && (setMsgSearchOpen(false), setMsgSearch(''))}
+                placeholder="메시지 검색..."
+                className="h-7 w-44 pl-6 pr-2 rounded-md bg-bg-2 border border-border text-[12px] focus:outline-none focus:border-accent"
+              />
+            </div>
+          )}
+          <IconButton size="sm" onClick={() => { setMsgSearchOpen(v => !v); if (msgSearchOpen) setMsgSearch(''); }}><Search size={13} /></IconButton>
           <Button variant={summaryOpen ? 'primary' : 'secondary'} size="sm" onClick={summarizeChat} disabled={summarizing || messages.length === 0}>
             <Sparkles size={12} /> {summarizing ? '요약 중...' : '대화 요약'}
           </Button>
@@ -162,7 +181,10 @@ export function ChatPage() {
           </div>
         )}
         <div className="flex-1 overflow-y-auto scroll p-5 space-y-4">
-          {messages.map(m => {
+          {msgSearch.trim() && (
+            <div className="text-[11.5px] text-fg-3 pb-1">"{msgSearch}" 검색 결과 {displayedMessages.length}건</div>
+          )}
+          {displayedMessages.map(m => {
             const isAi = m.authorId === 'ai';
             if (isAi) {
               return (
