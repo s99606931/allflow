@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Avatar, Badge, Button, IconButton, StatusDot } from '@/components/ui/primitives';
 import { CommentThread } from '@/components/comments/comment-thread';
-import { useProjects, useTasks } from '@/lib/hooks/use-data';
+import { TaskEditDialog } from '@/components/dialogs/task-edit-dialog';
+import { useProjects, useTasks, useTaskMutations } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import {
   ArrowUpRight,
@@ -13,13 +15,13 @@ import {
   Flag,
   Link2,
   Loader2,
+  Pencil,
   Sparkles,
   Tag,
   Trash2,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useTaskMutations } from '@/lib/hooks/use-data';
 
 interface TaskDetailProps {
   taskId: string | null;
@@ -27,6 +29,7 @@ interface TaskDetailProps {
 }
 
 export function TaskDetailDialog({ taskId, onClose }: TaskDetailProps) {
+  const [editOpen, setEditOpen] = useState(false);
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
   const { data: projects = [] } = useProjects();
   const userMap = useUserMap();
@@ -39,6 +42,7 @@ export function TaskDetailDialog({ taskId, onClose }: TaskDetailProps) {
   const subDone = subTasks.filter(s => s.status === 'done').length;
 
   return (
+    <>
     <Dialog.Root open={!!taskId} onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 fade-in" />
@@ -54,6 +58,11 @@ export function TaskDetailDialog({ taskId, onClose }: TaskDetailProps) {
             <div className="flex-1" />
             <IconButton size="sm" aria-label="링크 복사" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/tasks?id=${taskId ?? ''}`); toast.success('링크가 복사되었습니다.'); }}><Link2 size={14} /></IconButton>
             <IconButton size="sm" aria-label="외부 열기" onClick={() => window.open(`/tasks?id=${taskId ?? ''}`, '_blank', 'noopener,noreferrer')}><ArrowUpRight size={14} /></IconButton>
+            {task && (
+              <IconButton size="sm" aria-label="태스크 수정" onClick={() => setEditOpen(true)}>
+                <Pencil size={14} />
+              </IconButton>
+            )}
             {taskId && (
               <IconButton
                 size="sm"
@@ -169,6 +178,10 @@ export function TaskDetailDialog({ taskId, onClose }: TaskDetailProps) {
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+    {task && (
+      <TaskEditDialog open={editOpen} onOpenChange={setEditOpen} task={task} />
+    )}
+    </>
   );
 }
 
