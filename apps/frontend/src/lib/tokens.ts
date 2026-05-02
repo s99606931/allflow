@@ -8,7 +8,7 @@ export const STATUS = {
 } as const;
 
 export type StatusKey = keyof typeof STATUS;
-export type Theme = 'light' | 'dark';
+export type Theme = 'light' | 'dark' | 'system';
 export type Accent = 'blue' | 'indigo' | 'violet' | 'teal' | 'amber' | 'rose';
 
 export const ACCENTS: { id: Accent; label: string; hex: string }[] = [

@@ -26,26 +26,25 @@ export function AppearanceSection() {
 				</CardHeader>
 				<CardBody>
 					<div className="grid grid-cols-3 gap-3">
-						{(["light", "dark"] as const).map((t) => (
+						{(["light", "dark", "system"] as const).map((t) => (
 							<button
 								key={t}
+								type="button"
 								onClick={() => setTheme(t)}
 								className={`p-4 rounded-lg border text-left transition-colors ${theme === t ? "border-accent ring-2 ring-accent/30" : "border-border hover:border-border-strong"}`}
 							>
 								<div
-									className={`h-16 rounded mb-3 ${t === "light" ? "bg-white border border-zinc-200" : "bg-zinc-900"}`}
+									className={`h-16 rounded mb-3 ${
+										t === "light" ? "bg-white border border-zinc-200" :
+										t === "dark" ? "bg-zinc-900" :
+										"bg-gradient-to-r from-white via-zinc-200 to-zinc-900"
+									}`}
 								/>
-								<div className="text-[12.5px] font-semibold text-fg capitalize">
-									{t === "light" ? "라이트" : "다크"}
+								<div className="text-[12.5px] font-semibold text-fg">
+									{t === "light" ? "라이트" : t === "dark" ? "다크" : "시스템 따라가기"}
 								</div>
 							</button>
 						))}
-						<button className="p-4 rounded-lg border border-border hover:border-border-strong text-left">
-							<div className="h-16 rounded mb-3 bg-gradient-to-r from-white via-zinc-200 to-zinc-900" />
-							<div className="text-[12.5px] font-semibold text-fg">
-								시스템 따라가기
-							</div>
-						</button>
 					</div>
 				</CardBody>
 			</Card>
