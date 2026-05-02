@@ -1,7 +1,7 @@
 "use client";
 
 import { Avatar, IconButton } from "@/components/ui/primitives";
-import { useMe, useNotifications } from "@/lib/hooks/use-data";
+import { useMe, useNotifications, useNotificationMutations } from "@/lib/hooks/use-data";
 
 const ANON_USER = {
 	id: "anon",
@@ -111,6 +111,7 @@ function NotificationMenu() {
 	const [open, setOpen] = useState(false);
 	const [readIds, setReadIds] = useState<Set<string>>(new Set());
 	const { data: rawItems = [] } = useNotifications();
+	const { markRead, markAll } = useNotificationMutations();
 	const items = rawItems.map(n => ({ ...n, read: n.read || readIds.has(n.id) }));
 	const ref = useRef<HTMLDivElement>(null);
 	const router = useRouter();
@@ -164,7 +165,7 @@ function NotificationMenu() {
 						{unread > 0 && (
 							<button
 								type="button"
-								onClick={() => setReadIds(new Set(items.map(n => n.id)))}
+								onClick={() => { const unreadIds = items.filter(n => !n.read).map(n => n.id); setReadIds(new Set(items.map(n => n.id))); if (unreadIds.length > 0) markAll.mutate({ ids: unreadIds }); }}
 								className="text-[11px] text-accent hover:text-accent-strong transition-colors"
 							>
 								모두 읽음
@@ -177,7 +178,7 @@ function NotificationMenu() {
 							<button
 								type="button"
 								key={n.id}
-								onClick={() => setReadIds(prev => new Set([...prev, n.id]))}
+								onClick={() => { setReadIds(prev => new Set([...prev, n.id])); if (!n.read) markRead.mutate(n.id); }}
 								className={cn(
 									"w-full text-left px-3 py-2.5 hover:bg-bg-2 flex items-start gap-2.5 transition-colors",
 									!n.read && "bg-accent-soft/20",
