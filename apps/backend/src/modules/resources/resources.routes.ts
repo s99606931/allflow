@@ -1,14 +1,16 @@
-import { ConflictError, ValidationError } from '@all-flow/shared/errors';
+import { ConflictError, NotFoundError, ValidationError } from '@all-flow/shared/errors';
 /**
  * resources 모듈 — 리소스(회의실/장비) 도메인 (T1: Prisma 영속화).
  *
  * 라우트:
- *   GET  /resources          — 리소스 목록 (DB 기반, 비어 있으면 자동 시드)
- *   GET  /resources/bookings — 예약 목록 (date=YYYY-MM-DD, 기본 오늘)
- *   POST /resources/book     — 예약 (Booking 영속화 + 충돌 검증)
+ *   GET    /resources              — 리소스 목록 (DB 기반, 비어 있으면 자동 시드)
+ *   PATCH  /resources/:id          — 리소스 메타 수정 (name/capacity/location)
+ *   DELETE /resources/:id          — 리소스 삭제 (Cascade bookings)
+ *   GET    /resources/bookings     — 예약 목록 (date=YYYY-MM-DD, 기본 오늘)
+ *   POST   /resources/book         — 예약 (Booking 영속화 + 충돌 검증)
+ *   DELETE /resources/bookings/:id — 예약 취소
  *
  * 충돌 규칙: 동일 resourceId 의 [start, end) 가 기존 예약과 겹치면 409.
- *           start <= existing.start < end  OR  start < existing.end <= end
  *           즉 boundary touch 는 허용 (10:00 종료 → 10:00 시작 OK).
  */
 import type { FastifyInstance } from 'fastify';
@@ -80,6 +82,33 @@ export async function resourcesRoutes(app: FastifyInstance): Promise<void> {
     return rows.map(serializeResource);
   });
 
+  const ResourcePatch = z.object({
+    name: z.string().min(1).max(120).optional(),
+    capacity: z.number().int().positive().nullable().optional(),
+    location: z.string().max(120).nullable().optional(),
+  }).strict();
+
+  app.patch('/resources/:id', { preHandler: [app.authenticate] }, async (req) => {
+    const { id } = req.params as { id: string };
+    const parsed = ResourcePatch.safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+    const existing = await app.prisma.resource.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundError('Resource', id);
+    const updated = await app.prisma.resource.update({
+      where: { id },
+      data: parsed.data,
+    });
+    return serializeResource(updated);
+  });
+
+  app.delete('/resources/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const existing = await app.prisma.resource.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundError('Resource', id);
+    await app.prisma.resource.delete({ where: { id } });
+    reply.code(204).send();
+  });
+
   app.get('/resources/bookings', { preHandler: [app.authenticate] }, async (req) => {
     const query = req.query as { date?: string };
     const dateStr = query.date ?? new Date().toISOString().slice(0, 10);
@@ -90,11 +119,20 @@ export async function resourcesRoutes(app: FastifyInstance): Promise<void> {
       orderBy: { start: 'asc' },
     });
     return rows.map(r => ({
+      id: r.id,
       resourceId: r.resourceId,
       start: r.start.toISOString(),
       end: r.end.toISOString(),
       bookedBy: r.bookedBy,
     }));
+  });
+
+  app.delete('/resources/bookings/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const booking = await app.prisma.booking.findUnique({ where: { id } });
+    if (!booking) throw new NotFoundError('Booking', id);
+    await app.prisma.booking.delete({ where: { id } });
+    reply.code(204).send();
   });
 
   app.post('/resources/book', { preHandler: [app.authenticate] }, async (req) => {
@@ -139,6 +177,7 @@ export async function resourcesRoutes(app: FastifyInstance): Promise<void> {
     });
 
     const row = {
+      id: created.id,
       resourceId: created.resourceId,
       start: created.start.toISOString(),
       end: created.end.toISOString(),

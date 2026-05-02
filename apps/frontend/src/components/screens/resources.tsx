@@ -2,11 +2,11 @@
 
 import { Card, CardBody, Button, IconButton } from '@/components/ui/primitives';
 import {
-  Users, Monitor, MapPin, Mic, Plus, ChevronLeft, ChevronRight, Search, Sparkles, Car, Box, CalendarPlus,
+  Users, Monitor, MapPin, Mic, Plus, ChevronLeft, ChevronRight, Search, Sparkles, Car, Box, CalendarPlus, X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ResourceBookDialog } from '@/components/dialogs/resource-book-dialog';
-import { useResources, useBookings, useMe } from '@/lib/hooks/use-data';
+import { useResources, useBookings, useMe, useResourceMutations } from '@/lib/hooks/use-data';
 import type { Resource } from '@/lib/schemas';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
@@ -43,6 +43,7 @@ export function ResourcesPage() {
   }, [weekOffset]);
   const { data: existingBookings = [] } = useBookings(today);
   const { data: me } = useMe();
+  const { cancelBooking } = useResourceMutations();
   const myBookingsToday = existingBookings.filter(b => b.bookedBy === me?.id).length;
   const bookedResourceIds = new Set(existingBookings.map(b => b.resourceId));
   const utilizationRate = resources.length > 0
@@ -193,10 +194,40 @@ export function ResourcesPage() {
                       </div>
                     </div>
 
-                    <div className="flex-1 relative grid" style={{ gridTemplateColumns: `repeat(${HOURS.length}, 1fr)` }}>
-                      {HOURS.map(h => (
-                        <div key={h} className="border-l border-border h-[64px] hover:bg-accent-soft/30 cursor-pointer" onClick={() => { setBookPreselect({ resourceId: r.id, start: `${today}T${String(h).padStart(2, '0')}:00` }); setBookOpen(true); }} />
-                      ))}
+                    <div className="flex-1 relative" style={{ height: 64 }}>
+                      <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${HOURS.length}, 1fr)` }}>
+                        {HOURS.map(h => (
+                          <div key={h} className="border-l border-border h-full hover:bg-accent-soft/30 cursor-pointer" onClick={() => { setBookPreselect({ resourceId: r.id, start: `${today}T${String(h).padStart(2, '0')}:00` }); setBookOpen(true); }} />
+                        ))}
+                      </div>
+                      {existingBookings.filter(b => b.resourceId === r.id).map(b => {
+                        const startH = new Date(b.start).getHours() + new Date(b.start).getMinutes() / 60;
+                        const endH = new Date(b.end).getHours() + new Date(b.end).getMinutes() / 60;
+                        const left = Math.max(0, (startH - HOURS[0]!) / HOURS.length) * 100;
+                        const width = Math.min(100 - left, ((endH - startH) / HOURS.length) * 100);
+                        const isMine = b.bookedBy === me?.id;
+                        return (
+                          <div
+                            key={b.id ?? b.start}
+                            style={{ left: `${left}%`, width: `${width}%`, top: 4, bottom: 4 }}
+                            className={`absolute rounded group/bk flex items-center px-1.5 overflow-hidden ${isMine ? 'bg-accent text-white' : 'bg-fg-3/30 text-fg-2'}`}
+                          >
+                            <span className="text-[10px] font-medium truncate flex-1">
+                              {new Date(b.start).getHours()}:{String(new Date(b.start).getMinutes()).padStart(2,'0')}
+                            </span>
+                            {isMine && b.id && (
+                              <button
+                                type="button"
+                                onClick={e => { e.stopPropagation(); cancelBooking.mutate(b.id!); }}
+                                className="opacity-0 group-hover/bk:opacity-100 ml-1 hover:text-danger/80 transition-opacity"
+                                aria-label="예약 취소"
+                              >
+                                <X size={10} />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );

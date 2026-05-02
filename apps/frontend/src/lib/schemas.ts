@@ -207,6 +207,7 @@ export const ResourceSchema = z.object({
   location: z.string().optional(),
 });
 export const ResourceBookingSchema = z.object({
+  id: z.string().optional(),
   resourceId: z.string(),
   start: z.string(),
   end: z.string(),

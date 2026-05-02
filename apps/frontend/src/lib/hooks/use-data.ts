@@ -328,12 +328,19 @@ export function useEventMutations() {
 }
 
 export function useResourceMutations() {
+  const qc = useQueryClient();
+  const invalidateBookings = () => qc.invalidateQueries({ queryKey: ['bookings'] });
   const create = useMutation({
     mutationFn: (input: ResourceBooking) => api.bookResource(input),
-    onSuccess: () => toast.success('자원이 예약되었습니다'),
+    onSuccess: () => { invalidateBookings(); toast.success('자원이 예약되었습니다'); },
     onError,
   });
-  return { create };
+  const cancelBooking = useMutation({
+    mutationFn: (id: string) => api.cancelBooking(id),
+    onSuccess: () => { invalidateBookings(); toast.success('예약이 취소되었습니다'); },
+    onError,
+  });
+  return { create, cancelBooking };
 }
 
 export function useDocMutations() {

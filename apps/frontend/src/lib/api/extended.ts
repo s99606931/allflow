@@ -163,6 +163,10 @@ export const extendedApi = {
   bookResource: async (input: ResourceBooking): Promise<ResourceBooking> =>
     http.post('resources/book', { json: input }).json<ResourceBooking>(),
 
+  cancelBooking: async (id: string): Promise<void> => {
+    await http.delete(`resources/bookings/${id}`);
+  },
+
   /* Documents (TipTap) ---------------------------------------------------- */
   listDocs: async (): Promise<Doc[]> =>
     parsed(http.get('docs').json(), z.array(DocSchema)),
