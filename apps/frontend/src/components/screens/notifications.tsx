@@ -29,6 +29,7 @@ export function NotificationsPage() {
   const { markRead, markAll } = useNotificationMutations();
   const userMap = useUserMap();
   const [filter, setFilter] = useState<FilterKey>('all');
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const filtered = useMemo(
     () => notifs.filter(n => filter === 'all' || n.kind === filter),
@@ -42,7 +43,7 @@ export function NotificationsPage() {
         <h2 className="text-[18px] font-bold text-fg">알림 센터</h2>
         <Badge tone="danger">{unread.length}건 미확인</Badge>
         <div className="flex-1" />
-        <Button variant="secondary" size="sm"><Filter size={13} /> 필터</Button>
+        <Button variant={filterOpen ? 'primary' : 'secondary'} size="sm" onClick={() => setFilterOpen(v => !v)}><Filter size={13} /> 필터</Button>
         <Button
           variant="secondary"
           size="sm"
@@ -54,19 +55,21 @@ export function NotificationsPage() {
         <IconButton size="sm" aria-label="설정"><Settings2 size={14} /></IconButton>
       </div>
 
-      <div className="flex items-center gap-1 p-0.5 rounded-md bg-bg-2 border border-border w-fit">
-        {FILTERS.map(c => (
-          <button
-            key={c.id}
-            onClick={() => setFilter(c.id)}
-            className={`px-2.5 h-7 rounded text-[12px] font-medium transition-colors ${
-              filter === c.id ? 'bg-bg-elev text-fg shadow-sm' : 'text-fg-2 hover:text-fg-1'
-            }`}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
+      {filterOpen && (
+        <div className="flex items-center gap-1 p-0.5 rounded-md bg-bg-2 border border-border w-fit">
+          {FILTERS.map(c => (
+            <button
+              key={c.id}
+              onClick={() => setFilter(c.id)}
+              className={`px-2.5 h-7 rounded text-[12px] font-medium transition-colors ${
+                filter === c.id ? 'bg-bg-elev text-fg shadow-sm' : 'text-fg-2 hover:text-fg-1'
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <Card>
         {isLoading && <div className="px-5 py-6 text-[12.5px] text-fg-2">불러오는 중...</div>}
