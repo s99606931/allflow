@@ -58,9 +58,10 @@ export function ApprovalsPage() {
 
   const list = useMemo(() => {
     let base = approvals;
-    if (tab === 'inbox') base = approvals.filter(a => a.status === 'pending');
-    else if (tab === 'history') base = approvals.filter(a => a.status === 'approved' || a.status === 'rejected');
+    if (tab === 'inbox') base = approvals.filter(a => a.status === 'pending' && a.approver === me?.id);
+    else if (tab === 'history') base = approvals.filter(a => (a.status === 'approved' || a.status === 'rejected') && (a.approver === me?.id || a.requester === me?.id));
     else if (tab === 'sent') base = approvals.filter(a => a.requester === me?.id);
+    else if (tab === 'cc') base = approvals.filter(a => a.status === 'pending' && a.requester !== me?.id && a.approver !== me?.id);
     if (searchQ.trim()) {
       const q = searchQ.toLowerCase();
       base = base.filter(a => a.title.toLowerCase().includes(q));
@@ -69,10 +70,10 @@ export function ApprovalsPage() {
   }, [approvals, tab, searchQ, me]);
 
   const counts = useMemo(() => ({
-    inbox:   approvals.filter(a => a.status === 'pending').length,
+    inbox:   approvals.filter(a => a.status === 'pending' && a.approver === me?.id).length,
     sent:    approvals.filter(a => a.requester === me?.id).length,
-    cc:      0,
-    history: approvals.filter(a => a.status === 'approved' || a.status === 'rejected').length,
+    cc:      approvals.filter(a => a.status === 'pending' && a.requester !== me?.id && a.approver !== me?.id).length,
+    history: approvals.filter(a => (a.status === 'approved' || a.status === 'rejected') && (a.approver === me?.id || a.requester === me?.id)).length,
   }), [approvals, me]);
 
   return (
@@ -251,6 +252,17 @@ export function ApprovalsPage() {
   );
 }
 
+function buildAiSummary(approval: Approval): string {
+  const submittedHrs = Math.round((Date.now() - new Date(approval.createdAt).getTime()) / 3_600_000);
+  const timeLabel = submittedHrs < 1 ? '방금 전 상신' : submittedHrs < 24 ? `${submittedHrs}시간 전 상신` : `${Math.floor(submittedHrs / 24)}일 전 상신`;
+  const processingHrs = approval.decidedAt
+    ? Math.round((new Date(approval.decidedAt).getTime() - new Date(approval.createdAt).getTime()) / 3_600_000)
+    : null;
+  const timingText = processingHrs !== null ? `처리 시간 ${processingHrs}시간.` : '결재 대기 중.';
+  const reasonSnippet = approval.reason ? ` 상세: ${approval.reason.slice(0, 80)}${approval.reason.length > 80 ? '…' : ''}` : '';
+  return `${timeLabel}. ${timingText}${reasonSnippet}`;
+}
+
 function ApprovalDetail({ approval, onHold }: { approval: Approval; onHold: () => void }) {
   const userMap = useUserMap();
   const requester = userMap.get(approval.requester);
@@ -339,7 +351,7 @@ function ApprovalDetail({ approval, onHold }: { approval: Approval; onHold: () =
               <div className="text-[12.5px] text-fg-1 leading-relaxed">
                 <span className="font-semibold text-accent-strong">AI 요약</span> ·
                 {approval.amount ? ` 신청 금액 ${approval.amount.toLocaleString()}원. ` : ' '}
-                회사 정책 위배 사항 없음. 유사 결재 평균 처리 시간 4.2시간.
+                {buildAiSummary(approval)}
               </div>
             </div>
           </CardBody>
