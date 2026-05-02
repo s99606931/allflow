@@ -30,8 +30,17 @@ function lastContactOf(iso: string): string {
 export function ClientsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<Client | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('전체');
   const { data: clients = [], isLoading, error } = useClients();
   const { remove } = useClientMutations();
+
+  const STATUS_FILTERS = ['전체', '진행', '제안', '리드'] as const;
+  const filtered = clients.filter(c => {
+    if (search && !c.name.toLowerCase().includes(search.toLowerCase()) && !c.contact?.toLowerCase().includes(search.toLowerCase())) return false;
+    if (statusFilter !== '전체' && c.industry !== statusFilter) return false;
+    return true;
+  });
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
@@ -56,14 +65,14 @@ export function ClientsPage() {
 
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1 p-0.5 rounded-md bg-bg-2 border border-border">
-          {['전체', '진행', '제안', '리드'].map((c, i) => (
-            <button key={c} className={`px-2.5 h-7 rounded text-[12px] font-medium transition-colors ${i === 0 ? 'bg-bg-elev text-fg shadow-sm' : 'text-fg-2'}`}>{c}</button>
+          {STATUS_FILTERS.map((c) => (
+            <button key={c} onClick={() => setStatusFilter(c)} className={`px-2.5 h-7 rounded text-[12px] font-medium transition-colors ${statusFilter === c ? 'bg-bg-elev text-fg shadow-sm' : 'text-fg-2 hover:text-fg-1'}`}>{c}</button>
           ))}
         </div>
         <div className="flex-1" />
         <div className="relative">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
-          <input placeholder="고객사 검색..." className="h-8 w-56 pl-8 pr-3 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="고객사 검색..." className="h-8 w-56 pl-8 pr-3 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent" />
         </div>
         <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}><Plus size={13} /> 새 고객사</Button>
         <ClientForm open={createOpen} onOpenChange={setCreateOpen} />
@@ -82,10 +91,13 @@ export function ClientsPage() {
       {!isLoading && !error && clients.length === 0 && (
         <div className="py-12 text-center text-[12px] text-fg-3">등록된 고객사가 없습니다. 우상단 &lsquo;새 고객사&rsquo;를 눌러 추가하세요.</div>
       )}
+      {!isLoading && !error && clients.length > 0 && filtered.length === 0 && (
+        <div className="py-12 text-center text-[12px] text-fg-3">검색 결과가 없습니다.</div>
+      )}
 
-      {!isLoading && !error && clients.length > 0 && (
+      {!isLoading && !error && filtered.length > 0 && (
         <div className="grid grid-cols-4 gap-4">
-          {clients.map(c => (
+          {filtered.map(c => (
             <Card
               key={c.id}
               hoverable
