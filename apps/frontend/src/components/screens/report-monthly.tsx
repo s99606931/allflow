@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Card, CardBody, Button } from '@/components/ui/primitives';
 import { Download, Send, Sparkles, ExternalLink } from 'lucide-react';
 import { ReportRecipientsEditor } from '@/components/dialogs/report-recipients-editor';
-import { useAiMutations } from '@/lib/hooks/use-data';
+import { useAiMutations, useReports } from '@/lib/hooks/use-data';
 import type { Report } from '@/lib/schemas';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
@@ -27,6 +27,7 @@ export function ReportMonthlyPage() {
   const [sendOpen, setSendOpen] = useState(false);
   const [report, setReport] = useState<Report | null>(null);
   const { monthlyReport } = useAiMutations();
+  const { data: history = [] } = useReports();
   const period = lastMonth();
 
   const onGenerate = async () => {
@@ -165,6 +166,26 @@ export function ReportMonthlyPage() {
                 <p className="text-[14px] text-fg-1 leading-[1.8] whitespace-pre-wrap">{s.body}</p>
               </div>
             ))}
+          </CardBody>
+        </Card>
+      )}
+
+      {history.filter(r => r.kind === 'monthly').length > 0 && (
+        <Card>
+          <CardBody className="!p-4">
+            <div className="text-[11px] uppercase tracking-wider text-fg-3 font-semibold mb-2">이전 월간 보고서</div>
+            <div className="flex flex-wrap gap-2">
+              {history.filter(r => r.kind === 'monthly').slice(0, 6).map(r => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setReport(r as unknown as Report)}
+                  className="px-3 py-1.5 rounded-md border border-border bg-bg-1 hover:bg-hover transition-colors text-[12px] text-fg-1 mono"
+                >
+                  {r.periodStart.slice(0, 7)}
+                </button>
+              ))}
+            </div>
           </CardBody>
         </Card>
       )}
