@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { useState } from 'react';
 import { TaskCreateDialog } from '@/components/dialogs/task-create-dialog';
+import { TaskDetailDialog } from './task-detail';
 
 export function DashboardPage() {
   const { data: me } = useMe();
@@ -18,6 +19,7 @@ export function DashboardPage() {
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
   const userMap = useUserMap();
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const [insightPeriod, setInsightPeriod] = useState<'week' | 'month'>('week');
   const [insightMenuOpen, setInsightMenuOpen] = useState(false);
   const router = useRouter();
@@ -56,6 +58,7 @@ export function DashboardPage() {
           <Button variant="primary" onClick={() => router.push('/ai-auto')}><Sparkles size={14} /> AI에게 요청</Button>
         </div>
         <TaskCreateDialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen} />
+        <TaskDetailDialog taskId={openTaskId} onClose={() => setOpenTaskId(null)} />
       </div>
 
       {/* Top metrics row */}
@@ -102,7 +105,8 @@ export function DashboardPage() {
               const proj = projects.find(p => p.id === t.proj);
               const u = userMap.get(t.assignee);
               return (
-                <div key={t.id} className="flex items-center gap-3 px-5 py-2.5 border-b border-border last:border-0 hover:bg-hover transition-colors">
+                <button key={t.id} type="button" onClick={() => setOpenTaskId(t.id)}
+                  className="w-full flex items-center gap-3 px-5 py-2.5 border-b border-border last:border-0 hover:bg-hover transition-colors text-left">
                   {t.status === 'done' ? <CheckCircle2 size={16} className="text-success" /> : <Circle size={16} className="text-fg-3" />}
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] text-fg truncate">{t.title}</div>
@@ -118,7 +122,7 @@ export function DashboardPage() {
                   {t.priority === 'high' && <Badge tone="danger">높음</Badge>}
                   <div className="text-[11.5px] text-fg-2 mono w-12 text-right">{t.due}</div>
                   {u && <Avatar user={u} size={22} />}
-                </div>
+                </button>
               );
             })}
           </CardBody>

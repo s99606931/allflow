@@ -145,6 +145,26 @@ export function UsersPage() {
         </Card>
       )}
 
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-accent-soft border border-accent/30 text-[12.5px]">
+          <span className="font-semibold text-accent-strong">{selectedIds.size}명 선택됨</span>
+          <div className="flex-1" />
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              const emails = users.filter(u => selectedIds.has(u.id) && u.email).map(u => u.email!).join(', ');
+              if (emails) { navigator.clipboard.writeText(emails); toast.success(`${selectedIds.size}명 이메일 복사됨`); }
+            }}
+          >
+            <Mail size={13} /> 이메일 복사
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+            선택 해제
+          </Button>
+        </div>
+      )}
+
       <Card>
         <div className="grid grid-cols-[36px_1fr_140px_100px_80px_100px_28px] gap-3 px-4 h-9 items-center text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold border-b border-border">
           <input type="checkbox" className="justify-self-center" checked={displayed.length > 0 && selectedIds.size === displayed.length} onChange={e => setSelectedIds(e.target.checked ? new Set(displayed.map(u => u.id)) : new Set())} />
