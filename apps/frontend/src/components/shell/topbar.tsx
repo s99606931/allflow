@@ -1,7 +1,7 @@
 "use client";
 
 import { Avatar, IconButton } from "@/components/ui/primitives";
-import { useMe } from "@/lib/hooks/use-data";
+import { useMe, useNotifications } from "@/lib/hooks/use-data";
 
 const ANON_USER = {
 	id: "anon",
@@ -28,39 +28,6 @@ import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-// ── 알림 데이터 ─────────────────────────────────────────────────────────────
-
-interface Notification {
-	id: string;
-	title: string;
-	body: string;
-	time: string;
-	read: boolean;
-}
-
-const INITIAL_NOTIFICATIONS: Notification[] = [
-	{
-		id: "1",
-		title: "P0 이슈 할당됨",
-		body: "김민준이 #AUTH-42 이슈를 담당자로 배정했습니다",
-		time: "5분 전",
-		read: false,
-	},
-	{
-		id: "2",
-		title: "회의 일정 변경",
-		body: "스프린트 회고 회의가 오후 3시로 변경됩니다",
-		time: "1시간 전",
-		read: false,
-	},
-	{
-		id: "3",
-		title: "스프린트 종료 D-1",
-		body: "현재 스프린트 #12가 내일 종료됩니다",
-		time: "3시간 전",
-		read: true,
-	},
-];
 
 // ── 단축키 목록 ─────────────────────────────────────────────────────────────
 
@@ -142,7 +109,9 @@ export function Topbar({
 
 function NotificationMenu() {
 	const [open, setOpen] = useState(false);
-	const [items, setItems] = useState(INITIAL_NOTIFICATIONS);
+	const [readIds, setReadIds] = useState<Set<string>>(new Set());
+	const { data: rawItems = [] } = useNotifications();
+	const items = rawItems.map(n => ({ ...n, read: n.read || readIds.has(n.id) }));
 	const ref = useRef<HTMLDivElement>(null);
 	const unread = items.filter((n) => !n.read).length;
 
@@ -194,9 +163,7 @@ function NotificationMenu() {
 						{unread > 0 && (
 							<button
 								type="button"
-								onClick={() =>
-									setItems((prev) => prev.map((n) => ({ ...n, read: true })))
-								}
+								onClick={() => setReadIds(new Set(items.map(n => n.id)))}
 								className="text-[11px] text-accent hover:text-accent-strong transition-colors"
 							>
 								모두 읽음
@@ -209,11 +176,7 @@ function NotificationMenu() {
 							<button
 								type="button"
 								key={n.id}
-								onClick={() =>
-									setItems((prev) =>
-										prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)),
-									)
-								}
+								onClick={() => setReadIds(prev => new Set([...prev, n.id]))}
 								className={cn(
 									"w-full text-left px-3 py-2.5 hover:bg-bg-2 flex items-start gap-2.5 transition-colors",
 									!n.read && "bg-accent-soft/20",
