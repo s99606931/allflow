@@ -289,6 +289,7 @@ function Toolbar({ onCreate, activeFilter, onFilterChange, search, onSearchChang
 function IssueList({ filter, search }: { filter: number; search: string }) {
   const { data: allIssues = [] } = useIssues();
   const userMap = useUserMap();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const issues = allIssues.filter(iss => {
     if (search && !iss.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (filter === 1) return iss.assignee === 'me';
@@ -298,13 +299,15 @@ function IssueList({ filter, search }: { filter: number; search: string }) {
   });
   return (
     <Card>
-      <div className="grid grid-cols-[80px_1fr_140px_120px_90px_64px] gap-3 px-4 h-9 items-center text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold border-b border-border">
+      <div className="grid grid-cols-[36px_80px_1fr_140px_120px_90px_64px] gap-3 px-4 h-9 items-center text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold border-b border-border">
+        <input type="checkbox" className="justify-self-center" checked={issues.length > 0 && selectedIds.size === issues.length} onChange={e => setSelectedIds(e.target.checked ? new Set(issues.map(i => i.id)) : new Set())} />
         <div>ID</div><div>제목</div><div>상태</div><div>SLA</div><div>담당자</div><div className="text-right">생성</div>
       </div>
       {issues.map(iss => {
         const u = userMap.get(iss.assignee);
         return (
-          <div key={iss.id} className="grid grid-cols-[80px_1fr_140px_120px_90px_64px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors cursor-pointer">
+          <div key={iss.id} className="grid grid-cols-[36px_80px_1fr_140px_120px_90px_64px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors cursor-pointer">
+            <input type="checkbox" className="justify-self-center" checked={selectedIds.has(iss.id)} onClick={e => e.stopPropagation()} onChange={e => setSelectedIds(prev => { const next = new Set(prev); e.target.checked ? next.add(iss.id) : next.delete(iss.id); return next; })} />
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] mono font-bold px-1.5 py-0.5 rounded text-white" style={{ background: PRIO_COLOR[iss.prio] }}>{iss.prio}</span>
               <span className="mono text-[11px] text-fg-3">{iss.id.split('-')[1]}</span>
