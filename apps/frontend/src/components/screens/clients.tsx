@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, CardBody, Button } from '@/components/ui/primitives';
-import { ChevronRight, Plus, Search, Trash2, TrendingUp } from 'lucide-react';
+import { ChevronRight, Pencil, Plus, Search, Trash2, TrendingUp } from 'lucide-react';
 import { ClientForm } from '@/components/dialogs/client-form';
 import { ClientDetail } from '@/components/dialogs/client-detail';
 import { useClients, useClientMutations } from '@/lib/hooks/use-data';
@@ -31,6 +31,7 @@ function lastContactOf(iso: string): string {
 export function ClientsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<Client | null>(null);
+  const [editTarget, setEditTarget] = useState<Client | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('전체');
   const { data: clients = [], isLoading, error } = useClients();
@@ -92,6 +93,9 @@ export function ClientsPage() {
         </div>
         <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}><Plus size={13} /> 새 고객사</Button>
         <ClientForm open={createOpen} onOpenChange={setCreateOpen} />
+        {editTarget && (
+          <ClientForm open={!!editTarget} onOpenChange={open => !open && setEditTarget(null)} client={editTarget} />
+        )}
         {selected && (
           <ClientDetail
             client={{ id: selected.id, name: selected.name, code: codeOf(selected.name), tier: selected.industry ?? '' }}
@@ -135,6 +139,14 @@ export function ClientsPage() {
                     <div className="text-[14px] font-semibold text-fg truncate">{c.name}</div>
                     {c.industry && <div className="text-[11px] text-fg-3 truncate mt-0.5">{c.industry}</div>}
                   </div>
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); setEditTarget(c); }}
+                    className="opacity-0 group-hover:opacity-100 text-fg-3 hover:text-accent shrink-0 transition-opacity mt-0.5"
+                    aria-label="고객사 수정"
+                  >
+                    <Pencil size={13} />
+                  </button>
                   <button
                     type="button"
                     onClick={e => { e.stopPropagation(); if (confirm(`"${c.name}" 고객사를 삭제하시겠습니까?`)) remove.mutate(c.id); }}

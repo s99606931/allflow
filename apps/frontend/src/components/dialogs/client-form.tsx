@@ -1,5 +1,6 @@
 /**
- * ClientForm — quick "새 고객사" capture dialog (CRM 2.2.*).
+ * ClientForm — create or edit a CRM client (CRM 2.2.*).
+ * Pass `client` to enter edit mode; omit it for create mode.
  */
 'use client';
 
@@ -8,42 +9,61 @@ import { Button } from '@/components/ui/primitives';
 import { Dialog, DialogField, DialogFooter, Select, TextInput } from '@/components/ui/dialog';
 import { useClientMutations } from '@/lib/hooks/use-data';
 import { useTranslation } from '@/lib/i18n';
+import type { Client } from '@/lib/schemas';
 
 interface Props {
   open: boolean;
   onOpenChange: (next: boolean) => void;
+  client?: Client;
 }
 
 const INDUSTRIES = ['SaaS', 'Media', 'Fintech', 'Commerce', 'Healthcare', 'Other'];
 
-export function ClientForm({ open, onOpenChange }: Props) {
+export function ClientForm({ open, onOpenChange, client }: Props) {
   const { t } = useTranslation();
-  const { create } = useClientMutations();
-  const [name, setName] = useState('');
-  const [contact, setContact] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [industry, setIndustry] = useState(INDUSTRIES[0]);
+  const { create, update } = useClientMutations();
+  const isEdit = !!client;
+
+  const [name, setName] = useState(client?.name ?? '');
+  const [contact, setContact] = useState(client?.contact ?? '');
+  const [email, setEmail] = useState(client?.email ?? '');
+  const [phone, setPhone] = useState(client?.phone ?? '');
+  const [industry, setIndustry] = useState(client?.industry ?? INDUSTRIES[0]);
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!name.trim()) return;
-    await create.mutateAsync({
-      name: name.trim(),
-      contact: contact.trim() || undefined,
-      email: email.trim() || undefined,
-      phone: phone.trim() || undefined,
-      industry,
-    });
-    setName('');
-    setContact('');
-    setEmail('');
-    setPhone('');
+    if (isEdit) {
+      await update.mutateAsync({
+        id: client.id,
+        patch: {
+          name: name.trim(),
+          contact: contact.trim() || undefined,
+          email: email.trim() || undefined,
+          phone: phone.trim() || undefined,
+          industry,
+        },
+      });
+    } else {
+      await create.mutateAsync({
+        name: name.trim(),
+        contact: contact.trim() || undefined,
+        email: email.trim() || undefined,
+        phone: phone.trim() || undefined,
+        industry,
+      });
+      setName('');
+      setContact('');
+      setEmail('');
+      setPhone('');
+    }
     onOpenChange(false);
   };
 
+  const isPending = isEdit ? update.isPending : create.isPending;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} title={t('crm.create.title')}>
+    <Dialog open={open} onOpenChange={onOpenChange} title={isEdit ? '고객사 수정' : t('crm.create.title')}>
       <form onSubmit={onSubmit} className="space-y-3">
         <DialogField label={t('crm.create.name')} required>
           <TextInput value={name} onChange={e => setName(e.target.value)} required autoFocus />
@@ -72,8 +92,8 @@ export function ClientForm({ open, onOpenChange }: Props) {
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             {t('common.cancel')}
           </Button>
-          <Button type="submit" variant="primary" disabled={create.isPending}>
-            {create.isPending ? t('common.loading') : t('common.create')}
+          <Button type="submit" variant="primary" disabled={isPending}>
+            {isPending ? t('common.loading') : isEdit ? t('common.save') : t('common.create')}
           </Button>
         </DialogFooter>
       </form>
