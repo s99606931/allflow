@@ -32,6 +32,7 @@ export function IssuesPage() {
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [classifyResult, setClassifyResult] = useState('');
   const [classifyOpen, setClassifyOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { streaming, streamComplete } = useAiStream();
   const { data: issues = [], isLoading, error } = useIssues();
   const { remove: removeIssue } = useIssueMutations();
@@ -148,7 +149,7 @@ export function IssuesPage() {
       {/* Issue list */}
       <Card>
         <div className="grid grid-cols-[36px_80px_1fr_140px_120px_90px_28px_28px_64px] gap-3 px-4 h-9 items-center text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold border-b border-border">
-          <input type="checkbox" className="justify-self-center" />
+          <input type="checkbox" className="justify-self-center" checked={displayed.length > 0 && selectedIds.size === displayed.length} onChange={e => setSelectedIds(e.target.checked ? new Set(displayed.map(i => i.id)) : new Set())} />
           <div>ID</div>
           <div>제목</div>
           <div>상태</div>
@@ -171,7 +172,7 @@ export function IssuesPage() {
               className="group relative grid grid-cols-[36px_80px_1fr_140px_120px_90px_28px_28px_64px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors cursor-pointer"
               onClick={() => setEditIssue({ id: iss.id, title: iss.title, sev: iss.sev, prio: iss.prio })}
             >
-              <input type="checkbox" className="justify-self-center" onClick={e => e.stopPropagation()} />
+              <input type="checkbox" className="justify-self-center" checked={selectedIds.has(iss.id)} onClick={e => e.stopPropagation()} onChange={e => setSelectedIds(prev => { const next = new Set(prev); e.target.checked ? next.add(iss.id) : next.delete(iss.id); return next; })} />
               <div className="flex items-center gap-1.5">
                 <span
                   className="text-[10px] mono font-bold px-1.5 py-0.5 rounded text-white"

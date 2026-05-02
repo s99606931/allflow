@@ -26,6 +26,7 @@ export function UsersPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const displayed = useMemo(() => {
     if (!search) return users;
@@ -135,7 +136,7 @@ export function UsersPage() {
 
       <Card>
         <div className="grid grid-cols-[36px_1fr_140px_100px_80px_100px_28px] gap-3 px-4 h-9 items-center text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold border-b border-border">
-          <input type="checkbox" className="justify-self-center" />
+          <input type="checkbox" className="justify-self-center" checked={displayed.length > 0 && selectedIds.size === displayed.length} onChange={e => setSelectedIds(e.target.checked ? new Set(displayed.map(u => u.id)) : new Set())} />
           <div>사용자</div><div>역할</div><div>MFA</div><div>상태</div><div>마지막 활동</div><div />
         </div>
         {isLoading && (
@@ -152,7 +153,7 @@ export function UsersPage() {
             key={u.id}
             className="grid grid-cols-[36px_1fr_140px_100px_80px_100px_28px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover"
           >
-            <input type="checkbox" className="justify-self-center" />
+            <input type="checkbox" className="justify-self-center" checked={selectedIds.has(u.id)} onChange={e => setSelectedIds(prev => { const next = new Set(prev); e.target.checked ? next.add(u.id) : next.delete(u.id); return next; })} />
             <div className="flex items-center gap-2.5 min-w-0">
               <Avatar user={u} size={28} />
               <div className="min-w-0">
