@@ -81,7 +81,15 @@ export function useProjectMutations() {
     },
     onError,
   });
-  return { create, update };
+  const remove = useMutation({
+    mutationFn: (id: string) => api.deleteProject(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.projects.all() });
+      toast.success('프로젝트가 삭제되었습니다');
+    },
+    onError,
+  });
+  return { create, update, remove };
 }
 
 export function useTasks(filter?: { projectId?: string; assigneeId?: string }) {

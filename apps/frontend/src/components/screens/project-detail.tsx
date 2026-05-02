@@ -4,13 +4,15 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardBody, CardHeader, CardTitle, AvatarStack, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
-import { useProject, useTasks } from '@/lib/hooks/use-data';
+import { useProject, useTasks, useProjectMutations } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import { TaskDetailDialog } from './task-detail';
+import { ProjectEditDialog } from '@/components/dialogs/project-edit-dialog';
 
 interface Props {
   projectId: string;
@@ -21,9 +23,13 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export function ProjectDetail({ projectId }: Props) {
+  const router = useRouter();
   const projectQuery = useProject(projectId);
   const tasksQuery = useTasks({ projectId });
   const userMap = useUserMap();
+  const { remove } = useProjectMutations();
+  const [openTaskId, setOpenTaskId] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const project = projectQuery.data;
 
   if (projectQuery.isLoading) {
@@ -48,8 +54,6 @@ export function ProjectDetail({ projectId }: Props) {
       </div>
     );
   }
-
-  const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const members = project.members.map(id => userMap.get(id)).filter((u): u is NonNullable<typeof u> => Boolean(u));
   const tasks = tasksQuery.data ?? [];
 
@@ -75,6 +79,27 @@ export function ProjectDetail({ projectId }: Props) {
         <Badge tone="neutral" className="mono">{project.code}</Badge>
         <StatusDot status={project.status} />
         <span className="text-[12px] mono text-fg-2 ml-auto">~ {project.due || '미정'}</span>
+        <button
+          type="button"
+          onClick={() => setEditOpen(true)}
+          className="p-1.5 rounded text-fg-2 hover:text-accent hover:bg-bg-2 transition-colors"
+          aria-label="프로젝트 수정"
+        >
+          <Pencil size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={async () => {
+            if (!confirm(`"${project.name}" 프로젝트를 삭제하시겠습니까?`)) return;
+            await remove.mutateAsync(project.id);
+            router.push('/projects');
+          }}
+          className="p-1.5 rounded text-fg-2 hover:text-danger hover:bg-bg-2 transition-colors"
+          aria-label="프로젝트 삭제"
+        >
+          <Trash2 size={14} />
+        </button>
+        <ProjectEditDialog open={editOpen} onOpenChange={setEditOpen} project={project} />
       </div>
 
       <div className="grid grid-cols-3 gap-4">

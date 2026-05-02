@@ -145,6 +145,21 @@ export async function projectsRoutes(app: FastifyInstance): Promise<void> {
     },
   );
 
+  app.delete(
+    '/projects/:id',
+    { preHandler: [app.authenticate, app.requireRole(['owner', 'admin'], 'id')] },
+    async (req) => {
+      const { id } = req.params as { id: string };
+      await app.prisma.project
+        .update({ where: { id, deletedAt: null }, data: { deletedAt: new Date() } })
+        .catch((err: { code?: string }) => {
+          if (err.code === 'P2025') throw new NotFoundError('Project', id);
+          throw err;
+        });
+      return { id, deleted: true };
+    },
+  );
+
   app.patch(
     '/projects/:id',
     { preHandler: [app.authenticate, app.requireRole(['owner', 'admin'], 'id')] },

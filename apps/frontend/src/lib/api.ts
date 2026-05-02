@@ -62,6 +62,10 @@ const baseApi = {
   updateProject: async (id: string, patch: ProjectPatch): Promise<Project> =>
     parsed(http.patch(`projects/${id}`, { json: patch }).json(), ProjectSchema),
 
+  deleteProject: async (id: string): Promise<void> => {
+    await http.delete(`projects/${id}`);
+  },
+
   /* Tasks ------------------------------------------------------------------ */
   listTasks: async (params?: { projectId?: string; assigneeId?: string }): Promise<Task[]> =>
     parsed(
