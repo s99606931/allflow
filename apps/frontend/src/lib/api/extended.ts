@@ -251,6 +251,20 @@ export const extendedApi = {
     await http.delete(`tasks/${taskId}/dependencies/${depId}`);
   },
 
+  /* MCP Connections (admin) ---------------------------------------------- */
+  listMcpConnections: async (): Promise<McpConnection[]> =>
+    http.get('ai/mcp-connections').json<McpConnection[]>(),
+
+  createMcpConnection: async (input: McpConnectionInput): Promise<McpConnection> =>
+    http.post('ai/mcp-connections', { json: input }).json<McpConnection>(),
+
+  updateMcpConnection: async (id: string, isEnabled: boolean): Promise<McpConnection> =>
+    http.patch(`ai/mcp-connections/${id}`, { json: { isEnabled } }).json<McpConnection>(),
+
+  deleteMcpConnection: async (id: string): Promise<void> => {
+    await http.delete(`ai/mcp-connections/${id}`);
+  },
+
   /* LLM Connections (admin) --------------------------------------------- */
   listLlmConnections: async (): Promise<LlmConnection[]> =>
     http.get('llm-connections').json<LlmConnection[]>(),
@@ -342,4 +356,20 @@ export interface ReportSummary {
   tldr: string;
   kpis: unknown[];
   sections: unknown[];
+}
+
+/* MCP Connection types ---------------------------------------------------- */
+export interface McpConnection {
+  id: string;
+  name: string;
+  transport: 'stdio' | 'sse';
+  isEnabled: boolean;
+  createdAt: string;
+}
+
+export interface McpConnectionInput {
+  name: string;
+  transport: 'stdio' | 'sse';
+  config: Record<string, unknown>;
+  isEnabled?: boolean;
 }

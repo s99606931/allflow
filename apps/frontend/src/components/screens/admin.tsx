@@ -5,6 +5,7 @@ import { useHealth, useOrgMutations } from '@/lib/hooks/use-data';
 import { useAuditLog } from '@/lib/hooks/use-admin';
 import { Activity, AlertCircle, Cpu, ShieldAlert } from 'lucide-react';
 import { LlmConnectionsPanel } from '@/components/admin/llm-connections-panel';
+import { McpConnectionsPanel } from '@/components/admin/mcp-connections-panel';
 
 /**
  * Format uptime seconds → "3d 4h 12m" / "6h 12m" / "12m" / "37s".
@@ -113,6 +114,7 @@ export function AdminPage() {
       </div>
 
       <LlmConnectionsPanel />
+      <McpConnectionsPanel />
 
       <Card>
         <CardHeader>

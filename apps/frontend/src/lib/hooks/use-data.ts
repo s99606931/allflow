@@ -21,7 +21,7 @@ import type {
   IssueTransition, ProfilePatch, ProjectCreate, ProjectPatch, TaskCreate, TaskPatch, BulkMarkRead,
   InviteUser, RevokeToken, MessageSend, DocCreate, ResourceBooking,
 } from '@/lib/schemas';
-import type { LlmConnection, LlmConnectionInput } from '@/lib/api/extended';
+import type { LlmConnection, LlmConnectionInput, McpConnection, McpConnectionInput } from '@/lib/api/extended';
 
 const onError = (err: unknown) => {
   toast.error(toastMessage(err));
@@ -507,6 +507,40 @@ export function useLlmConnectionMutations() {
   });
 
   return { create, update, remove, activate, test };
+}
+
+export function useMcpConnections() {
+  return useQuery<McpConnection[]>({
+    queryKey: ['mcp-connections'],
+    queryFn: () => api.listMcpConnections(),
+  });
+}
+
+export function useMcpConnectionMutations() {
+  const qc = useQueryClient();
+  const onError = (e: unknown) => toast.error(e instanceof Error ? e.message : '오류가 발생했습니다');
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['mcp-connections'] });
+
+  const create = useMutation({
+    mutationFn: (input: McpConnectionInput) => api.createMcpConnection(input),
+    onSuccess: () => { toast.success('MCP 연결이 추가되었습니다'); invalidate(); },
+    onError,
+  });
+
+  const toggle = useMutation({
+    mutationFn: (vars: { id: string; isEnabled: boolean }) =>
+      api.updateMcpConnection(vars.id, vars.isEnabled),
+    onSuccess: invalidate,
+    onError,
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => api.deleteMcpConnection(id),
+    onSuccess: () => { toast.success('MCP 연결이 삭제되었습니다'); invalidate(); },
+    onError,
+  });
+
+  return { create, toggle, remove };
 }
 
 /* ----------------------------------------- Gantt hooks (re-export) ------- */
