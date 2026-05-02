@@ -65,6 +65,10 @@ export function DashboardPage() {
           reviewCount > 0 ? `리뷰 대기 ${reviewCount}건 빠른 처리 방법` : '지연 위험 항목 찾아줘',
           '팀 현황 요약해줘',
         ]}
+        quickActions={[
+          { label: 'AI 브리핑', icon: <Sparkles size={10} />, onClick: () => generateBriefing() },
+          { label: '태스크 추가', onClick: () => setTaskDialogOpen(true) },
+        ]}
       />
       {/* Hero greeting */}
       <div className="flex items-end justify-between flex-wrap gap-4">

@@ -100,6 +100,10 @@ export function ProgressPage() {
               lowProgress > 0 ? `진행률 30% 미만 프로젝트 ${lowProgress}개 가속 방법` : '일정 지연 프로젝트 알려줘',
               '프로젝트 현황 요약해줘',
             ]}
+            quickActions={[
+              ...(blockedProjects > 0 ? [{ label: `헬스체크 보기`, onClick: () => setTab('health') }] : []),
+              { label: '간트 보기', onClick: () => setTab('gantt') },
+            ]}
           />
         );
       })()}
