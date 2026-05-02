@@ -9,6 +9,7 @@ import {
 	CardTitle,
 	IconButton,
 } from "@/components/ui/primitives";
+import { useSecurityLog } from "@/lib/hooks/use-admin";
 import { Check, Clock, Eye, EyeOff, MapPin, Monitor, Smartphone } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -41,15 +42,15 @@ const SESSIONS = [
 	},
 ] as const;
 
-const SECURITY_LOG = [
-	["로그인 성공", "Chrome / 서울", "오늘 09:01"],
-	["MFA 인증", "Authenticator", "오늘 09:01"],
-	["비밀번호 변경", "Chrome / 서울", "2025-11-14"],
-	["로그인 실패 (잘못된 비밀번호)", "Unknown / 부산", "2025-11-12"],
-] as const;
+const ACTION_LABELS: Record<string, string> = {
+	'auth.login.success': '로그인 성공',
+	'auth.token.revoke': '토큰 만료/로그아웃',
+	'auth.login.failed': '로그인 실패',
+};
 
 export function SecuritySection() {
 	const [showApi, setShowApi] = useState(false);
+	const { data: securityLog } = useSecurityLog(10);
 	return (
 		<Section
 			title="보안 / 세션"
@@ -152,15 +153,21 @@ export function SecuritySection() {
 					<CardTitle>최근 보안 활동</CardTitle>
 				</CardHeader>
 				<CardBody className="space-y-2 text-[12px]">
-					{SECURITY_LOG.map(([k, where, time], i) => (
-						<div key={i} className="flex items-center justify-between py-1">
-							<div>
-								<div className="text-fg-1">{k}</div>
-								<div className="text-[11px] text-fg-3">{where}</div>
+					{!securityLog || securityLog.items.length === 0 ? (
+						<div className="py-4 text-center text-fg-3 text-[12px]">보안 활동 기록이 없습니다.</div>
+					) : (
+						securityLog.items.map((item) => (
+							<div key={item.id} className="flex items-center justify-between py-1">
+								<div>
+									<div className="text-fg-1">{ACTION_LABELS[item.action] ?? item.action}</div>
+									<div className="text-[11px] text-fg-3">{item.actor?.name ?? item.actorId}</div>
+								</div>
+								<div className="text-[11px] text-fg-3 mono">
+									{new Date(item.createdAt).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })}
+								</div>
 							</div>
-							<div className="text-[11px] text-fg-3 mono">{time}</div>
-						</div>
-					))}
+						))
+					)}
 				</CardBody>
 			</Card>
 		</Section>

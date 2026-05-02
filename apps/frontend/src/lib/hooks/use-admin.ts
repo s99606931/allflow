@@ -39,3 +39,16 @@ export function useAuditLog(page = 1, limit = 50) {
     },
   });
 }
+
+export function useSecurityLog(limit = 10) {
+  return useQuery<AuditLogResponse>({
+    queryKey: ['audit-log', 'security', limit],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/audit-log?action=auth.&limit=${limit}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('보안 로그를 불러오지 못했습니다');
+      return res.json() as Promise<AuditLogResponse>;
+    },
+  });
+}

@@ -37,6 +37,7 @@ async function buildTestApp() {
     },
     // biome-ignore lint/suspicious/noExplicitAny: 테스트 mock stub
     user: { findUnique: async (_: AnyArgs) => null },
+    auditLog: { create: async () => ({ id: 'log-1' }) },
   } as AnyArgs);
   await app.register(authPlugin);
   await app.register(authRoutes);

@@ -40,7 +40,9 @@ function makeStore() {
       findMany: async (args: AnyArgs) => {
         const take = args?.take ?? 50;
         const skip = args?.skip ?? 0;
+        const prefix: string | null = args?.where?.action?.startsWith ?? null;
         const items = Array.from(logs.values())
+          .filter((row) => !prefix || row.action.startsWith(prefix))
           .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
           .slice(skip, skip + take)
           .map((row) => ({
@@ -49,7 +51,11 @@ function makeStore() {
           }));
         return items;
       },
-      count: async () => logs.size,
+      count: async (args: AnyArgs) => {
+        const prefix: string | null = args?.where?.action?.startsWith ?? null;
+        if (!prefix) return logs.size;
+        return Array.from(logs.values()).filter((row) => row.action.startsWith(prefix)).length;
+      },
       createMany: async (args: AnyArgs) => {
         for (const data of args.data) {
           seq += 1;
@@ -176,6 +182,30 @@ describe('modules/audit-log — T1 Prisma', () => {
     expect(r.statusCode).toBe(200);
     const body = r.json();
     expect(body.total).toBeGreaterThan(0);
+    await app.close();
+  });
+
+  it('action 접두사 필터 — auth. 만 반환', async () => {
+    const { app, store } = await buildTestApp();
+    const token = await makeJws('u1');
+
+    await store.auditLog.createMany({
+      data: [
+        { action: 'auth.login.success', actorId: 'u1', targetType: 'User', targetId: 'u1' },
+        { action: 'auth.token.revoke', actorId: 'u1', targetType: 'User', targetId: 'u1' },
+        { action: 'project.created', actorId: 'u1', targetType: 'Project', targetId: null },
+      ],
+    });
+
+    const r = await app.inject({
+      method: 'GET',
+      url: '/audit-log?action=auth.',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(r.statusCode).toBe(200);
+    const body = r.json();
+    expect(body.total).toBe(2);
+    expect(body.items.every((item: { action: string }) => item.action.startsWith('auth.'))).toBe(true);
     await app.close();
   });
 });

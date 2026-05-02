@@ -14,6 +14,7 @@ import type { FastifyInstance } from 'fastify';
 import { SignJWT } from 'jose';
 import { z } from 'zod';
 import { getEnv } from '../../config/env.js';
+import { writeAuditLog } from '../audit-log/write-audit-log.js';
 
 const RevokeRequest = z
   .object({
@@ -51,6 +52,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       .setIssuedAt()
       .setExpirationTime('1h')
       .sign(new TextEncoder().encode(env.AUTH_SECRET ?? ''));
+    writeAuditLog(app.prisma, { action: 'auth.login.success', actorId: user.id }).catch(() => {});
     return {
       user: { id: user.id, email: user.email, name: user.name },
       accessToken,
@@ -79,6 +81,11 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       },
       'auth token revoke',
     );
+    writeAuditLog(app.prisma, {
+      action: 'auth.token.revoke',
+      actorId: userId,
+      ...(reason ? { metadata: { reason } } : {}),
+    }).catch(() => {});
 
     return { revoked: true, tokenId };
   });
