@@ -6,7 +6,7 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/primitives';
 import { Dialog, DialogField, DialogFooter, Select, TextInput } from '@/components/ui/dialog';
-import { useIssueMutations, useProjects, useUsers } from '@/lib/hooks/use-data';
+import { useIssueMutations, useMe, useProjects, useUsers } from '@/lib/hooks/use-data';
 import type { IssuePrio, IssueSev } from '@/lib/schemas';
 
 interface Props {
@@ -27,18 +27,19 @@ export function IssueCreateDialog({ open, onOpenChange }: Props) {
   const { create } = useIssueMutations();
   const { data: projects = [] } = useProjects();
   const { data: users = [] } = useUsers();
+  const { data: me } = useMe();
   const firstProj = projects[0]?.id ?? '';
-  const firstUser = users[0]?.id ?? '';
+  const defaultAssignee = me?.id ?? users[0]?.id ?? '';
   const [title, setTitle] = useState('');
   const [projectId, setProjectId] = useState(firstProj);
-  const [assigneeId, setAssigneeId] = useState(firstUser);
+  const [assigneeId, setAssigneeId] = useState(defaultAssignee);
   const [sev, setSev] = useState<IssueSev>('med');
   const [prio, setPrio] = useState<IssuePrio>('P2');
 
   const reset = () => {
     setTitle('');
     setProjectId(firstProj);
-    setAssigneeId(firstUser);
+    setAssigneeId(defaultAssignee);
     setSev('med');
     setPrio('P2');
   };
