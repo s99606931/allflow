@@ -8,6 +8,7 @@ import { Card, CardBody, CardHeader, CardTitle, AvatarStack, Badge, Button, Prog
 import { useProject, useTasks } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 interface Props {
   projectId: string;
@@ -49,8 +50,15 @@ export function ProjectDetail({ projectId }: Props) {
   const members = project.members.map(id => userMap.get(id)).filter((u): u is NonNullable<typeof u> => Boolean(u));
   const tasks = tasksQuery.data ?? [];
 
+  const doneTasks = tasks.filter(t => t.status === 'done').length;
+  const overdueTasks = tasks.filter(t => t.status !== 'done' && t.due && t.due < new Date().toISOString().slice(0, 10)).length;
+
   return (
     <div className="p-6 max-w-[1200px] mx-auto space-y-5">
+      <AiGuideWidget
+        systemContext={`프로젝트 ${project.name} — 진행률 ${project.progress}%, 태스크 ${doneTasks}/${tasks.length} 완료, 기한초과 ${overdueTasks}건`}
+        hints={['이 프로젝트 리스크 분석해줘', '블로킹 태스크 찾아줘', '다음 마일스톤 준비 도와줘']}
+      />
       <div className="flex items-center gap-3">
         <Link href="/projects" className="inline-flex items-center gap-1.5 text-[12.5px] text-fg-2 hover:text-fg-1">
           <ArrowLeft size={13} /> 프로젝트 목록
