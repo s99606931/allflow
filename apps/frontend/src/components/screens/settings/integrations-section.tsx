@@ -2,6 +2,7 @@
 
 import { Button, Card, CardBody } from "@/components/ui/primitives";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { Section } from "./shared";
 
 const APPS = [
@@ -15,7 +16,10 @@ const APPS = [
 	{ n: "Zoom", desc: "회의 자동 녹화 → 회의록", conn: false },
 ] as const;
 
+const NOTION_ROUTE = '/notion';
+
 export function IntegrationsSection() {
+	const router = useRouter();
 	return (
 		<Section title="연결된 앱" desc="외부 도구와의 통합을 관리합니다.">
 			<div className="grid grid-cols-2 gap-3">
@@ -30,11 +34,11 @@ export function IntegrationsSection() {
 								<div className="text-[11px] text-fg-3 truncate">{a.desc}</div>
 							</div>
 							{a.conn ? (
-								<Button size="sm" variant="secondary" onClick={() => toast.info(`${a.n} 연결 설정 페이지는 준비 중입니다.`)}>
+								<Button size="sm" variant="secondary" onClick={() => a.n === 'Notion' ? router.push(NOTION_ROUTE) : toast.info(`${a.n} 설정 페이지는 준비 중입니다.`)}>
 									관리
 								</Button>
 							) : (
-								<Button size="sm" variant="primary" onClick={() => toast.info(`${a.n} 연결을 시작합니다. OAuth 인증 흐름은 준비 중입니다.`)}>
+								<Button size="sm" variant="primary" onClick={() => toast.info(`${a.n} OAuth 연동은 준비 중입니다.`)}>
 									연결
 								</Button>
 							)}

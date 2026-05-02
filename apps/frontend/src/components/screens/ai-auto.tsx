@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress } from '@/components/ui/primitives';
 import { AiChatPanel } from '@/components/ai/ai-chat-panel';
 import { useAiMutations, useDocs, useProjects, useTaskMutations } from '@/lib/hooks/use-data';
@@ -8,7 +9,6 @@ import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { useVoiceInput } from '@/lib/hooks/use-voice-input';
 import type { ExtractedAction } from '@/lib/schemas';
 import { FileText, Mail, Mic, Sparkles, Upload, Database, Wand2, X, Check, FileAudio } from 'lucide-react';
-import { toast } from 'sonner';
 import type { LucideIcon } from 'lucide-react';
 
 type Source = 'meeting' | 'email' | 'voice' | 'notion' | 'csv';
@@ -24,6 +24,7 @@ const SOURCES: { id: Source; label: string; icon: LucideIcon; desc: string }[] =
 type AiItem = ExtractedAction & { id: number; proj: string; source?: string };
 
 export function AIAutoPage() {
+  const router = useRouter();
   const projectsQuery = useProjects();
   const projects = useMemo(() => projectsQuery.data ?? [], [projectsQuery.data]);
   const firstProjectId = projects[0]?.id ?? '';
@@ -183,7 +184,7 @@ export function AIAutoPage() {
                 <Upload size={24} className="mx-auto text-fg-3" />
                 <div className="text-[13px] font-medium text-fg mt-2">소스 연결</div>
                 <div className="text-[11.5px] text-fg-3 mt-1">{SOURCES.find(s => s.id === source)?.desc}</div>
-                <Button variant="primary" size="sm" className="mt-3" onClick={() => toast.info('설정 > 통합 연결에서 외부 소스를 연결하세요.')}>연결하기</Button>
+                <Button variant="primary" size="sm" className="mt-3" onClick={() => router.push('/settings/integrations')}>연결하기</Button>
               </div>
             )}
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Card, CardBody, Avatar, Button } from '@/components/ui/primitives';
 import { ChevronLeft, ChevronRight, Plus, Video, Sparkles } from 'lucide-react';
@@ -34,6 +35,7 @@ function computeWeekWindow(anchor?: Date): { from: string; to: string; days: { l
 }
 
 export function CalendarPage() {
+  const router = useRouter();
   const [view, setView] = useState<'week' | 'month'>('week');
   const [createOpen, setCreateOpen] = useState(false);
   const [detail, setDetail] = useState<EventLike | null>(null);
@@ -92,7 +94,7 @@ export function CalendarPage() {
             </button>
           ))}
         </div>
-        <Button variant="secondary" size="sm" onClick={() => toast.info('설정 > 통합 연결에서 Google/Outlook 캘린더를 연결하세요.')}>캘린더 동기화</Button>
+        <Button variant="secondary" size="sm" onClick={() => router.push('/settings/integrations')}>캘린더 동기화</Button>
         <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
           <Plus size={13} /> 일정 추가
         </Button>
