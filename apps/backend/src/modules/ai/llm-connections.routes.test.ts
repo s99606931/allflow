@@ -125,7 +125,7 @@ describe('modules/ai/llm-connections.routes', () => {
     process.env.AUTH_SECRET = TEST_AUTH;
     const built = await buildTestApp();
     app = built.app;
-    mockRegistry = built.mockRegistry as { invalidate: ReturnType<typeof vi.fn> };
+    mockRegistry = built.mockRegistry as unknown as { invalidate: ReturnType<typeof vi.fn> };
     token = await makeToken('u1');
   });
 
