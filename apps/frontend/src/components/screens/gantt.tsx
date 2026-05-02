@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { useGantt, useGanttByAssignee, useProjects } from '@/lib/hooks/use-data';
 import type { GanttTask } from '@/lib/api/extended';
 import { ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { GanttDepPanel } from './gantt-dep-panel';
 
 const CELL_W = 32;
 const ROW_H = 40;
@@ -116,6 +117,7 @@ export function GanttPage() {
   const viewDays = 28;
   const [projectFilter, setProjectFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'project' | 'assignee'>('project');
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   const viewStart = useMemo(() => {
     const d = addDays(new Date(), -7 + offsetDays);
@@ -261,7 +263,8 @@ export function GanttPage() {
                 <div
                   key={task.id}
                   style={{ height: ROW_H }}
-                  className="border-b border-r border-border bg-bg-1 flex items-center px-4 gap-2"
+                  onClick={() => setSelectedTaskId(id => id === task.id ? null : task.id)}
+                  className={`border-b border-r border-border flex items-center px-4 gap-2 cursor-pointer transition-colors ${selectedTaskId === task.id ? 'bg-accent-soft' : 'bg-bg-1 hover:bg-hover'}`}
                 >
                   <span
                     style={{
@@ -457,7 +460,19 @@ export function GanttPage() {
             <span style={{ width: 10, height: 10, background: '#888', transform: 'rotate(45deg)', display: 'inline-block' }} />
             마일스톤
           </span>
+          {!selectedTaskId && (
+            <span className="text-fg-4 italic">태스크 이름 클릭 → 의존성 관리</span>
+          )}
         </div>
+      )}
+
+      {/* Dependency side panel */}
+      {selectedTaskId && (
+        <GanttDepPanel
+          taskId={selectedTaskId}
+          tasks={tasks}
+          onClose={() => setSelectedTaskId(null)}
+        />
       )}
     </div>
   );
