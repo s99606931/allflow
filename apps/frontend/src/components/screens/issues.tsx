@@ -30,7 +30,6 @@ export function IssuesPage() {
   const [search, setSearch] = useState('');
   const [aiDismissed, setAiDismissed] = useState(false);
   const [aiApproved, setAiApproved] = useState(false);
-  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [classifyResult, setClassifyResult] = useState('');
   const [classifyOpen, setClassifyOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -238,40 +237,38 @@ export function IssuesPage() {
         })}
       </Card>
 
-      {/* AI suggestion */}
-      {!aiDismissed && (
-        <Card className="!bg-accent-soft border-accent/20">
-          <CardBody className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-md bg-accent text-accent-fg grid place-items-center shrink-0"><Sparkles size={14} /></div>
-            <div className="flex-1">
-              <div className="text-[13px] font-semibold text-fg">AI 권장 액션 — 결제 PG 응답 지연 (ISS-238)</div>
-              <p className="text-[12.5px] text-fg-1 mt-1 leading-relaxed">
-                지난 30일 동안 동일 패턴 3회 발생. <strong>백업 PG 우회 라우트 활성화</strong>를 권장합니다. 평균 복구 시간 4분 → 40초로 단축될 것으로 예상돼요.
-              </p>
-              {evidenceOpen && (
-                <div className="mt-2 p-2.5 rounded bg-bg-elev border border-border text-[11.5px] text-fg-2 space-y-1">
-                  <div>• 2026-04-02: ISS-192 — 동일 PG 타임아웃 (4m 복구)</div>
-                  <div>• 2026-04-18: ISS-215 — 결제 API 503 (3m 복구)</div>
-                  <div>• 2026-05-01: ISS-238 — 현재 이슈 (진행 중)</div>
-                </div>
-              )}
-              {aiApproved ? (
-                <div className="flex items-center gap-1.5 mt-2.5 text-[12px] text-success font-medium">
-                  <CheckCircle2 size={13} /> 백업 라우트 활성화 완료
-                </div>
-              ) : (
-                <div className="flex gap-2 mt-2.5">
-                  <Button variant="primary" size="sm" onClick={() => setAiApproved(true)}>백업 라우트 활성화</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setEvidenceOpen(v => !v)}>
-                    {evidenceOpen ? '근거 숨기기' : '근거 보기'}
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setAiDismissed(true)}>무시</Button>
-                </div>
-              )}
-            </div>
-          </CardBody>
-        </Card>
-      )}
+      {/* AI suggestion — derives from real issue data */}
+      {!aiDismissed && (() => {
+        const urgent = issues
+          .filter(i => i.status !== 'resolved' && i.slaPct >= 80)
+          .sort((a, b) => b.slaPct - a.slaPct)[0];
+        if (!urgent) return null;
+        const shortId = urgent.id.includes('-') ? urgent.id.split('-').slice(-1)[0] : urgent.id;
+        return (
+          <Card className="!bg-accent-soft border-accent/20">
+            <CardBody className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-md bg-accent text-accent-fg grid place-items-center shrink-0"><Sparkles size={14} /></div>
+              <div className="flex-1">
+                <div className="text-[13px] font-semibold text-fg">AI 권장 액션 — {urgent.title} (#{shortId})</div>
+                <p className="text-[12.5px] text-fg-1 mt-1 leading-relaxed">
+                  <strong>{urgent.prio}</strong> 이슈가 SLA <strong>{urgent.slaPct}%</strong> 도달. 즉각 대응이 필요합니다.
+                  {slaAtRisk > 1 && ` 추가로 ${slaAtRisk - 1}개 이슈가 SLA 위험 상태입니다.`}
+                </p>
+                {aiApproved ? (
+                  <div className="flex items-center gap-1.5 mt-2.5 text-[12px] text-success font-medium">
+                    <CheckCircle2 size={13} /> 에스컬레이션 완료
+                  </div>
+                ) : (
+                  <div className="flex gap-2 mt-2.5">
+                    <Button variant="primary" size="sm" onClick={() => setAiApproved(true)}>에스컬레이션</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setAiDismissed(true)}>무시</Button>
+                  </div>
+                )}
+              </div>
+            </CardBody>
+          </Card>
+        );
+      })()}
     </div>
   );
 }

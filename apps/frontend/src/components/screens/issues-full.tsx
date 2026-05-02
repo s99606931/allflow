@@ -113,7 +113,7 @@ export function IssuesPageFull() {
         <Tabs.Content value="list" className="pt-4 space-y-4 outline-none">
           <Toolbar onCreate={() => setCreateOpen(true)} activeFilter={listFilter} onFilterChange={setListFilter} search={listSearch} onSearchChange={setListSearch} />
           <IssueList filter={listFilter} search={listSearch} />
-          {!aiSuggestionDismissed && <AISuggestion onDismiss={() => setAiSuggestionDismissed(true)} />}
+          {!aiSuggestionDismissed && <AISuggestion issues={issues} onDismiss={() => setAiSuggestionDismissed(true)} />}
         </Tabs.Content>
 
         {/* BOARD */}
@@ -182,18 +182,7 @@ export function IssuesPageFull() {
               </CardBody>
             </Card>
 
-            <Card className="!bg-accent-soft border-accent/20">
-              <CardBody className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={14} className="text-accent-strong" />
-                  <div className="text-[12.5px] font-semibold text-fg">AI 권장 액션</div>
-                </div>
-                <p className="text-[12px] text-fg-1 leading-relaxed">
-                  ISS-238 (P0) 이 SLA 92% 도달. <strong>백업 PG 우회 라우트</strong> 활성화로 평균 복구 시간을 4분 → 40초로 단축할 수 있어요.
-                </p>
-                <Button variant="primary" size="sm" onClick={() => toast.success("백업 PG 우회 라우트 활성화 요청이 전송되었습니다.")}>백업 라우트 활성화</Button>
-              </CardBody>
-            </Card>
+            <SlaAiActionCard issues={issues} />
           </div>
         </Tabs.Content>
 
@@ -428,28 +417,61 @@ function computeStats(issues: Issue[]) {
   };
 }
 
-function AISuggestion({ onDismiss }: { onDismiss: () => void }) {
-  const [showEvidence, setShowEvidence] = useState(false);
+function AISuggestion({ issues, onDismiss }: { issues: Issue[]; onDismiss: () => void }) {
+  const urgent = issues
+    .filter(i => i.status !== 'resolved' && i.slaPct >= 80)
+    .sort((a, b) => b.slaPct - a.slaPct)[0];
+  if (!urgent) return null;
+  const shortId = urgent.id.includes('-') ? urgent.id.split('-').slice(-1)[0] : urgent.id;
   return (
     <Card className="!bg-accent-soft border-accent/20">
       <CardBody className="flex items-start gap-3">
         <div className="w-8 h-8 rounded-md bg-accent text-accent-fg grid place-items-center shrink-0"><Sparkles size={14} /></div>
         <div className="flex-1">
-          <div className="text-[13px] font-semibold text-fg">AI 권장 액션 — 결제 PG 응답 지연 (ISS-238)</div>
+          <div className="text-[13px] font-semibold text-fg">AI 권장 액션 — {urgent.title} (#{shortId})</div>
           <p className="text-[12.5px] text-fg-1 mt-1 leading-relaxed">
-            지난 30일 동안 동일 패턴 3회 발생. <strong>백업 PG 우회 라우트 활성화</strong>를 권장합니다.
+            <strong>{urgent.prio}</strong> 이슈가 SLA {urgent.slaPct}% 도달. 즉각 대응이 필요합니다.
+            담당자 확인 및 에스컬레이션을 권장합니다.
           </p>
-          {showEvidence && (
-            <div className="mt-2 p-2.5 rounded-md bg-bg text-[11.5px] text-fg-2 leading-relaxed border border-border">
-              2024-04: P0 이슈 ISS-191 (4h 지연) · 2025-01: ISS-207 (2h 지연) · 2025-04: ISS-238 (현재) — 동일 PG 벤더.
-            </div>
-          )}
           <div className="flex gap-2 mt-2.5">
-            <Button variant="primary" size="sm" onClick={() => { const c = window.confirm('백업 PG 라우트를 활성화하시겠습니까?\n\n운영 팀에 의해 검토된 후 적용됩니다.'); if (c) onDismiss(); }}>백업 라우트 활성화</Button>
-            <Button variant="secondary" size="sm" onClick={() => setShowEvidence(v => !v)}>근거 {showEvidence ? '닫기' : '보기'}</Button>
+            <Button variant="primary" size="sm" onClick={() => { toast.success(`#${shortId} 에스컬레이션 요청이 전송되었습니다.`); onDismiss(); }}>에스컬레이션</Button>
             <Button variant="ghost" size="sm" onClick={onDismiss}>무시</Button>
           </div>
         </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+function SlaAiActionCard({ issues }: { issues: Issue[] }) {
+  const urgent = issues
+    .filter(i => i.status !== 'resolved' && i.slaPct >= 80)
+    .sort((a, b) => b.slaPct - a.slaPct)[0];
+  if (!urgent) {
+    return (
+      <Card className="!bg-success-soft border-success/20">
+        <CardBody className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Sparkles size={14} className="text-success" />
+            <div className="text-[12.5px] font-semibold text-fg">AI 권장 액션</div>
+          </div>
+          <p className="text-[12px] text-fg-1 leading-relaxed">현재 SLA 위험 이슈가 없습니다. 예방적 모니터링을 유지하세요.</p>
+        </CardBody>
+      </Card>
+    );
+  }
+  const shortId = urgent.id.includes('-') ? urgent.id.split('-').slice(-1)[0] : urgent.id;
+  return (
+    <Card className="!bg-accent-soft border-accent/20">
+      <CardBody className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Sparkles size={14} className="text-accent-strong" />
+          <div className="text-[12.5px] font-semibold text-fg">AI 권장 액션</div>
+        </div>
+        <p className="text-[12px] text-fg-1 leading-relaxed">
+          <strong>#{shortId}</strong> ({urgent.prio}) SLA {urgent.slaPct}% 도달. 즉각 대응 및 에스컬레이션을 권장합니다.
+        </p>
+        <Button variant="primary" size="sm" onClick={() => toast.success(`#${shortId} 에스컬레이션 요청이 전송되었습니다.`)}>에스컬레이션</Button>
       </CardBody>
     </Card>
   );
