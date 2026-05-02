@@ -32,7 +32,9 @@ export function HRPage() {
           '1:1 미팅 준비 도와줘',
         ]}
         quickActions={[
-          ...(pendingLeaves > 0 ? [{ label: `1:1 토픽 추천`, onClick: () => setTab('1:1 미팅') }] : []),
+          { label: '휴가 신청', onClick: () => setTab('휴가 / 연차') },
+          ...(pendingLeaves > 0 ? [{ label: `대기 ${pendingLeaves}건 처리`, onClick: () => setTab('휴가 / 연차') }] : []),
+          { label: 'OKR 보기', onClick: () => setTab('평가 / OKR') },
         ]}
       />
       <div className="flex items-center gap-2">
