@@ -7,6 +7,7 @@ import { useMe, useOrgUnits } from '@/lib/hooks/use-data';
 import { Award, Briefcase, CalendarClock, Plane, Plus, Users, X, Pencil, Check } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 const TABS = ['휴가 / 연차', '근태', '평가 / OKR', '1:1 미팅'] as const;
 type Tab = (typeof TABS)[number];
@@ -307,8 +308,12 @@ function LeaveRow({ leave, cancelLeave, onReapply }: LeaveRowProps) {
             size="sm"
             disabled={updateLeave.isPending}
             onClick={async () => {
-              await updateLeave.mutateAsync({ id: leave.id, data: { startDate: editStart, endDate: editEnd, reason: editReason || undefined } });
-              setEditing(false);
+              try {
+                await updateLeave.mutateAsync({ id: leave.id, data: { startDate: editStart, endDate: editEnd, reason: editReason || undefined } });
+                setEditing(false);
+              } catch {
+                toast.error('휴가 수정에 실패했습니다');
+              }
             }}
           >
             <Check size={12} /> 저장
