@@ -25,16 +25,25 @@ interface Props {
   onOpenChange: (next: boolean) => void;
   resources: { id: string; name: string }[];
   existingBookings?: Slot[];
+  initialResourceId?: string;
+  initialStart?: string;
 }
 
-export function ResourceBookDialog({ open, onOpenChange, resources, existingBookings = [] }: Props) {
+export function ResourceBookDialog({ open, onOpenChange, resources, existingBookings = [], initialResourceId, initialStart }: Props) {
   const { t } = useTranslation();
   const { data: me } = useMe();
   const { create } = useResourceMutations();
   const today = new Date().toISOString().slice(0, 10);
-  const [resourceId, setResourceId] = useState(resources[0]?.id ?? '');
-  const [start, setStart] = useState(`${today}T09:00`);
-  const [end, setEnd] = useState(`${today}T10:00`);
+  const [resourceId, setResourceId] = useState(initialResourceId ?? resources[0]?.id ?? '');
+  const [start, setStart] = useState(initialStart ?? `${today}T09:00`);
+  const [end, setEnd] = useState(() => {
+    if (initialStart) {
+      const d = new Date(initialStart);
+      d.setHours(d.getHours() + 1);
+      return d.toISOString().slice(0, 16);
+    }
+    return `${today}T10:00`;
+  });
 
   const conflict = useMemo(() => {
     return existingBookings.some(

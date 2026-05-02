@@ -33,6 +33,7 @@ export function ResourcesPage() {
   const [resourceSearch, setResourceSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [bookOpen, setBookOpen] = useState(false);
+  const [bookPreselect, setBookPreselect] = useState<{ resourceId: string; start: string } | undefined>();
   const [weekOffset, setWeekOffset] = useState(0);
 
   const today = useMemo(() => {
@@ -84,9 +85,11 @@ export function ResourcesPage() {
         </Button>
         <ResourceBookDialog
           open={bookOpen}
-          onOpenChange={setBookOpen}
+          onOpenChange={(next) => { setBookOpen(next); if (!next) setBookPreselect(undefined); }}
           resources={resources.map(r => ({ id: r.id, name: r.name }))}
           existingBookings={existingBookings}
+          initialResourceId={bookPreselect?.resourceId}
+          initialStart={bookPreselect?.start}
         />
       </div>
 
@@ -179,7 +182,7 @@ export function ResourcesPage() {
 
                     <div className="flex-1 relative grid" style={{ gridTemplateColumns: `repeat(${HOURS.length}, 1fr)` }}>
                       {HOURS.map(h => (
-                        <div key={h} className="border-l border-border h-[64px] hover:bg-accent-soft/30 cursor-pointer" />
+                        <div key={h} className="border-l border-border h-[64px] hover:bg-accent-soft/30 cursor-pointer" onClick={() => { setBookPreselect({ resourceId: r.id, start: `${today}T${String(h).padStart(2, '0')}:00` }); setBookOpen(true); }} />
                       ))}
                     </div>
                   </div>
