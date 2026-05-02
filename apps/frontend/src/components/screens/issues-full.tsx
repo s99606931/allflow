@@ -63,12 +63,12 @@ export function IssuesPageFull() {
       {/* KPI strip */}
       <div className="grid grid-cols-6 gap-3">
         {[
-          { l: '신규 (24h)', v: stats.recent, t: '+3' },
-          { l: 'P0 진행중', v: stats.p0, t: stats.p0 > 0 ? '!' : '0', danger: stats.p0 > 0 },
-          { l: '미할당', v: stats.unassigned, t: '+1' },
-          { l: '평균 해결', v: '2.4d', t: '-0.3' },
-          { l: 'SLA 준수', v: '94%', t: '+2%' },
-          { l: '재발생', v: '3', t: '-1' },
+          { l: '전체', v: stats.recent, t: '' },
+          { l: 'P0 진행중', v: stats.p0, t: stats.p0 > 0 ? '!' : '—', danger: stats.p0 > 0 },
+          { l: '미할당', v: stats.unassigned, t: '' },
+          { l: '해결 완료', v: stats.resolvedCount, t: '' },
+          { l: 'SLA 준수', v: `${stats.slaRate}%`, t: '' },
+          { l: 'Critical 해결', v: stats.criticalResolved, t: '' },
         ].map(m => (
           <Card key={m.l}>
             <CardBody className="!p-3.5">
@@ -386,10 +386,18 @@ function BoardCard({ issue }: { issue: Issue }) {
 }
 
 function computeStats(issues: Issue[]) {
+  const resolved = issues.filter(i => i.status === 'resolved');
+  const open = issues.filter(i => i.status !== 'resolved');
+  const slaCompliant = open.length > 0 ? open.filter(i => i.slaPct < 80).length : 0;
+  const slaRate = open.length > 0 ? Math.round((slaCompliant / open.length) * 100) : 100;
+  const criticalResolved = resolved.filter(i => i.sev === 'critical').length;
   return {
     recent: issues.length,
     p0: issues.filter(i => i.prio === 'P0' && i.status !== 'resolved').length,
     unassigned: issues.filter(i => !i.assignee).length,
+    resolvedCount: resolved.length,
+    slaRate,
+    criticalResolved,
   };
 }
 

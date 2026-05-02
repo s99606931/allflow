@@ -126,7 +126,7 @@ describe('modules/audit-log — T1 Prisma', () => {
     await app.close();
   });
 
-  it('빈 DB일 때 자동 시드 후 3건 반환', async () => {
+  it('빈 DB일 때 빈 배열 반환 (자동 시드 없음)', async () => {
     const { app } = await buildTestApp();
     const token = await makeJws('u1');
     const r = await app.inject({
@@ -136,8 +136,8 @@ describe('modules/audit-log — T1 Prisma', () => {
     });
     expect(r.statusCode).toBe(200);
     const body = r.json();
-    expect(body.total).toBe(3);
-    expect(body.items).toHaveLength(3);
+    expect(body.total).toBe(0);
+    expect(body.items).toHaveLength(0);
     await app.close();
   });
 
@@ -160,21 +160,21 @@ describe('modules/audit-log — T1 Prisma', () => {
     const { app, store } = await buildTestApp();
     const token = await makeJws('u1');
 
-    // 먼저 자동 시드 유발
-    await app.inject({
-      method: 'GET',
-      url: '/audit-log',
-      headers: { authorization: `Bearer ${token}` },
+    // 직접 시드
+    await store.auditLog.createMany({
+      data: [
+        { action: 'user.login', actorId: 'u1', targetType: 'User', targetId: 'u1' },
+        { action: 'project.created', actorId: 'u1', targetType: 'Project', metadata: { name: '테스트' } },
+      ],
     });
 
-    // 두 번째 호출 — 이미 시드됐으므로 count > 0
-    const r2 = await app.inject({
+    const r = await app.inject({
       method: 'GET',
       url: '/audit-log',
       headers: { authorization: `Bearer ${token}` },
     });
-    expect(r2.statusCode).toBe(200);
-    const body = r2.json();
+    expect(r.statusCode).toBe(200);
+    const body = r.json();
     expect(body.total).toBeGreaterThan(0);
     await app.close();
   });

@@ -40,6 +40,10 @@ export function ResourcesPage() {
   const { data: existingBookings = [] } = useBookings(today);
   const { data: me } = useMe();
   const myBookingsToday = existingBookings.filter(b => b.bookedBy === me?.id).length;
+  const bookedResourceIds = new Set(existingBookings.map(b => b.resourceId));
+  const utilizationRate = resources.length > 0
+    ? Math.round((bookedResourceIds.size / resources.length) * 100)
+    : 0;
 
   const filtered = useMemo(
     () => resources.filter(r => kind === 'all' || r.kind === kind),
@@ -158,7 +162,7 @@ export function ResourcesPage() {
       <div className="grid grid-cols-4 gap-4">
         {[
           { k: '등록 리소스', v: String(resources.length), sub: `회의실 ${resources.filter(r => r.kind === 'room').length} · 장비 ${resources.filter(r => r.kind === 'equipment').length}` },
-          { k: '평균 사용률', v: '—', sub: '데이터 수집 중' },
+          { k: '사용률 (오늘)', v: `${utilizationRate}%`, sub: `${bookedResourceIds.size}/${resources.length} 리소스` },
           { k: '내 예약', v: String(myBookingsToday), sub: '오늘 기준' },
           { k: '총 예약', v: String(existingBookings.length), sub: '오늘 기준' },
         ].map(s => (
