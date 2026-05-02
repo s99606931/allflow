@@ -243,3 +243,40 @@ describe('modules/identity — POST /users/invite', () => {
     await app.close();
   });
 });
+
+describe('modules/identity — DELETE /users/me', () => {
+  beforeAll(() => { process.env.AUTH_SECRET = TEST_AUTH; });
+  afterAll(() => { process.env.AUTH_SECRET = undefined; resetEnvForTests(); });
+
+  it('인증 없으면 401', async () => {
+    const app = await buildTestApp({ user: {} });
+    const r = await app.inject({ method: 'DELETE', url: '/users/me' });
+    expect(r.statusCode).toBe(401);
+    await app.close();
+  });
+
+  it('존재하지 않는 사용자 → 404', async () => {
+    const app = await buildTestApp({ user: { findFirst: async () => null, update: async () => { throw new Error('should not be called'); } } });
+    const token = await makeJws('u-missing');
+    const r = await app.inject({ method: 'DELETE', url: '/users/me', headers: { authorization: `Bearer ${token}` } });
+    expect(r.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('정상: 204 + deletedAt 세팅', async () => {
+    let captured: AnyArgs;
+    const app = await buildTestApp({
+      user: {
+        findFirst: async () => ({ id: 'u1' }),
+        update: async (args: AnyArgs) => { captured = args; return SAMPLE_USERS[0]; },
+      },
+    });
+    const token = await makeJws('u1');
+    const r = await app.inject({ method: 'DELETE', url: '/users/me', headers: { authorization: `Bearer ${token}` } });
+    expect(r.statusCode).toBe(204);
+    expect(captured!.data.deletedAt).toBeInstanceOf(Date);
+    expect(captured!.data.name).toBe('탈퇴한 사용자');
+    expect(captured!.data.email).toBeNull();
+    await app.close();
+  });
+});

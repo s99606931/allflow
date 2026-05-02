@@ -413,6 +413,13 @@ export function useProfileMutations() {
   return { update };
 }
 
+export function useDeleteAccount() {
+  return useMutation({
+    mutationFn: () => api.deleteAccount(),
+    onError,
+  });
+}
+
 export function useTaskComments(taskId: string | undefined) {
   return useQuery({
     queryKey: keys.tasks.comments(taskId ?? ''),

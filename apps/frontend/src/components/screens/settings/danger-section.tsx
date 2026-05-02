@@ -2,10 +2,22 @@
 
 import { Button, Card, CardBody } from "@/components/ui/primitives";
 import { Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { useDeleteAccount } from "@/lib/hooks/use-data";
 import { Section } from "./shared";
 
 export function DangerSection() {
+	const router = useRouter();
+	const deleteAccount = useDeleteAccount();
+
+	const onDelete = () => {
+		const confirmed = window.confirm("정말로 계정을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.");
+		if (!confirmed) return;
+		deleteAccount.mutate(undefined, {
+			onSuccess: () => router.push('/login'),
+		});
+	};
+
 	return (
 		<Section title="계정 삭제" desc="이 작업은 되돌릴 수 없습니다.">
 			<Card className="border-danger/40">
@@ -23,13 +35,8 @@ export function DangerSection() {
 						</div>
 					</div>
 					<div className="flex justify-end gap-2 pt-2 border-t border-border">
-						<Button size="md" variant="danger" onClick={() => {
-							const confirmed = window.confirm("정말로 계정을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.");
-							if (confirmed) {
-								toast.error("계정 삭제 기능은 준비 중입니다. 관리자에게 문의해 주세요.");
-							}
-						}}>
-							<Trash2 size={13} /> 계정 영구 삭제
+						<Button size="md" variant="danger" disabled={deleteAccount.isPending} onClick={onDelete}>
+							<Trash2 size={13} /> {deleteAccount.isPending ? '처리 중...' : '계정 영구 삭제'}
 						</Button>
 					</div>
 				</CardBody>

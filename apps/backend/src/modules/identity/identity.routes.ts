@@ -149,4 +149,27 @@ export async function identityRoutes(app: FastifyInstance): Promise<void> {
 
     return serializeUser(updated);
   });
+
+  app.delete('/users/me', { preHandler: [app.authenticate] }, async (req, reply) => {
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const existing = await app.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundError('User', userId);
+
+    await app.prisma.user.update({
+      where: { id: userId },
+      data: {
+        deletedAt: new Date(),
+        name: '탈퇴한 사용자',
+        email: null,
+        initials: '?',
+      },
+    });
+
+    return reply.code(204).send();
+  });
 }

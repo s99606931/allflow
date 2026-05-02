@@ -212,6 +212,10 @@ export const extendedApi = {
   updateProfile: async (input: ProfilePatch): Promise<User> =>
     parsed(http.patch('users/me', { json: input }).json(), UserSchema),
 
+  deleteAccount: async (): Promise<void> => {
+    await http.delete('users/me');
+  },
+
   /* Comments (tasks · issues) ------------------------------------------- */
   listTaskComments: async (taskId: string): Promise<Comment[]> =>
     parsed(http.get(`tasks/${taskId}/comments`).json(), z.array(CommentSchema)),
