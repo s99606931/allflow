@@ -526,6 +526,10 @@ export function useIssueCommentCreate(issueId: string) {
   });
 }
 
+export function useReports() {
+  return useQuery({ queryKey: ['reports'], queryFn: () => api.listReports() });
+}
+
 export function useReportSend() {
   return useMutation({
     mutationFn: (vars: { id: string; recipients: string[] }) =>

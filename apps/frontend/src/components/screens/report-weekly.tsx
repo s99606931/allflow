@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardBody, CardHeader, CardTitle, Button } from '@/components/ui/primitives';
 import { Calendar, Download, RefreshCw, Send, Sparkles } from 'lucide-react';
 import { ReportRecipientsEditor } from '@/components/dialogs/report-recipients-editor';
-import { useAiMutations, useProjects } from '@/lib/hooks/use-data';
+import { useAiMutations, useProjects, useReports } from '@/lib/hooks/use-data';
 import type { Report } from '@/lib/schemas';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
@@ -52,6 +52,7 @@ export function ReportWeeklyPage() {
   const period = reportType === '격주' ? lastTwoWeeks : lastWeek;
   const { weeklyReport } = useAiMutations();
   const { data: projects = [] } = useProjects();
+  const { data: history = [] } = useReports();
   const [scope, setScope] = useState<Set<string>>(new Set());
 
   const onGenerate = async () => {
@@ -127,6 +128,28 @@ export function ReportWeeklyPage() {
             </Button>
           </CardBody>
         </Card>
+
+        {history.length > 0 && (
+          <Card>
+            <CardHeader><CardTitle>보고서 히스토리</CardTitle></CardHeader>
+            <CardBody className="space-y-0.5 !p-2">
+              {history.slice(0, 8).map(r => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setReport(r as unknown as Report)}
+                  className="w-full text-left rounded-md px-2.5 py-2 hover:bg-hover transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider ${r.kind === 'weekly' ? 'bg-accent-soft text-accent-strong' : 'bg-bg-2 text-fg-2'}`}>{r.kind === 'weekly' ? '주간' : '월간'}</span>
+                    <span className="text-[11.5px] mono text-fg-1">{r.periodStart} ~ {r.periodEnd}</span>
+                  </div>
+                  {r.tldr && <div className="text-[11px] text-fg-3 mt-0.5 truncate">{r.tldr.slice(0, 55)}{r.tldr.length > 55 ? '…' : ''}</div>}
+                </button>
+              ))}
+            </CardBody>
+          </Card>
+        )}
       </div>
 
       <div className="col-span-8 space-y-4">
