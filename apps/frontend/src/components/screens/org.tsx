@@ -158,14 +158,22 @@ export function OrgPage() {
                 <div className="space-y-1.5">
                   {d.members.map(m => {
                     const u = userMap.get(m);
-                    return u ? (
+                    if (!u) return <div key={m} className="text-[12px] text-fg-3 truncate">{m}</div>;
+                    const status = (u as { userStatus?: string }).userStatus ?? '';
+                    const dotColor =
+                      status === '업무 중' ? 'bg-success' :
+                      status === '집중 모드' || status === '회의 중' ? 'bg-warning' :
+                      'bg-fg-3';
+                    return (
                       <div key={m} className="flex items-center gap-2 text-[12px]">
                         <Avatar user={u} size={20} />
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`}
+                          title={status || '상태 없음'}
+                        />
                         <span className="text-fg-1 flex-1 truncate">{u.name}</span>
                         <span className="text-[10.5px] text-fg-3">{u.role.split(' ')[0]}</span>
                       </div>
-                    ) : (
-                      <div key={m} className="text-[12px] text-fg-3 truncate">{m}</div>
                     );
                   })}
                 </div>

@@ -6,8 +6,9 @@ import { ProjectCreateDialog } from '@/components/dialogs/project-create-dialog'
 import { Card, CardBody, CardHeader, CardTitle, Badge, Button, Progress } from '@/components/ui/primitives';
 import { useProjects, useProjectMutations } from '@/lib/hooks/use-data';
 import type { Project, StatusKey } from '@/lib/schemas';
-import { LayoutGrid, GanttChart, HeartPulse, Plus } from 'lucide-react';
+import { LayoutGrid, GanttChart, HeartPulse, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { api } from '@/lib/api';
 
 
 const PROJECT_STATUS_OPTIONS: { value: StatusKey; label: string }[] = [
@@ -64,6 +65,26 @@ export function ProgressPage() {
   const { update: updateProject } = useProjectMutations();
   const PROJECTS = projects;
   const todayPct = todayLinePercent();
+  const [aiAnalysis, setAiAnalysis] = useState<Record<string, string>>({});
+  const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
+  const [aiOpen, setAiOpen] = useState<Record<string, boolean>>({});
+
+  const runAiAnalysis = async (p: Project) => {
+    const taskRate = p.tasks.total > 0 ? Math.round((p.tasks.done / p.tasks.total) * 100) : 0;
+    const diff = p.progress - taskRate;
+    const riskLabel = p.progress < 30 ? '높음' : p.progress < 60 ? '중간' : '낮음';
+    const prompt = `프로젝트 "${p.name}" (코드: ${p.code}) 분석:\n- 진행률: ${p.progress}%\n- 태스크 완료율: ${taskRate}%\n- 진행률-태스크 차이: ${diff > 0 ? '+' : ''}${diff}%p\n- 상태: ${p.status}\n- 리스크: ${riskLabel}\n${p.budget != null ? `- 예산: ${(p.budget / 1000000).toFixed(1)}M\n` : ''}\n이 프로젝트의 현재 진행 상황과 리스크를 3~4문장으로 간결하게 분석하고, 개선 포인트를 1~2가지 제안해줘.`;
+    setAiLoading(prev => ({ ...prev, [p.id]: true }));
+    setAiOpen(prev => ({ ...prev, [p.id]: true }));
+    try {
+      const result = await api.aiComplete(prompt);
+      setAiAnalysis(prev => ({ ...prev, [p.id]: result.text }));
+    } catch {
+      setAiAnalysis(prev => ({ ...prev, [p.id]: 'AI 분석 중 오류가 발생했습니다.' }));
+    } finally {
+      setAiLoading(prev => ({ ...prev, [p.id]: false }));
+    }
+  };
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
@@ -109,48 +130,79 @@ export function ProgressPage() {
 
         <Tabs.Content value="portfolio" className="pt-4 outline-none">
           <Card>
-            <div className="grid grid-cols-[1fr_120px_120px_120px_120px_100px] gap-3 px-4 h-9 items-center text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold border-b border-border">
+            <div className="grid grid-cols-[1fr_120px_120px_120px_120px_140px] gap-3 px-4 h-9 items-center text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold border-b border-border">
               <div>프로젝트</div><div>태스크율</div><div>진행률</div><div>차이</div><div>예산 소진</div><div>리스크</div>
             </div>
             {PROJECTS.map(p => {
               const taskRate = p.tasks.total > 0 ? Math.round((p.tasks.done / p.tasks.total) * 100) : 0;
               const diff = p.progress - taskRate;
+              const isAnalysisOpen = !!aiOpen[p.id];
+              const analysisText = aiAnalysis[p.id];
+              const isAnalysisLoading = !!aiLoading[p.id];
               return (
-                <div key={p.id} className="grid grid-cols-[1fr_120px_120px_120px_120px_100px] gap-3 px-4 py-3 items-center text-[12.5px] border-b border-border last:border-0">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-                    <span className="font-medium text-fg truncate">{p.name}</span>
-                    <Badge tone="neutral" className="mono">{p.code}</Badge>
+                <div key={p.id} className="border-b border-border last:border-0">
+                  <div className="grid grid-cols-[1fr_120px_120px_120px_120px_140px] gap-3 px-4 py-3 items-center text-[12.5px]">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
+                      <span className="font-medium text-fg truncate">{p.name}</span>
+                      <Badge tone="neutral" className="mono">{p.code}</Badge>
+                    </div>
+                    <div><Progress value={taskRate} /><div className="text-[10.5px] mono text-fg-3 mt-0.5">{taskRate}%</div></div>
+                    <div><Progress value={p.progress} tone={p.status === 'done' ? 'success' : 'accent'} /><div className="text-[10.5px] mono text-fg-1 mt-0.5 font-semibold">{p.progress}%</div></div>
+                    <div className={`mono text-[12px] font-semibold ${diff < -5 ? 'text-danger' : diff < 0 ? 'text-warning' : 'text-success'}`}>{diff > 0 ? '+' : ''}{diff}%p</div>
+                    <div>
+                      {p.budget != null
+                        ? <><Progress value={Math.min(100, Math.round((p.progress / 100) * p.budget))} tone="warning" /><div className="text-[10.5px] mono text-fg-3 mt-0.5">{(p.budget / 1000000).toFixed(1)}M</div></>
+                        : <div className="text-[10.5px] text-fg-3">미설정</div>}
+                    </div>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <select
+                        aria-label={`${p.name} 상태`}
+                        value={p.status}
+                        disabled={updateProject.isPending}
+                        onChange={e =>
+                          updateProject.mutate({
+                            id: p.id,
+                            patch: { status: e.target.value as StatusKey },
+                          })
+                        }
+                        className="text-[10.5px] rounded border border-border bg-bg-1 px-1 py-0.5 mono"
+                      >
+                        {PROJECT_STATUS_OPTIONS.map(o => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                      {p.progress < 30 ? <Badge tone="danger">높음</Badge> : p.progress < 60 ? <Badge tone="warning">중간</Badge> : <Badge tone="success">낮음</Badge>}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={isAnalysisLoading}
+                        onClick={() => {
+                          if (isAnalysisOpen && analysisText) {
+                            setAiOpen(prev => ({ ...prev, [p.id]: false }));
+                          } else {
+                            void runAiAnalysis(p);
+                          }
+                        }}
+                        className="text-[10.5px] h-6 px-1.5 gap-0.5"
+                      >
+                        {isAnalysisLoading ? '분석 중…' : 'AI 분석'}
+                        {!isAnalysisLoading && isAnalysisOpen && analysisText
+                          ? <ChevronUp size={11} />
+                          : !isAnalysisLoading ? <ChevronDown size={11} /> : null}
+                      </Button>
+                    </div>
                   </div>
-                  <div><Progress value={taskRate} /><div className="text-[10.5px] mono text-fg-3 mt-0.5">{taskRate}%</div></div>
-                  <div><Progress value={p.progress} tone={p.status === 'done' ? 'success' : 'accent'} /><div className="text-[10.5px] mono text-fg-1 mt-0.5 font-semibold">{p.progress}%</div></div>
-                  <div className={`mono text-[12px] font-semibold ${diff < -5 ? 'text-danger' : diff < 0 ? 'text-warning' : 'text-success'}`}>{diff > 0 ? '+' : ''}{diff}%p</div>
-                  <div>
-                    {p.budget != null
-                      ? <><Progress value={Math.min(100, Math.round((p.progress / 100) * p.budget))} tone="warning" /><div className="text-[10.5px] mono text-fg-3 mt-0.5">{(p.budget / 1000000).toFixed(1)}M</div></>
-                      : <div className="text-[10.5px] text-fg-3">미설정</div>}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <select
-                      aria-label={`${p.name} 상태`}
-                      value={p.status}
-                      disabled={updateProject.isPending}
-                      onChange={e =>
-                        updateProject.mutate({
-                          id: p.id,
-                          patch: { status: e.target.value as StatusKey },
-                        })
-                      }
-                      className="text-[10.5px] rounded border border-border bg-bg-1 px-1 py-0.5 mono"
-                    >
-                      {PROJECT_STATUS_OPTIONS.map(o => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                    {p.progress < 30 ? <Badge tone="danger">높음</Badge> : p.progress < 60 ? <Badge tone="warning">중간</Badge> : <Badge tone="success">낮음</Badge>}
-                  </div>
+                  {isAnalysisOpen && (
+                    <div className="mx-4 mb-3 rounded-md border border-border bg-bg-elev px-4 py-3 text-[12.5px] text-fg-1 leading-relaxed">
+                      {isAnalysisLoading
+                        ? <span className="text-fg-3">AI가 분석 중입니다…</span>
+                        : analysisText ?? ''}
+                    </div>
+                  )}
                 </div>
               );
             })}

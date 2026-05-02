@@ -35,14 +35,39 @@ export function ReportMonthlyPage() {
 
   return (
     <div className="p-6 max-w-[1100px] mx-auto space-y-5">
-      <AiGuideWidget
-        systemContext={`월간 보고 — ${period.label} KPI·팀 성과·이슈 통계 임원진 리포트 ${report ? '(생성됨)' : '(미생성)'}`}
-        hints={[
-          report ? `${period.label} 보고서 핵심 인사이트 요약해줘` : `${period.label} AI 보고서 생성 도와줘`,
-          report ? 'KPI 달성률 분석해줘' : '이번 달 핵심 성과 찾아줘',
-          '개선 포인트 제안해줘',
-        ]}
-      />
+      {(() => {
+        const firstKpi = report?.kpis?.[0];
+        const secondKpi = report?.kpis?.[1];
+        const downKpis = report?.kpis?.filter(k => k.dir === 'down') ?? [];
+        const sectionCount = report?.sections?.length ?? 0;
+
+        const systemContext = report
+          ? `월간 보고 — ${period.label} | 보고서 생성됨 | 섹션 ${sectionCount}개${firstKpi ? ` | ${firstKpi.label}: ${firstKpi.value}${firstKpi.delta ? ` (${firstKpi.delta})` : ''}` : ''}${secondKpi ? ` | ${secondKpi.label}: ${secondKpi.value}${secondKpi.delta ? ` (${secondKpi.delta})` : ''}` : ''}`
+          : `월간 보고 — ${period.label} | 보고서 미생성 | ${period.year}년 ${period.month}월`;
+
+        const downHint = downKpis.length > 0
+          ? `KPI 하락 원인 분석해줘 — ${downKpis.map(k => k.label).join(', ')} 하락 중`
+          : null;
+
+        const hints: string[] = report
+          ? [
+              `${period.label} 보고서 핵심 인사이트 요약해줘`,
+              downHint ?? (firstKpi ? `${firstKpi.label} KPI 달성률 분석해줘` : 'KPI 달성률 분석해줘'),
+              '개선 포인트 제안해줘',
+            ]
+          : [
+              `${period.label} AI 보고서 생성 도와줘`,
+              '이번 달 핵심 성과 찾아줘',
+              '개선 포인트 제안해줘',
+            ];
+
+        return (
+          <AiGuideWidget
+            systemContext={systemContext}
+            hints={hints}
+          />
+        );
+      })()}
       <div className="flex items-center gap-2">
         <h2 className="text-[16px] font-bold text-fg flex-1" suppressHydrationWarning>월간 보고 — {period.label}</h2>
         <Button
