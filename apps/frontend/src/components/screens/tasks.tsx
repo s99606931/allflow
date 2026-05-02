@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Card, Avatar, Badge, Button, StatusDot } from '@/components/ui/primitives';
-import { useTasks, useTaskMutations, useProjects } from '@/lib/hooks/use-data';
+import { useTasks, useTaskMutations, useProjects, useMe } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { StatusKey } from '@/lib/schemas';
 import { TaskDetailDialog } from './task-detail';
@@ -29,11 +29,12 @@ export function TasksPage() {
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'med' | 'low'>('all');
   const { data: tasks = [] } = useTasks();
   const { data: projects = [] } = useProjects();
+  const { data: me } = useMe();
   const { update } = useTaskMutations();
   const userMap = useUserMap();
 
   const filtered = tasks.filter(t => {
-    if (filter === 'mine' && t.assignee !== 'me') return false;
+    if (filter === 'mine' && t.assignee !== me?.id) return false;
     if (filter === 'today' && t.due !== '오늘') return false;
     if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (priorityFilter !== 'all' && t.priority !== priorityFilter) return false;
@@ -42,7 +43,7 @@ export function TasksPage() {
 
   const filterCounts = {
     all: tasks.length,
-    mine: tasks.filter(t => t.assignee === 'me').length,
+    mine: tasks.filter(t => t.assignee === me?.id).length,
     today: tasks.filter(t => t.due === '오늘').length,
     overdue: tasks.filter(t => t.status !== 'done' && t.due && t.due < new Date().toISOString().slice(0, 10)).length,
   };

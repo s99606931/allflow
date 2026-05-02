@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ApprovalForm } from '@/components/dialogs/approval-form';
-import { useApprovals, useApprovalMutations } from '@/lib/hooks/use-data';
+import { useApprovals, useApprovalMutations, useMe } from '@/lib/hooks/use-data';
 import { toast } from 'sonner';
 import type { Approval } from '@/lib/schemas';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
@@ -52,6 +52,7 @@ export function ApprovalsPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQ, setSearchQ] = useState('');
   const { data: approvals = [], isLoading, error } = useApprovals();
+  const { data: me } = useMe();
   const userMap = useUserMap();
   const { update: updateApproval } = useApprovalMutations();
 
@@ -59,20 +60,20 @@ export function ApprovalsPage() {
     let base = approvals;
     if (tab === 'inbox') base = approvals.filter(a => a.status === 'pending');
     else if (tab === 'history') base = approvals.filter(a => a.status === 'approved' || a.status === 'rejected');
-    else if (tab === 'sent') base = approvals.filter(a => a.requester === 'me');
+    else if (tab === 'sent') base = approvals.filter(a => a.requester === me?.id);
     if (searchQ.trim()) {
       const q = searchQ.toLowerCase();
       base = base.filter(a => a.title.toLowerCase().includes(q));
     }
     return base;
-  }, [approvals, tab, searchQ]);
+  }, [approvals, tab, searchQ, me]);
 
   const counts = useMemo(() => ({
     inbox:   approvals.filter(a => a.status === 'pending').length,
-    sent:    approvals.filter(a => a.requester === 'me').length,
+    sent:    approvals.filter(a => a.requester === me?.id).length,
     cc:      0,
     history: approvals.filter(a => a.status === 'approved' || a.status === 'rejected').length,
-  }), [approvals]);
+  }), [approvals, me]);
 
   return (
     <div className="flex h-[calc(100vh-56px)]">

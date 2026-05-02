@@ -4,7 +4,7 @@ import { useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
 import { IssueCreateDialog } from '@/components/dialogs/issue-create-dialog';
-import { useIssues, useIssueMutations } from '@/lib/hooks/use-data';
+import { useIssues, useIssueMutations, useMe } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { Issue, IssueSev, IssuePrio, IssueStatus } from '@/lib/schemas';
 import { Plus, Search, Sparkles, LayoutList, KanbanSquare, Clock, BarChart3, Trash2 } from 'lucide-react';
@@ -314,12 +314,13 @@ function Toolbar({ onCreate, activeFilter, onFilterChange, search, onSearchChang
 
 function IssueList({ filter, search }: { filter: number; search: string }) {
   const { data: allIssues = [] } = useIssues();
+  const { data: me } = useMe();
   const userMap = useUserMap();
   const { remove } = useIssueMutations();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const issues = allIssues.filter(iss => {
     if (search && !iss.title.toLowerCase().includes(search.toLowerCase())) return false;
-    if (filter === 1) return iss.assignee === 'me';
+    if (filter === 1) return iss.assignee === me?.id;
     if (filter === 2) return iss.sev === 'critical';
     if (filter === 3) return iss.status === 'open';
     return true;

@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Card, CardBody, Avatar, Badge, Button } from '@/components/ui/primitives';
 import { MoreHorizontal, Search, Shield, UserPlus, Filter, Download, X, Mail, Copy } from 'lucide-react';
-import { useUsers, useInviteUser, useUserMetrics } from '@/lib/hooks/use-data';
+import { useUsers, useInviteUser, useUserMetrics, useMe } from '@/lib/hooks/use-data';
 import { toast } from 'sonner';
 import type { User } from '@/lib/schemas';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
@@ -22,6 +22,7 @@ function downloadCSV(users: User[]) {
 
 export function UsersPage() {
   const { data: users = [], isLoading, error } = useUsers();
+  const { data: me } = useMe();
   const inviteMutation = useInviteUser();
   const { data: userMetrics } = useUserMetrics();
   const [showInvite, setShowInvite] = useState(false);
@@ -173,7 +174,7 @@ export function UsersPage() {
             </div>
             <div>
               <Badge tone="neutral">{u.role}</Badge>
-              {u.id === 'me' && (
+              {u.id === me?.id && (
                 <span className="ml-1">
                   <Shield size={11} className="inline text-accent" />
                 </span>
