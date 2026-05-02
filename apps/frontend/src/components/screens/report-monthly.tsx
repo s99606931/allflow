@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { Card, CardBody, Button } from '@/components/ui/primitives';
-import { Download, Send, Sparkles } from 'lucide-react';
+import { Download, Send, Sparkles, ExternalLink } from 'lucide-react';
 import { ReportRecipientsEditor } from '@/components/dialogs/report-recipients-editor';
 import { useAiMutations } from '@/lib/hooks/use-data';
 import type { Report } from '@/lib/schemas';
@@ -128,13 +129,32 @@ export function ReportMonthlyPage() {
               <div>
                 <h3 className="text-[16px] font-bold text-fg mb-3">핵심 메트릭</h3>
                 <div className="grid grid-cols-3 gap-3">
-                  {report.kpis.map(k => (
-                    <div key={k.label} className="rounded-lg border border-border p-4">
-                      <div className="text-[11px] text-fg-2">{k.label}</div>
-                      <div className="text-[28px] font-bold mono mt-1 text-fg">{k.value}</div>
-                      {k.delta && <div className={`text-[12px] mono mt-0.5 ${k.dir === 'up' ? 'text-success' : k.dir === 'down' ? 'text-danger' : 'text-fg-3'}`}>{k.delta}</div>}
-                    </div>
-                  ))}
+                  {report.kpis.map(k => {
+                    const href = /태스크|task/i.test(k.label) ? '/tasks'
+                      : /이슈|issue/i.test(k.label) ? '/issues'
+                      : /프로젝트|project/i.test(k.label) ? '/projects'
+                      : /멤버|사용자|user/i.test(k.label) ? '/users'
+                      : null;
+                    const inner = (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <div className="text-[11px] text-fg-2">{k.label}</div>
+                          {href && <ExternalLink size={10} className="text-fg-3 opacity-0 group-hover/kpi:opacity-100 transition-opacity" />}
+                        </div>
+                        <div className="text-[28px] font-bold mono mt-1 text-fg">{k.value}</div>
+                        {k.delta && <div className={`text-[12px] mono mt-0.5 ${k.dir === 'up' ? 'text-success' : k.dir === 'down' ? 'text-danger' : 'text-fg-3'}`}>{k.delta}</div>}
+                      </>
+                    );
+                    return href ? (
+                      <Link key={k.label} href={href} className="group/kpi block rounded-lg border border-border p-4 hover:border-accent/50 hover:bg-accent-soft/20 transition-colors">
+                        {inner}
+                      </Link>
+                    ) : (
+                      <div key={k.label} className="rounded-lg border border-border p-4">
+                        {inner}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
