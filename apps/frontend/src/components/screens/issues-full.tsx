@@ -355,7 +355,7 @@ function IssueList({ filter, search }: { filter: number; search: string }) {
             <div className="text-right text-[11px] text-fg-3">{iss.created}</div>
             <button
               type="button"
-              onClick={e => { e.stopPropagation(); if (window.confirm(`"${iss.title}" 이슈를 삭제하시겠습니까?`)) remove.mutate(iss.id); }}
+              onClick={e => { e.stopPropagation(); toast(`"${iss.title}" 이슈를 삭제하시겠습니까?`, { action: { label: '삭제', onClick: () => remove.mutate(iss.id) }, cancel: '취소' }); }}
               className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded opacity-0 group-hover:opacity-100 text-fg-3 hover:text-danger hover:bg-bg-2 transition-opacity"
               aria-label="이슈 삭제"
             >

@@ -280,13 +280,20 @@ function ApprovalDetail({ approval, onHold }: { approval: Approval; onHold: () =
     }
   };
 
-  const onRetract = async () => {
-    if (!confirm('이 결재를 회수하시겠습니까? 회수된 결재는 복구할 수 없습니다.')) return;
-    try {
-      await remove.mutateAsync(approval.id);
-    } catch {
-      toast.error('회수에 실패했습니다');
-    }
+  const onRetract = () => {
+    toast('이 결재를 회수하시겠습니까? 회수된 결재는 복구할 수 없습니다.', {
+      action: {
+        label: '회수',
+        onClick: async () => {
+          try {
+            await remove.mutateAsync(approval.id);
+          } catch {
+            toast.error('회수에 실패했습니다');
+          }
+        },
+      },
+      cancel: '취소',
+    });
   };
 
   return (
@@ -335,7 +342,7 @@ function ApprovalDetail({ approval, onHold }: { approval: Approval; onHold: () =
                 <button
                   type="button"
                   className="w-full flex items-center gap-2 px-3 py-2 text-[12.5px] text-danger hover:bg-hover"
-                  onClick={async () => { if (!confirm('이 결재를 삭제하시겠습니까?')) return; setMoreOpen(false); try { await remove.mutateAsync(approval.id); } catch { toast.error('삭제에 실패했습니다'); } }}
+                  onClick={() => { setMoreOpen(false); toast('이 결재를 삭제하시겠습니까?', { action: { label: '삭제', onClick: async () => { try { await remove.mutateAsync(approval.id); } catch { toast.error('삭제에 실패했습니다'); } } }, cancel: '취소' }); }}
                 >
                   <Trash2 size={13} /> 삭제
                 </button>

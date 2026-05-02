@@ -70,8 +70,10 @@ export function TaskDetailDialog({ taskId, onClose }: TaskDetailProps) {
                 className="text-danger hover:bg-danger/10"
                 disabled={removeTask.isPending}
                 onClick={() => {
-                  if (!window.confirm('이 태스크를 삭제하시겠습니까?')) return;
-                  removeTask.mutate(taskId, { onSuccess: onClose });
+                  toast('태스크를 삭제하시겠습니까?', {
+                    action: { label: '삭제', onClick: () => removeTask.mutate(taskId, { onSuccess: onClose }) },
+                    cancel: '취소',
+                  });
                 }}
               >
                 <Trash2 size={14} />

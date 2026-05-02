@@ -161,11 +161,11 @@ export function CalendarPage() {
             {HOURS.map(h => (window?.days ?? []).map((_, di) => (
               <div key={`c-${h}-${di}`} className="border-b border-l border-border" style={{ gridRow: h - 7, gridColumn: di + 2 }} />
             )))}
-            {placed.map((ev, i) => (
+            {placed.map((ev) => (
               <button
                 key={ev.id}
                 type="button"
-                onClick={() => setDetail(isoEvents[i] ?? null)}
+                onClick={() => setDetail({ id: ev.id, title: ev.title, start: ev.start.slice(0, 16), end: ev.end.slice(0, 16), attendees: ev.attendees, source: ev.source })}
                 aria-label={`${ev.title} ${ev.hour}:00`}
                 className="m-1 rounded-md p-2 cursor-pointer text-white shadow-sm hover:shadow-md transition-shadow text-left"
                 style={{
