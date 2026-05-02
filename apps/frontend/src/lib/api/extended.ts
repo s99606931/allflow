@@ -237,6 +237,20 @@ export const extendedApi = {
   getGanttByAssignee: async (): Promise<GanttResponse> =>
     http.get('gantt/by-assignee').json<GanttResponse>(),
 
+  /* Task dependencies ----------------------------------------------------- */
+  listTaskDependencies: async (taskId: string): Promise<GanttDependency[]> =>
+    http.get(`tasks/${taskId}/dependencies`).json<GanttDependency[]>(),
+
+  createTaskDependency: async (
+    taskId: string,
+    input: { predecessorId: string; type: GanttDependency['type']; lagDays?: number },
+  ): Promise<GanttDependency> =>
+    http.post(`tasks/${taskId}/dependencies`, { json: input }).json<GanttDependency>(),
+
+  deleteTaskDependency: async (taskId: string, depId: string): Promise<void> => {
+    await http.delete(`tasks/${taskId}/dependencies/${depId}`);
+  },
+
   /* LLM Connections (admin) --------------------------------------------- */
   listLlmConnections: async (): Promise<LlmConnection[]> =>
     http.get('llm-connections').json<LlmConnection[]>(),

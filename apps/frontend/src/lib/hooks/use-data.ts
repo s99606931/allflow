@@ -21,7 +21,7 @@ import type {
   IssueTransition, ProfilePatch, ProjectCreate, ProjectPatch, TaskCreate, TaskPatch, BulkMarkRead,
   InviteUser, RevokeToken, MessageSend, DocCreate, ResourceBooking,
 } from '@/lib/schemas';
-import type { GanttResponse, LlmConnection, LlmConnectionInput } from '@/lib/api/extended';
+import type { LlmConnection, LlmConnectionInput } from '@/lib/api/extended';
 
 const onError = (err: unknown) => {
   toast.error(toastMessage(err));
@@ -509,19 +509,12 @@ export function useLlmConnectionMutations() {
   return { create, update, remove, activate, test };
 }
 
-export function useGantt(params?: { projectId?: string; from?: string; to?: string }) {
-  return useQuery<GanttResponse>({
-    queryKey: keys.gantt.data(params),
-    queryFn: () => api.getGantt(params),
-  });
-}
-
-export function useGanttByAssignee() {
-  return useQuery<GanttResponse>({
-    queryKey: [...keys.gantt.all(), 'by-assignee'],
-    queryFn: () => api.getGanttByAssignee(),
-  });
-}
+/* ----------------------------------------- Gantt hooks (re-export) ------- */
+// Gantt/dependency 훅은 use-gantt.ts 로 분리 (500 LOC 게이트 준수)
+export {
+  useGantt, useGanttByAssignee,
+  useTaskDependencies, useTaskDependencyMutations,
+} from './use-gantt';
 
 /* ----------------------------------------- AI hooks (re-export) --------- */
 // AI 스트리밍/스레드 훅은 use-ai.ts 로 분리 (500 LOC 게이트 준수)
