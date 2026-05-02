@@ -29,6 +29,9 @@
 | 로그아웃 동작 | ✅ PASS | user-flows.spec.ts |
 | API 미인증 → 401 AUTH_REQUIRED | ✅ PASS | 직접 API 호출 시 401 반환 확인 |
 | OAuth 콜백 (/oauth-callback) | ⚠️ P1 | E2E에서 직접 테스트 미포함 (next-auth 내장 처리) |
+| MFA TOTP 설정 | ✅ PASS | otpauth, setup/verify/disable/recovery 엔드포인트 완결 |
+| 프로필 사진 업로드 | ✅ PASS | POST /users/me/avatar multipart 2MB base64 저장 |
+| 활성 세션 관리 | ✅ PASS | jti 블록리스트 + GET/DELETE /auth/sessions |
 
 ---
 
