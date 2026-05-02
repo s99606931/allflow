@@ -84,6 +84,9 @@ export const extendedApi = {
     await http.delete(`issues/${id}`);
   },
 
+  updateIssue: async (id: string, patch: { title?: string; sev?: string; prio?: string; assigneeId?: string }): Promise<Issue> =>
+    parsed(http.patch(`issues/${id}`, { json: patch }).json(), IssueSchema),
+
   /* Tasks deletion (complement to existing update) ----------------------- */
   deleteTask: async (id: string): Promise<{ id: string; deleted: true }> =>
     http.delete(`tasks/${id}`).json<{ id: string; deleted: true }>(),
@@ -104,6 +107,9 @@ export const extendedApi = {
   deleteApproval: async (id: string): Promise<void> => {
     await http.delete(`approvals/${id}`);
   },
+
+  updateApproval: async (id: string, patch: { title?: string; amount?: number; reason?: string }): Promise<Approval> =>
+    parsed(http.patch(`approvals/${id}`, { json: patch }).json(), ApprovalSchema),
 
   /* Clients (CRM) --------------------------------------------------------- */
   listClients: async (): Promise<Client[]> =>

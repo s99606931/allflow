@@ -204,8 +204,14 @@ export function useIssueMutations() {
     onSuccess: () => { invalidate(); toast.success('이슈가 삭제되었습니다'); },
     onError,
   });
+  const update = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: { title?: string; sev?: string; prio?: string; assigneeId?: string } }) =>
+      api.updateIssue(id, patch),
+    onSuccess: () => { invalidate(); toast.success('이슈가 수정되었습니다'); },
+    onError,
+  });
 
-  return { create, transition, remove };
+  return { create, transition, remove, update };
 }
 
 export function useApprovalMutations() {
@@ -227,7 +233,13 @@ export function useApprovalMutations() {
     onSuccess: () => { invalidate(); toast.success('결재가 회수되었습니다'); },
     onError,
   });
-  return { create, decide, remove };
+  const update = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: { title?: string; amount?: number; reason?: string } }) =>
+      api.updateApproval(id, patch),
+    onSuccess: () => { invalidate(); toast.success('결재가 수정되었습니다'); },
+    onError,
+  });
+  return { create, decide, remove, update };
 }
 
 export function useClientMutations() {

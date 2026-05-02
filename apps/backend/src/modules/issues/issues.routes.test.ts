@@ -567,4 +567,82 @@ describe('modules/issues — T1 Prisma', () => {
     expect(r.statusCode).toBe(403);
     await app.close();
   });
+
+  it('PATCH /issues/:id → title 업데이트 200', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/issues',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { projectId: 'proj-1', title: '원래 제목', sev: 'low', prio: 'P3', sla: '5d' },
+    });
+    const { id } = post.json() as { id: string };
+
+    const r = await app.inject({
+      method: 'PATCH',
+      url: `/issues/${id}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: '수정된 제목' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(r.json().title).toBe('수정된 제목');
+    await app.close();
+  });
+
+  it('PATCH /issues/:id → prio 업데이트 200', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/issues',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { projectId: 'proj-1', title: '우선순위 변경', sev: 'low', prio: 'P3', sla: '5d' },
+    });
+    const { id } = post.json() as { id: string };
+
+    const r = await app.inject({
+      method: 'PATCH',
+      url: `/issues/${id}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { prio: 'P1' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(r.json().prio).toBe('P1');
+    await app.close();
+  });
+
+  it('PATCH /issues/:id → 빈 body → 400', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/issues',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { projectId: 'proj-1', title: '빈 패치', sev: 'low', prio: 'P3', sla: '5d' },
+    });
+    const { id } = post.json() as { id: string };
+
+    const r = await app.inject({
+      method: 'PATCH',
+      url: `/issues/${id}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: {},
+    });
+    expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('PATCH /issues/:id → 없는 id → 404', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/issues/nonexistent-id',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: '제목' },
+    });
+    expect(r.statusCode).toBe(404);
+    await app.close();
+  });
 });

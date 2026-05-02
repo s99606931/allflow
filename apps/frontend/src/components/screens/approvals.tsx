@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardBody, Avatar, Badge, Button, IconButto
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import {
   FileSignature, Plus, Search, Inbox, Send, CheckCircle2, XCircle, Clock,
-  FileText, Stamp, Sparkles, MoreHorizontal, Undo2,
+  FileText, Stamp, Sparkles, MoreHorizontal, Undo2, Edit2,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ApprovalForm } from '@/components/dialogs/approval-form';
@@ -44,8 +44,12 @@ export function ApprovalsPage() {
   const [tab, setTab] = useState<TabId>('inbox');
   const [selected, setSelected] = useState<Approval | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editAmount, setEditAmount] = useState('');
   const { data: approvals = [], isLoading, error } = useApprovals();
   const userMap = useUserMap();
+  const { update: updateApproval } = useApprovalMutations();
 
   const list = useMemo(() => {
     if (tab === 'inbox') return approvals.filter(a => a.status === 'pending');
@@ -109,32 +113,93 @@ export function ApprovalsPage() {
           {list.map(a => {
             const requester = userMap.get(a.requester);
             const isActive = selected?.id === a.id;
+            const isEditing = editId === a.id;
             return (
-              <button
-                key={a.id}
-                onClick={() => setSelected(a)}
-                className={`w-full text-left px-5 py-3.5 border-b border-border hover:bg-hover transition-colors ${isActive ? 'bg-accent-soft/40' : ''}`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-md grid place-items-center shrink-0 text-white bg-accent">
-                    <FileSignature size={14} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] mono text-fg-3">{a.id}</span>
-                      <Badge tone={STATUS_META[a.status].tone}>{STATUS_META[a.status].label}</Badge>
+              <div key={a.id} className={`border-b border-border ${isActive ? 'bg-accent-soft/40' : ''}`}>
+                <button
+                  onClick={() => setSelected(a)}
+                  className="w-full text-left px-5 py-3.5 hover:bg-hover transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-md grid place-items-center shrink-0 text-white bg-accent">
+                      <FileSignature size={14} />
                     </div>
-                    <div className="text-[13px] font-semibold text-fg mt-1 line-clamp-2">{a.title}</div>
-                    <div className="flex items-center gap-2 mt-2 text-[11px] text-fg-3">
-                      {requester && <Avatar user={requester} size={16} />}
-                      <span>{requester?.name ?? a.requester}</span>
-                      <span>·</span>
-                      <span className="mono">{a.amount ? `${a.amount.toLocaleString()}원` : '—'}</span>
-                      <span className="ml-auto">{relativeTime(a.createdAt)}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] mono text-fg-3">{a.id}</span>
+                        <Badge tone={STATUS_META[a.status].tone}>{STATUS_META[a.status].label}</Badge>
+                        {a.status === 'pending' && (
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setEditId(a.id);
+                              setEditTitle(a.title);
+                              setEditAmount(a.amount != null ? String(a.amount) : '');
+                            }}
+                            className="ml-auto p-1 rounded text-fg-3 hover:text-accent hover:bg-bg-2 transition-colors"
+                            aria-label="결재 수정"
+                          >
+                            <Edit2 size={11} />
+                          </button>
+                        )}
+                      </div>
+                      <div className="text-[13px] font-semibold text-fg mt-1 line-clamp-2">{a.title}</div>
+                      <div className="flex items-center gap-2 mt-2 text-[11px] text-fg-3">
+                        {requester && <Avatar user={requester} size={16} />}
+                        <span>{requester?.name ?? a.requester}</span>
+                        <span>·</span>
+                        <span className="mono">{a.amount ? `${a.amount.toLocaleString()}원` : '—'}</span>
+                        <span className="ml-auto">{relativeTime(a.createdAt)}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </button>
+                </button>
+                {isEditing && (
+                  <div className="px-5 pb-3.5 space-y-2">
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={e => setEditTitle(e.target.value)}
+                      placeholder="제목"
+                      className="w-full h-8 px-2.5 rounded-md border border-border bg-bg-1 text-[12.5px] focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                    <input
+                      type="number"
+                      value={editAmount}
+                      onChange={e => setEditAmount(e.target.value)}
+                      placeholder="금액 (원)"
+                      className="w-full h-8 px-2.5 rounded-md border border-border bg-bg-1 text-[12.5px] focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditId(null)}
+                      >
+                        취소
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        disabled={updateApproval.isPending}
+                        onClick={async () => {
+                          const patch: { title?: string; amount?: number } = {};
+                          if (editTitle.trim()) patch.title = editTitle.trim();
+                          const parsed = parseFloat(editAmount);
+                          if (!Number.isNaN(parsed)) patch.amount = parsed;
+                          await updateApproval.mutateAsync({ id: a.id, patch });
+                          setEditId(null);
+                        }}
+                      >
+                        저장
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>

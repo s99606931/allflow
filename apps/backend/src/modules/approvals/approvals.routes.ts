@@ -29,6 +29,18 @@ const ApprovalDecision = z
   })
   .strict();
 
+const ApprovalPatch = z
+  .object({
+    title: z.string().min(1).max(200).optional(),
+    amount: z.number().finite().optional(),
+    reason: z.string().min(1).max(2000).optional(),
+  })
+  .strict()
+  .refine(
+    (v) => v.title !== undefined || v.amount !== undefined || v.reason !== undefined,
+    { message: '최소 한 개 필드 필수' },
+  );
+
 const StatusFilter = z.enum(['pending', 'approved', 'rejected', 'cancelled']);
 
 type ApprovalStatus = z.infer<typeof StatusFilter>;
@@ -142,6 +154,35 @@ export async function approvalsRoutes(app: FastifyInstance): Promise<void> {
     );
 
     return serialize(updated);
+  });
+
+  app.patch('/approvals/:id', { preHandler: [app.authenticate] }, async (req) => {
+    const { id } = req.params as { id: string };
+    const parsed = ApprovalPatch.safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const existing = await app.prisma.approval.findFirst({ where: { id } });
+    if (!existing) throw new NotFoundError('Approval', id);
+    if (existing.status !== 'pending') {
+      throw new ValidationError('pending 상태인 결재만 수정할 수 있습니다');
+    }
+    if (existing.requesterId !== userId) {
+      throw new ForbiddenError('상신자만 결재를 수정할 수 있습니다');
+    }
+
+    const updated = await app.prisma.approval.update({
+      where: { id },
+      data: parsed.data,
+    });
+
+    app.log.info(
+      { action: 'approvals.update', actorId: userId, approvalId: id },
+      'approval updated',
+    );
+
+    return serialize(updated as ApprovalRow);
   });
 
   app.delete('/approvals/:id', { preHandler: [app.authenticate] }, async (req, reply) => {

@@ -51,6 +51,23 @@ const IssueCreate = z.object({
   sla: z.string().min(1).max(40),
 });
 
+const IssuePatch = z
+  .object({
+    title: z.string().min(1).max(200).optional(),
+    sev: IssueSev.optional(),
+    prio: IssuePrio.optional(),
+    assigneeId: z.string().min(1).optional(),
+  })
+  .strict()
+  .refine(
+    (v) =>
+      v.title !== undefined ||
+      v.sev !== undefined ||
+      v.prio !== undefined ||
+      v.assigneeId !== undefined,
+    { message: '최소 한 개 필드 필수' },
+  );
+
 interface IssueRow {
   id: string;
   title: string;
@@ -158,6 +175,39 @@ export async function issuesRoutes(app: FastifyInstance): Promise<void> {
 
     reply.code(201);
     return toApiIssue(created as unknown as IssueRow);
+  });
+
+  app.patch('/issues/:id', { preHandler: [app.authenticate] }, async (req) => {
+    const { id } = req.params as { id: string };
+    const parsed = IssuePatch.safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const existing = (await app.prisma.issue.findFirst({
+      where: { id, deletedAt: null },
+      select: {
+        id: true,
+        project: { select: { members: { where: { userId }, select: { userId: true } } } },
+      },
+    })) as { id: string; project: { members: { userId: string }[] } } | null;
+    if (!existing) throw new NotFoundError('Issue', id);
+    if (existing.project.members.length === 0) {
+      throw new ForbiddenError('프로젝트 멤버가 아닙니다');
+    }
+
+    const updated = await app.prisma.issue.update({
+      where: { id },
+      data: parsed.data,
+      include: ISSUE_INCLUDE,
+    });
+
+    app.log.info(
+      { action: 'issues.update', actorId: userId, issueId: id },
+      'issue updated',
+    );
+
+    return toApiIssue(updated as unknown as IssueRow);
   });
 
   app.delete('/issues/:id', { preHandler: [app.authenticate] }, async (req, reply) => {

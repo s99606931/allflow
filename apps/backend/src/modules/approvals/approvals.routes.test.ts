@@ -375,4 +375,110 @@ describe('modules/approvals — T1 Prisma', () => {
     expect(r.statusCode).toBe(401);
     await app.close();
   });
+
+  it('PATCH /approvals/:id → title/amount 업데이트 200', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/approvals',
+      headers: { authorization: `Bearer ${u1}` },
+      payload: { title: '원래 제목', approver: 'u2', amount: 10000 },
+    });
+    const { id } = post.json() as { id: string };
+
+    const r = await app.inject({
+      method: 'PATCH',
+      url: `/approvals/${id}`,
+      headers: { authorization: `Bearer ${u1}` },
+      payload: { title: '수정된 제목', amount: 20000 },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toMatchObject({ title: '수정된 제목', amount: 20000 });
+    await app.close();
+  });
+
+  it('PATCH /approvals/:id → 빈 body → 400', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/approvals',
+      headers: { authorization: `Bearer ${u1}` },
+      payload: { title: '빈 패치', approver: 'u2' },
+    });
+    const { id } = post.json() as { id: string };
+
+    const r = await app.inject({
+      method: 'PATCH',
+      url: `/approvals/${id}`,
+      headers: { authorization: `Bearer ${u1}` },
+      payload: {},
+    });
+    expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('PATCH /approvals/:id → 없는 id → 404', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/approvals/missing',
+      headers: { authorization: `Bearer ${u1}` },
+      payload: { title: '제목' },
+    });
+    expect(r.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('PATCH /approvals/:id → 이미 처리된 결재 → 400', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    const u2 = await makeJws('u2');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/approvals',
+      headers: { authorization: `Bearer ${u1}` },
+      payload: { title: '처리될 결재', approver: 'u2' },
+    });
+    const { id } = post.json() as { id: string };
+    await app.inject({
+      method: 'POST',
+      url: `/approvals/${id}/decision`,
+      headers: { authorization: `Bearer ${u2}` },
+      payload: { decision: 'approved' },
+    });
+
+    const r = await app.inject({
+      method: 'PATCH',
+      url: `/approvals/${id}`,
+      headers: { authorization: `Bearer ${u1}` },
+      payload: { title: '수정 시도' },
+    });
+    expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('PATCH /approvals/:id → 타인 수정 시도 → 403', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    const u3 = await makeJws('u3');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/approvals',
+      headers: { authorization: `Bearer ${u1}` },
+      payload: { title: '타인 수정 불가', approver: 'u2' },
+    });
+    const { id } = post.json() as { id: string };
+
+    const r = await app.inject({
+      method: 'PATCH',
+      url: `/approvals/${id}`,
+      headers: { authorization: `Bearer ${u3}` },
+      payload: { title: '무단 수정' },
+    });
+    expect(r.statusCode).toBe(403);
+    await app.close();
+  });
 });

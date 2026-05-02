@@ -8,6 +8,7 @@ import { useIssues, useIssueMutations } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { IssueCreateDialog } from '@/components/dialogs/issue-create-dialog';
+import { IssueEditDialog } from '@/components/dialogs/issue-edit-dialog';
 
 const SEV_TONE: Record<IssueSev, 'danger' | 'warning' | 'info' | 'neutral'> = {
   critical: 'danger', high: 'warning', med: 'info', low: 'neutral',
@@ -23,6 +24,7 @@ type IssueFilter = '전체' | '내 이슈' | '🔥 Critical' | 'Open' | '⏰ SLA
 
 export function IssuesPage() {
   const [createOpen, setCreateOpen] = useState(false);
+  const [editIssue, setEditIssue] = useState<{ id: string; title: string; sev: string; prio: string } | null>(null);
   const [activeFilter, setActiveFilter] = useState<IssueFilter>('전체');
   const [search, setSearch] = useState('');
   const [aiDismissed, setAiDismissed] = useState(false);
@@ -120,6 +122,13 @@ export function IssuesPage() {
         </Button>
         <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}><Plus size={13} /> 새 이슈</Button>
         <IssueCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
+        {editIssue && (
+          <IssueEditDialog
+            open={!!editIssue}
+            onOpenChange={open => { if (!open) setEditIssue(null); }}
+            issue={editIssue}
+          />
+        )}
       </div>
 
       {/* AI classify result */}
@@ -160,8 +169,9 @@ export function IssuesPage() {
             <div
               key={iss.id}
               className="group relative grid grid-cols-[36px_80px_1fr_140px_120px_90px_28px_28px_64px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors cursor-pointer"
+              onClick={() => setEditIssue({ id: iss.id, title: iss.title, sev: iss.sev, prio: iss.prio })}
             >
-              <input type="checkbox" className="justify-self-center" />
+              <input type="checkbox" className="justify-self-center" onClick={e => e.stopPropagation()} />
               <div className="flex items-center gap-1.5">
                 <span
                   className="text-[10px] mono font-bold px-1.5 py-0.5 rounded text-white"
