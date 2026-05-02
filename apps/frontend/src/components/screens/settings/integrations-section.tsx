@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Card, CardBody } from "@/components/ui/primitives";
+import { toast } from "sonner";
 import { Section } from "./shared";
 
 const APPS = [
@@ -29,11 +30,11 @@ export function IntegrationsSection() {
 								<div className="text-[11px] text-fg-3 truncate">{a.desc}</div>
 							</div>
 							{a.conn ? (
-								<Button size="sm" variant="secondary">
+								<Button size="sm" variant="secondary" onClick={() => toast.info(`${a.n} 연결 설정 페이지는 준비 중입니다.`)}>
 									관리
 								</Button>
 							) : (
-								<Button size="sm" variant="primary">
+								<Button size="sm" variant="primary" onClick={() => toast.info(`${a.n} 연결을 시작합니다. OAuth 인증 흐름은 준비 중입니다.`)}>
 									연결
 								</Button>
 							)}
