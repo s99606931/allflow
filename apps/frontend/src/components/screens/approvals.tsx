@@ -86,7 +86,7 @@ export function ApprovalsPage() {
             <ApprovalForm open={createOpen} onOpenChange={setCreateOpen} />
           </div>
           <AiGuideWidget
-            systemContext="전자결재 — 결재 상신·검토·승인·반려·에스컬레이션 관리 화면"
+            systemContext={`전자결재 — 대기중 ${counts.inbox}건, 상신 ${counts.sent}건, 처리완료 ${counts.history}건, 전체 ${approvals.length}건`}
             hints={['대기 중인 결재 요약해줘', '에스컬레이션 위험 찾아줘', '결재 프로세스 가이드해줘']}
             className="mx-0 my-2 rounded-lg"
           />

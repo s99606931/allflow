@@ -132,8 +132,18 @@ export function ReportWeeklyPage() {
 
         {!report && (
           <Card>
-            <CardBody className="text-center py-16 text-[13px] text-fg-3">
-              {weeklyReport.isPending ? 'AI가 주간 보고서를 작성하고 있습니다...' : '왼쪽에서 범위와 옵션을 선택하고 &lsquo;보고서 생성&rsquo;을 클릭하세요.'}
+            <CardBody className="text-center py-12 space-y-2">
+              {weeklyReport.isPending ? (
+                <div className="text-[13px] text-fg-3">AI가 주간 보고서를 작성하고 있습니다...</div>
+              ) : (
+                <>
+                  <div className="text-[13px] font-semibold text-fg">주간 보고서가 없습니다</div>
+                  <div className="text-[12px] text-fg-3 max-w-sm mx-auto">
+                    왼쪽에서 범위와 옵션을 선택하고 &lsquo;보고서 생성&rsquo;을 클릭하세요.
+                    완료 태스크·지연 항목·팀 성과가 자동으로 요약됩니다.
+                  </div>
+                </>
+              )}
             </CardBody>
           </Card>
         )}

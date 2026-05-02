@@ -453,23 +453,32 @@ export function GanttPage() {
       </div>
 
       {/* Legend */}
-      {data && (
-        <div className="flex items-center gap-4 text-[11px] text-fg-3 flex-wrap">
-          <span>총 {data.tasks.length}개 태스크</span>
-          <span>의존성 {data.dependencies.length}건</span>
-          <span className="flex items-center gap-1.5">
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: STATUS_COLORS.doing, display: 'inline-block' }} />
-            진행중
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span style={{ width: 10, height: 10, background: '#888', transform: 'rotate(45deg)', display: 'inline-block' }} />
-            마일스톤
-          </span>
-          {!selectedTaskId && (
-            <span className="text-fg-4 italic">태스크 이름 클릭 → 의존성 관리</span>
-          )}
-        </div>
-      )}
+      {data && (() => {
+        const atRiskCount = tasks.filter(t => t.status === 'doing' && t.progress < 50).length;
+        return (
+          <div className="flex items-center gap-4 text-[11px] text-fg-3 flex-wrap">
+            <span>총 {data.tasks.length}개 태스크</span>
+            <span>의존성 {data.dependencies.length}건</span>
+            {atRiskCount > 0 && (
+              <span className="flex items-center gap-1 text-warning font-semibold">
+                <span className="w-2 h-2 rounded-full bg-warning inline-block" />
+                위험 {atRiskCount}건
+              </span>
+            )}
+            <span className="flex items-center gap-1.5">
+              <span style={{ width: 12, height: 12, borderRadius: 3, background: STATUS_COLORS.doing, display: 'inline-block' }} />
+              진행중
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span style={{ width: 10, height: 10, background: '#888', transform: 'rotate(45deg)', display: 'inline-block' }} />
+              마일스톤
+            </span>
+            {!selectedTaskId && (
+              <span className="text-fg-4 italic">태스크 이름 클릭 → 의존성 관리</span>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Dependency side panel */}
       {selectedTaskId && (

@@ -26,6 +26,8 @@ export function DocsPage() {
   const [editContent, setEditContent] = useState('');
 
   const activeDoc = docs.find(d => d.id === active) ?? null;
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+  const recentDocsCount = docs.filter(d => d.updatedAt >= sevenDaysAgo).length;
 
   useEffect(() => {
     if (activeDoc) {
@@ -101,7 +103,7 @@ export function DocsPage() {
       <div className="overflow-y-auto scroll">
         <div className="max-w-[760px] mx-auto px-10 py-8">
           <AiGuideWidget
-            systemContext="문서 관리 — 마크다운 문서 작성·편집·AI 요약·버전 관리 화면"
+            systemContext={`문서 관리 — 총 ${docs.length}건, 최근 7일 수정 ${recentDocsCount}건`}
             hints={['문서 구조 개선 제안해줘', '오래된 문서 찾아줘', '이 문서 요약해줘']}
             className="mb-6"
           />
