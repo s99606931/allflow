@@ -1,13 +1,14 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress } from '@/components/ui/primitives';
 import { AiChatPanel } from '@/components/ai/ai-chat-panel';
-import { useAiMutations, useProjects, useTaskMutations } from '@/lib/hooks/use-data';
+import { useAiMutations, useDocs, useProjects, useTaskMutations } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { useVoiceInput } from '@/lib/hooks/use-voice-input';
 import type { ExtractedAction } from '@/lib/schemas';
 import { FileText, Mail, Mic, Sparkles, Upload, Database, Wand2, X, Check, FileAudio } from 'lucide-react';
+import { toast } from 'sonner';
 import type { LucideIcon } from 'lucide-react';
 
 type Source = 'meeting' | 'email' | 'voice' | 'notion' | 'csv';
@@ -37,6 +38,19 @@ export function AIAutoPage() {
   const userMap = useUserMap();
   const onTranscript = useCallback((t: string) => setText(prev => prev ? `${prev}\n${t}` : t), []);
   const voice = useVoiceInput(onTranscript);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data: docs = [] } = useDocs();
+  const [recentOpen, setRecentOpen] = useState(false);
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setText(ev.target?.result as string ?? '');
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
   const ai = useAiMutations();
   const tasks = useTaskMutations();
   const extracting = ai.extractActions.isPending;
@@ -113,9 +127,24 @@ export function AIAutoPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-[12px] font-medium text-fg-1">회의록 본문</div>
-                  <div className="flex gap-1.5">
-                    <Button variant="secondary" size="sm"><Upload size={12} /> 파일</Button>
-                    <Button variant="secondary" size="sm">최근 회의록</Button>
+                  <div className="flex gap-1.5 relative">
+                    <input ref={fileInputRef} type="file" accept=".txt,.md,.docx,.doc" className="hidden" onChange={handleFileUpload} />
+                    <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}><Upload size={12} /> 파일</Button>
+                    <div className="relative">
+                      <Button variant="secondary" size="sm" onClick={() => setRecentOpen(v => !v)}>최근 회의록</Button>
+                      {recentOpen && docs.length > 0 && (
+                        <div className="absolute right-0 top-full mt-1 z-10 w-56 rounded-lg border border-border bg-bg-elev shadow-lg py-1 max-h-48 overflow-y-auto">
+                          {docs.slice(0, 10).map(d => (
+                            <button
+                              key={d.id}
+                              type="button"
+                              className="w-full text-left px-3 py-2 text-[12px] text-fg-1 hover:bg-hover truncate"
+                              onClick={() => { setText(d.preview ?? d.title); setRecentOpen(false); }}
+                            >{d.title}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <textarea
@@ -154,7 +183,7 @@ export function AIAutoPage() {
                 <Upload size={24} className="mx-auto text-fg-3" />
                 <div className="text-[13px] font-medium text-fg mt-2">소스 연결</div>
                 <div className="text-[11.5px] text-fg-3 mt-1">{SOURCES.find(s => s.id === source)?.desc}</div>
-                <Button variant="primary" size="sm" className="mt-3">연결하기</Button>
+                <Button variant="primary" size="sm" className="mt-3" onClick={() => toast.info('설정 > 통합 연결에서 외부 소스를 연결하세요.')}>연결하기</Button>
               </div>
             )}
 

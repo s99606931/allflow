@@ -60,4 +60,17 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
       data: { status: parsed.data.status, approverId: userId },
     });
   });
+
+  app.delete('/hr/leave/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+    const existing = await app.prisma.leaveRequest.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundError('LeaveRequest', id);
+    if (existing.requesterId !== userId) {
+      throw new NotFoundError('LeaveRequest', id);
+    }
+    await app.prisma.leaveRequest.delete({ where: { id } });
+    return reply.code(204).send();
+  });
 }
