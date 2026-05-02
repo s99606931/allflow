@@ -35,6 +35,13 @@ function makeStore() {
       return list.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     },
     findUnique: async (args: AnyArgs) => rows.get(args.where.id) ?? null,
+    findFirst: async (args: AnyArgs) => rows.get(args.where.id) ?? null,
+    delete: async (args: AnyArgs) => {
+      const cur = rows.get(args.where.id);
+      if (!cur) throw new Error('not found');
+      rows.delete(args.where.id);
+      return cur;
+    },
     create: async (args: AnyArgs) => {
       seq += 1;
       const now = new Date(Date.now() + seq);
@@ -76,6 +83,8 @@ async function buildTestApp() {
     approval: {
       findMany: store.findMany,
       findUnique: store.findUnique,
+      findFirst: store.findFirst,
+      delete: store.delete,
       create: store.create,
       update: store.update,
     },
@@ -269,6 +278,101 @@ describe('modules/approvals — T1 Prisma', () => {
       payload: { decision: 'approved' },
     });
     expect(r.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('DELETE /approvals/:id → pending 결재 회수 → 204', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/approvals',
+      headers: { authorization: `Bearer ${u1}` },
+      payload: { title: '회수할 결재', approver: 'u2' },
+    });
+    const { id } = post.json() as { id: string };
+
+    const del = await app.inject({
+      method: 'DELETE',
+      url: `/approvals/${id}`,
+      headers: { authorization: `Bearer ${u1}` },
+    });
+    expect(del.statusCode).toBe(204);
+
+    const get = await app.inject({
+      method: 'GET',
+      url: '/approvals',
+      headers: { authorization: `Bearer ${u1}` },
+    });
+    const list = get.json() as Array<{ id: string }>;
+    expect(list.some((item) => item.id === id)).toBe(false);
+    await app.close();
+  });
+
+  it('DELETE /approvals/:id → pending 아닌 결재 → 400', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    const u2 = await makeJws('u2');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/approvals',
+      headers: { authorization: `Bearer ${u1}` },
+      payload: { title: '이미 처리된 결재', approver: 'u2' },
+    });
+    const { id } = post.json() as { id: string };
+    await app.inject({
+      method: 'POST',
+      url: `/approvals/${id}/decision`,
+      headers: { authorization: `Bearer ${u2}` },
+      payload: { decision: 'approved' },
+    });
+
+    const del = await app.inject({
+      method: 'DELETE',
+      url: `/approvals/${id}`,
+      headers: { authorization: `Bearer ${u1}` },
+    });
+    expect(del.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('DELETE /approvals/:id → 없는 id → 404', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    const r = await app.inject({
+      method: 'DELETE',
+      url: '/approvals/missing',
+      headers: { authorization: `Bearer ${u1}` },
+    });
+    expect(r.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('DELETE /approvals/:id → 상신자 아닌 사용자 → 403', async () => {
+    const app = await buildTestApp();
+    const u1 = await makeJws('u1');
+    const u3 = await makeJws('u3');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/approvals',
+      headers: { authorization: `Bearer ${u1}` },
+      payload: { title: '권한 없는 회수 시도', approver: 'u2' },
+    });
+    const { id } = post.json() as { id: string };
+
+    const del = await app.inject({
+      method: 'DELETE',
+      url: `/approvals/${id}`,
+      headers: { authorization: `Bearer ${u3}` },
+    });
+    expect(del.statusCode).toBe(403);
+    await app.close();
+  });
+
+  it('DELETE /approvals/:id → 인증 없으면 401', async () => {
+    const app = await buildTestApp();
+    const r = await app.inject({ method: 'DELETE', url: '/approvals/x' });
+    expect(r.statusCode).toBe(401);
     await app.close();
   });
 });

@@ -160,6 +160,32 @@ export async function issuesRoutes(app: FastifyInstance): Promise<void> {
     return toApiIssue(created as unknown as IssueRow);
   });
 
+  app.delete('/issues/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const existing = (await app.prisma.issue.findFirst({
+      where: { id, deletedAt: null },
+      select: {
+        id: true,
+        project: { select: { members: { where: { userId }, select: { userId: true } } } },
+      },
+    })) as { id: string; project: { members: { userId: string }[] } } | null;
+    if (!existing) throw new NotFoundError('Issue', id);
+    if (existing.project.members.length === 0) {
+      throw new ForbiddenError('프로젝트 멤버가 아닙니다');
+    }
+
+    await app.prisma.issue.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    reply.code(204);
+    return reply.send();
+  });
+
   app.post('/issues/:id/transition', { preHandler: [app.authenticate] }, async (req) => {
     const { id } = req.params as { id: string };
     const parsed = TransitionInput.safeParse(req.body);

@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardBody, Avatar, Badge, Button, IconButto
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import {
   FileSignature, Plus, Search, Inbox, Send, CheckCircle2, XCircle, Clock,
-  FileText, Stamp, Sparkles, MoreHorizontal,
+  FileText, Stamp, Sparkles, MoreHorizontal, Undo2,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ApprovalForm } from '@/components/dialogs/approval-form';
@@ -149,7 +149,7 @@ function ApprovalDetail({ approval }: { approval: Approval }) {
   const userMap = useUserMap();
   const requester = userMap.get(approval.requester);
   const approver = userMap.get(approval.approver);
-  const { decide } = useApprovalMutations();
+  const { decide, remove } = useApprovalMutations();
   const [comment, setComment] = useState('');
 
   const onDecide = async (decision: 'approved' | 'rejected') => {
@@ -158,6 +158,15 @@ function ApprovalDetail({ approval }: { approval: Approval }) {
       setComment('');
     } catch {
       toast.error('처리에 실패했습니다');
+    }
+  };
+
+  const onRetract = async () => {
+    if (!confirm('이 결재를 회수하시겠습니까? 회수된 결재는 복구할 수 없습니다.')) return;
+    try {
+      await remove.mutateAsync(approval.id);
+    } catch {
+      toast.error('회수에 실패했습니다');
     }
   };
 
@@ -259,6 +268,9 @@ function ApprovalDetail({ approval }: { approval: Approval }) {
               onChange={e => setComment(e.target.value)}
               className="flex-1 h-9 px-3 py-2 rounded-md bg-bg-1 border border-border text-[12.5px] resize-none focus:outline-none focus:ring-2 focus:ring-accent"
             />
+            <Button variant="ghost" size="md" onClick={onRetract} disabled={remove.isPending} aria-label="결재 회수">
+              <Undo2 size={13} /> 회수
+            </Button>
             <Button variant="secondary" size="md" onClick={() => onDecide('rejected')} disabled={decide.isPending}>
               <XCircle size={13} /> 반려
             </Button>

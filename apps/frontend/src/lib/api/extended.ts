@@ -80,6 +80,10 @@ export const extendedApi = {
   transitionIssue: async (id: string, input: IssueTransition): Promise<Issue> =>
     parsed(http.post(`issues/${id}/transition`, { json: input }).json(), IssueSchema),
 
+  deleteIssue: async (id: string): Promise<void> => {
+    await http.delete(`issues/${id}`);
+  },
+
   /* Tasks deletion (complement to existing update) ----------------------- */
   deleteTask: async (id: string): Promise<{ id: string; deleted: true }> =>
     http.delete(`tasks/${id}`).json<{ id: string; deleted: true }>(),
@@ -96,6 +100,10 @@ export const extendedApi = {
 
   decideApproval: async (id: string, input: ApprovalDecision): Promise<Approval> =>
     parsed(http.post(`approvals/${id}/decision`, { json: input }).json(), ApprovalSchema),
+
+  deleteApproval: async (id: string): Promise<void> => {
+    await http.delete(`approvals/${id}`);
+  },
 
   /* Clients (CRM) --------------------------------------------------------- */
   listClients: async (): Promise<Client[]> =>

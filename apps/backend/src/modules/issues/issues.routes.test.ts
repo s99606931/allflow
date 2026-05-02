@@ -502,6 +502,53 @@ describe('modules/issues — T1 Prisma', () => {
     await app.close();
   });
 
+  it('DELETE /issues/:id → 204 + GET 목록에서 제외 (소프트 삭제)', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/issues',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { projectId: 'proj-1', title: '삭제될 이슈', sev: 'low', prio: 'P3', sla: '5d' },
+    });
+    const { id } = post.json() as { id: string };
+
+    const del = await app.inject({
+      method: 'DELETE',
+      url: `/issues/${id}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(del.statusCode).toBe(204);
+
+    const get = await app.inject({
+      method: 'GET',
+      url: '/issues',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const list = get.json() as Array<{ id: string }>;
+    expect(list.some((item) => item.id === id)).toBe(false);
+    await app.close();
+  });
+
+  it('DELETE /issues/:id → 없는 id → 404', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'DELETE',
+      url: '/issues/nonexistent-id',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(r.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('DELETE /issues/:id → 인증 없으면 401', async () => {
+    const app = await buildTestApp();
+    const r = await app.inject({ method: 'DELETE', url: '/issues/issue-1' });
+    expect(r.statusCode).toBe(401);
+    await app.close();
+  });
+
   it('POST /issues → 멤버 아닌 사용자 → 403', async () => {
     const app = await buildTestApp();
     const token = await makeJws('u-not-member');

@@ -143,4 +143,29 @@ export async function approvalsRoutes(app: FastifyInstance): Promise<void> {
 
     return serialize(updated);
   });
+
+  app.delete('/approvals/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const existing = await app.prisma.approval.findFirst({ where: { id } });
+    if (!existing) throw new NotFoundError('Approval', id);
+    if (existing.status !== 'pending') {
+      throw new ValidationError('진행 중이 아닌 결재는 회수할 수 없습니다');
+    }
+    if (existing.requesterId !== userId) {
+      throw new ForbiddenError('상신자만 결재를 회수할 수 있습니다');
+    }
+
+    await app.prisma.approval.delete({ where: { id } });
+
+    app.log.info(
+      { action: 'approvals.retract', actorId: userId, approvalId: id },
+      'approval retracted',
+    );
+
+    reply.code(204);
+    return reply.send();
+  });
 }

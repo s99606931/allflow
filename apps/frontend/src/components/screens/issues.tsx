@@ -3,8 +3,8 @@
 import { useMemo, useState } from 'react';
 import { Card, CardBody, Avatar, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
 import type { IssueSev, IssuePrio } from '@/lib/types';
-import { CheckCircle2, Filter, Loader2, Plus, Search, Sparkles, X } from 'lucide-react';
-import { useIssues } from '@/lib/hooks/use-data';
+import { CheckCircle2, Filter, Loader2, Plus, Search, Sparkles, Trash2, X } from 'lucide-react';
+import { useIssues, useIssueMutations } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { IssueCreateDialog } from '@/components/dialogs/issue-create-dialog';
@@ -32,6 +32,7 @@ export function IssuesPage() {
   const [classifyOpen, setClassifyOpen] = useState(false);
   const { streaming, streamComplete } = useAiStream();
   const { data: issues = [], isLoading, error } = useIssues();
+  const { remove: removeIssue } = useIssueMutations();
   const userMap = useUserMap();
   const p0Count = issues.filter(i => i.prio === 'P0' && (i.status === 'open' || i.status === 'in-progress')).length;
   const newCount = issues.filter(i => i.status === 'open').length;
@@ -158,7 +159,7 @@ export function IssuesPage() {
           return (
             <div
               key={iss.id}
-              className="grid grid-cols-[36px_80px_1fr_140px_120px_90px_28px_28px_64px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors cursor-pointer"
+              className="group relative grid grid-cols-[36px_80px_1fr_140px_120px_90px_28px_28px_64px] gap-3 px-4 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors cursor-pointer"
             >
               <input type="checkbox" className="justify-self-center" />
               <div className="flex items-center gap-1.5">
@@ -192,6 +193,17 @@ export function IssuesPage() {
               <div className="text-center text-[11px] text-fg-2 mono">{iss.comments}</div>
               <div className="text-center text-[11px] text-fg-2 mono">{iss.linked || '-'}</div>
               <div className="text-right text-[11px] text-fg-3">{iss.created}</div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm(`"${iss.title}" 이슈를 삭제하시겠습니까?`)) removeIssue.mutate(iss.id);
+                }}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded opacity-0 group-hover:opacity-100 text-fg-3 hover:text-danger hover:bg-bg-2 transition-opacity"
+                aria-label="이슈 삭제"
+              >
+                <Trash2 size={12} />
+              </button>
             </div>
           );
         })}
