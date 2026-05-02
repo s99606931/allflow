@@ -53,7 +53,11 @@ export function NotificationsPage() {
     <div className="p-6 max-w-[920px] mx-auto space-y-4">
       <AiGuideWidget
         systemContext={`알림 센터 — 전체 ${notifs.length}건, 미확인 ${unread.length}건`}
-        hints={['중요 알림 분류해줘', '읽지 않은 항목 요약해줘', '알림 설정 최적화 도와줘']}
+        hints={[
+          unread.length > 0 ? `미확인 ${unread.length}건 중 중요 알림 분류해줘` : '중요 알림 분류해줘',
+          '읽지 않은 항목 요약해줘',
+          '알림 설정 최적화 도와줘',
+        ]}
       />
       <div className="flex items-center gap-2">
         <h2 className="text-[18px] font-bold text-fg">알림 센터</h2>

@@ -145,7 +145,10 @@ export function ApprovalsPage() {
           {isLoading && <div className="px-5 py-12 text-center text-[12px] text-fg-3">불러오는 중...</div>}
           {error && <div className="px-5 py-12 text-center text-[12px] text-danger">결재 목록을 불러오지 못했습니다.</div>}
           {!isLoading && !error && list.length === 0 && (
-            <div className="px-5 py-12 text-center text-[12px] text-fg-3">표시할 결재가 없습니다.</div>
+            <div className="px-5 py-12 text-center space-y-2">
+              <div className="text-[13px] font-semibold text-fg">결재가 없습니다</div>
+              <div className="text-[12px] text-fg-3">&ldquo;새 결재&rdquo;를 눌러 문서를 상신하거나 팀원의 결재를 기다리세요.</div>
+            </div>
           )}
           {list.map(a => {
             const requester = userMap.get(a.requester);

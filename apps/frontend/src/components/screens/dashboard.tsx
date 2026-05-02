@@ -164,7 +164,10 @@ export function DashboardPage() {
               </div>
             )}
             {!projectsLoading && projects.length === 0 && (
-              <div className="text-center text-fg-3 text-[12.5px] py-4">프로젝트가 없습니다.</div>
+              <div className="text-center py-4 space-y-2">
+                <div className="text-[12.5px] text-fg">프로젝트가 없습니다</div>
+                <Link href="/projects" className="text-[12px] text-accent-strong hover:underline">프로젝트 시작하기 →</Link>
+              </div>
             )}
             {projects.slice(0, 4).map(p => (
               <div key={p.id} className="space-y-1.5">

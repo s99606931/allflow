@@ -106,7 +106,10 @@ export function OrgPage() {
       {isLoading && <div className="py-12 text-center text-[12px] text-fg-3">불러오는 중...</div>}
       {error && <div className="py-12 text-center text-[12px] text-danger">조직 정보를 불러오지 못했습니다.</div>}
       {!isLoading && !error && units.length === 0 && (
-        <div className="py-12 text-center text-[12px] text-fg-3">등록된 조직 단위가 없습니다.</div>
+        <div className="py-12 text-center space-y-2">
+          <div className="text-[13px] font-semibold text-fg">조직 단위가 없습니다</div>
+          <div className="text-[12px] text-fg-3">우상단 &ldquo;+ 부서 추가&rdquo;를 눌러 팀/부서를 만드세요.</div>
+        </div>
       )}
 
       {rootUnits.length > 0 && (

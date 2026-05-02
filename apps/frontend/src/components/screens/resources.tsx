@@ -66,7 +66,11 @@ export function ResourcesPage() {
     <div className="p-6 max-w-[1440px] mx-auto space-y-5">
       <AiGuideWidget
         systemContext={`회의실·리소스 예약 — 총 ${resources.length}개 자원, 사용률 ${utilizationRate}%, 내 예약 ${myBookingsToday}건`}
-        hints={['예약 충돌 확인해줘', '빈 자원 찾아줘', '이번 주 예약 현황 요약해줘']}
+        hints={[
+          utilizationRate > 80 ? `사용률 ${utilizationRate}% — 자원 부족 해결 방법` : '예약 충돌 확인해줘',
+          myBookingsToday > 0 ? `내 예약 ${myBookingsToday}건 일정 최적화` : '빈 자원 찾아줘',
+          '이번 주 예약 현황 요약해줘',
+        ]}
       />
       <div className="flex items-center gap-2">
         <h2 className="text-[18px] font-bold text-fg">회의실 / 리소스 예약</h2>
@@ -132,7 +136,10 @@ export function ResourcesPage() {
       {isLoading && <div className="py-12 text-center text-[12px] text-fg-3">불러오는 중...</div>}
       {error && <div className="py-12 text-center text-[12px] text-danger">리소스를 불러오지 못했습니다.</div>}
       {!isLoading && !error && resources.length === 0 && (
-        <div className="py-12 text-center text-[12px] text-fg-3">등록된 리소스가 없습니다.</div>
+        <div className="py-12 text-center space-y-2">
+          <div className="text-[13px] font-semibold text-fg">리소스가 없습니다</div>
+          <div className="text-[12px] text-fg-3">회의실·장비·차량 등 공유 자원을 추가하고 예약을 관리하세요.</div>
+        </div>
       )}
 
       {filtered.length > 0 && (
