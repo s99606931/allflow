@@ -113,6 +113,7 @@ function NotificationMenu() {
 	const { data: rawItems = [] } = useNotifications();
 	const items = rawItems.map(n => ({ ...n, read: n.read || readIds.has(n.id) }));
 	const ref = useRef<HTMLDivElement>(null);
+	const router = useRouter();
 	const unread = items.filter((n) => !n.read).length;
 
 	useEffect(() => {
@@ -209,7 +210,7 @@ function NotificationMenu() {
 					<div className="px-3 py-2 border-t border-border text-center">
 						<button
 							type="button"
-							onClick={() => setOpen(false)}
+							onClick={() => { setOpen(false); router.push('/notifications'); }}
 							className="text-[11.5px] text-accent hover:text-accent-strong transition-colors"
 						>
 							모든 알림 보기
