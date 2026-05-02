@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Card, CardBody, Button } from '@/components/ui/primitives';
-import { ChevronRight, Pencil, Plus, Search, Trash2, TrendingUp } from 'lucide-react';
+import { ChevronRight, Loader2, Pencil, Plus, Search, Sparkles, Trash2, TrendingUp } from 'lucide-react';
 import { ClientForm } from '@/components/dialogs/client-form';
 import { ClientDetail } from '@/components/dialogs/client-detail';
 import { useClients, useClientMutations } from '@/lib/hooks/use-data';
 import type { Client } from '@/lib/schemas';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { useAiStream } from '@/lib/hooks/use-ai';
 
 /** Derive a 2-letter code from the client name for the avatar badge. */
 function codeOf(name: string): string {
@@ -37,6 +38,9 @@ export function ClientsPage() {
   const [statusFilter, setStatusFilter] = useState('전체');
   const { data: clients = [], isLoading, error } = useClients();
   const { remove } = useClientMutations();
+  const [aiFollowup, setAiFollowup] = useState('');
+  const [aiFollowupLoading, setAiFollowupLoading] = useState(false);
+  const { streamComplete } = useAiStream();
 
   const thisMonth = new Date();
   const newThisMonth = clients.filter(c => {
@@ -61,7 +65,36 @@ export function ClientsPage() {
           (() => { const noContact = clients.filter(c => !c.email && !c.phone).length; return noContact > 0 ? `연락처 미등록 ${noContact}개 고객사 정보 보완 방법` : '고객사 업종별 분류 현황 알려줘'; })(),
           `전체 ${clients.length}개 고객사 현황 요약해줘`,
         ]}
+        quickActions={[
+          {
+            label: 'AI 팔로업 분석',
+            icon: <Sparkles size={10} />,
+            onClick: async () => {
+              if (aiFollowup) { setAiFollowup(''); return; }
+              const noContact = clients.filter(c => !c.email && !c.phone);
+              setAiFollowupLoading(true);
+              await streamComplete(
+                `[고객사 현황: 총 ${clients.length}개, 이번달 신규 ${newThisMonth}개, 연락처 미등록 ${noContact.length}개]\n\n팔로업이 가장 필요한 고객사 유형과 우선순위 행동 3가지를 2~4문장으로 알려줘.`,
+                (delta) => setAiFollowup(prev => prev + delta),
+                () => setAiFollowupLoading(false),
+                { useTools: false },
+              );
+            },
+          },
+        ]}
       />
+      {(aiFollowupLoading || aiFollowup) && (
+        <Card className="bg-accent-soft/30 border-accent/30">
+          <CardBody className="p-3.5">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Sparkles size={12} className="text-accent shrink-0" />
+              <span className="text-[12px] font-semibold text-accent-strong">AI 팔로업 분석</span>
+            </div>
+            {aiFollowupLoading && !aiFollowup && <Loader2 size={12} className="animate-spin text-accent-strong" />}
+            {aiFollowup && <p className="text-[12px] text-fg-1 leading-relaxed whitespace-pre-wrap">{aiFollowup}</p>}
+          </CardBody>
+        </Card>
+      )}
       <div className="grid grid-cols-4 gap-3">
         {[
           { l: '활성 고객사', v: String(clients.length), d: '+0' },

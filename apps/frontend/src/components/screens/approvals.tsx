@@ -94,6 +94,10 @@ export function ApprovalsPage() {
               '에스컬레이션 위험 찾아줘',
               '결재 프로세스 가이드해줘',
             ]}
+            quickActions={[
+              ...(counts.inbox > 0 ? [{ label: `받은 결재 ${counts.inbox}건`, onClick: () => setTab('inbox') }] : []),
+              ...(counts.sent > 0 ? [{ label: `상신 내역 ${counts.sent}건`, onClick: () => setTab('sent') }] : []),
+            ]}
             className="mx-0 my-2 rounded-lg"
           />
           {searchOpen ? (
