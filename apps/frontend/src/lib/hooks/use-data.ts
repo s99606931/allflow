@@ -516,6 +516,13 @@ export function useGantt(params?: { projectId?: string; from?: string; to?: stri
   });
 }
 
+export function useGanttByAssignee() {
+  return useQuery<GanttResponse>({
+    queryKey: [...keys.gantt.all(), 'by-assignee'],
+    queryFn: () => api.getGanttByAssignee(),
+  });
+}
+
 /* ----------------------------------------- AI hooks (re-export) --------- */
 // AI 스트리밍/스레드 훅은 use-ai.ts 로 분리 (500 LOC 게이트 준수)
 export type { AiThread, AiMessage } from './use-ai';

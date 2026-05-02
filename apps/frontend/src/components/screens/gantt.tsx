@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useGantt, useProjects } from '@/lib/hooks/use-data';
+import { useGantt, useGanttByAssignee, useProjects } from '@/lib/hooks/use-data';
 import type { GanttTask } from '@/lib/api/extended';
 import { ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 
@@ -115,6 +115,7 @@ export function GanttPage() {
   const [offsetDays, setOffsetDays] = useState(0);
   const viewDays = 28;
   const [projectFilter, setProjectFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'project' | 'assignee'>('project');
 
   const viewStart = useMemo(() => {
     const d = addDays(new Date(), -7 + offsetDays);
@@ -130,10 +131,9 @@ export function GanttPage() {
     [projects],
   );
 
-  const { data, isLoading } = useGantt({
-    from: isoDate(viewStart),
-    to: isoDate(viewEnd),
-  });
+  const ganttByProject = useGantt({ from: isoDate(viewStart), to: isoDate(viewEnd) });
+  const ganttByAssignee = useGanttByAssignee();
+  const { data, isLoading } = viewMode === 'assignee' ? ganttByAssignee : ganttByProject;
 
   const days = useMemo(
     () => Array.from({ length: viewDays }, (_, i) => addDays(viewStart, i)),
@@ -214,12 +214,25 @@ export function GanttPage() {
           {isoDate(viewStart)} — {isoDate(viewEnd)}
         </span>
 
+        <div className="flex items-center gap-1 p-0.5 rounded-md bg-bg-2 border border-border">
+          {(['project', 'assignee'] as const).map(m => (
+            <button
+              key={m}
+              onClick={() => setViewMode(m)}
+              className={`px-2.5 h-7 rounded text-[12px] font-medium transition-colors ${viewMode === m ? 'bg-bg-elev text-fg shadow-sm' : 'text-fg-2 hover:text-fg-1'}`}
+            >
+              {m === 'project' ? '프로젝트별' : '담당자별'}
+            </button>
+          ))}
+        </div>
+
         <div className="flex items-center gap-1 ml-auto">
           <Filter size={13} className="text-fg-3" />
           <select
             value={projectFilter}
             onChange={e => setProjectFilter(e.target.value)}
             className="h-8 px-2 rounded-md border border-border bg-bg-1 text-[12px] text-fg"
+            disabled={viewMode === 'assignee'}
           >
             <option value="all">전체 프로젝트</option>
             {projectIds.map(id => (

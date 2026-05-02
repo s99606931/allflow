@@ -234,6 +234,9 @@ export const extendedApi = {
       .get('gantt', { searchParams: params as Record<string, string> })
       .json<GanttResponse>(),
 
+  getGanttByAssignee: async (): Promise<GanttResponse> =>
+    http.get('gantt/by-assignee').json<GanttResponse>(),
+
   /* LLM Connections (admin) --------------------------------------------- */
   listLlmConnections: async (): Promise<LlmConnection[]> =>
     http.get('llm-connections').json<LlmConnection[]>(),
