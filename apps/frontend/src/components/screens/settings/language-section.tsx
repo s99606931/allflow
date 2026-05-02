@@ -2,10 +2,17 @@
 
 import { Card, CardBody } from "@/components/ui/primitives";
 import { type Locale, useTranslation } from "@/lib/i18n";
+import { useUIStore } from "@/store/ui-store";
 import { Row, Section } from "./shared";
 
 export function LanguageSection() {
 	const { locale, setLocale, t } = useTranslation();
+	const timezone = useUIStore((s) => s.timezone);
+	const setTimezone = useUIStore((s) => s.setTimezone);
+	const dateFormat = useUIStore((s) => s.dateFormat);
+	const setDateFormat = useUIStore((s) => s.setDateFormat);
+	const weekStart = useUIStore((s) => s.weekStart);
+	const setWeekStart = useUIStore((s) => s.setWeekStart);
 	return (
 		<Section title="언어 / 시간대">
 			<Card>
@@ -22,21 +29,33 @@ export function LanguageSection() {
 						</select>
 					</Row>
 					<Row label="시간대">
-						<select className="h-8 px-2.5 rounded-md bg-bg-1 border border-border text-[12.5px]">
+						<select
+							className="h-8 px-2.5 rounded-md bg-bg-1 border border-border text-[12.5px]"
+							value={timezone}
+							onChange={(e) => setTimezone(e.target.value)}
+						>
 							<option>(UTC+09:00) 서울</option>
 							<option>(UTC+00:00) 런던</option>
 							<option>(UTC-08:00) 샌프란시스코</option>
 						</select>
 					</Row>
 					<Row label="날짜 형식">
-						<select className="h-8 px-2.5 rounded-md bg-bg-1 border border-border text-[12.5px]">
+						<select
+							className="h-8 px-2.5 rounded-md bg-bg-1 border border-border text-[12.5px]"
+							value={dateFormat}
+							onChange={(e) => setDateFormat(e.target.value)}
+						>
 							<option>2026년 4월 28일</option>
 							<option>2026-04-28</option>
 							<option>04/28/2026</option>
 						</select>
 					</Row>
 					<Row label="주 시작 요일">
-						<select className="h-8 px-2.5 rounded-md bg-bg-1 border border-border text-[12.5px]">
+						<select
+							className="h-8 px-2.5 rounded-md bg-bg-1 border border-border text-[12.5px]"
+							value={weekStart}
+							onChange={(e) => setWeekStart(e.target.value)}
+						>
 							<option>월요일</option>
 							<option>일요일</option>
 						</select>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/primitives";
+import { useUIStore } from "@/store/ui-store";
 import { useState } from "react";
 import { Row, Section, Toggle } from "./shared";
 
@@ -26,6 +27,12 @@ const INITIAL_STATE: NotifState = {
 
 export function NotifSection() {
 	const [state, setState] = useState<NotifState>(INITIAL_STATE);
+	const dndWeekdayNight = useUIStore((s) => s.dndWeekdayNight);
+	const setDndWeekdayNight = useUIStore((s) => s.setDndWeekdayNight);
+	const dndWeekend = useUIStore((s) => s.dndWeekend);
+	const setDndWeekend = useUIStore((s) => s.setDndWeekend);
+	const dndDuringMeeting = useUIStore((s) => s.dndDuringMeeting);
+	const setDndDuringMeeting = useUIStore((s) => s.setDndDuringMeeting);
 
 	return (
 		<Section title="알림" desc="채널별로 받을 알림 종류를 선택하세요.">
@@ -68,13 +75,13 @@ export function NotifSection() {
 				</CardHeader>
 				<CardBody className="space-y-1">
 					<Row label="평일 야간" sub="22:00 ~ 08:00 · 푸시 알림 차단">
-						<Toggle checked={true} onChange={() => {}} />
+						<Toggle checked={dndWeekdayNight} onChange={setDndWeekdayNight} />
 					</Row>
 					<Row label="주말 종일" sub="긴급 (P0) 만 허용">
-						<Toggle checked={true} onChange={() => {}} />
+						<Toggle checked={dndWeekend} onChange={setDndWeekend} />
 					</Row>
 					<Row label="회의 중 자동 차단" sub="캘린더에 회의가 있는 동안">
-						<Toggle checked={false} onChange={() => {}} />
+						<Toggle checked={dndDuringMeeting} onChange={setDndDuringMeeting} />
 					</Row>
 				</CardBody>
 			</Card>

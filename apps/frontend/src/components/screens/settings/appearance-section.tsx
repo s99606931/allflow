@@ -11,6 +11,12 @@ export function AppearanceSection() {
 	const setTheme = useUIStore((s) => s.setTheme);
 	const accent = useUIStore((s) => s.accent);
 	const setAccent = useUIStore((s) => s.setAccent);
+	const compact = useUIStore((s) => s.compact);
+	const setCompact = useUIStore((s) => s.setCompact);
+	const reduceMotion = useUIStore((s) => s.reduceMotion);
+	const setReduceMotion = useUIStore((s) => s.setReduceMotion);
+	const fontSize = useUIStore((s) => s.fontSize);
+	const setFontSize = useUIStore((s) => s.setFontSize);
 
 	return (
 		<Section title="외관" desc="테마 · 액센트 · 글자 크기를 조정합니다.">
@@ -66,7 +72,11 @@ export function AppearanceSection() {
 			<Card>
 				<CardBody className="space-y-1">
 					<Row label="글자 크기" sub="앱 전체 텍스트 크기를 조정합니다.">
-						<select className="h-8 px-2.5 rounded-md bg-bg-1 border border-border text-[12.5px]">
+						<select
+							className="h-8 px-2.5 rounded-md bg-bg-1 border border-border text-[12.5px]"
+							value={fontSize}
+							onChange={(e) => setFontSize(e.target.value)}
+						>
 							<option>작게 (90%)</option>
 							<option>표준 (100%)</option>
 							<option>크게 (110%)</option>
@@ -74,10 +84,10 @@ export function AppearanceSection() {
 						</select>
 					</Row>
 					<Row label="컴팩트 모드" sub="여백을 줄여 더 많은 정보를 표시합니다.">
-						<Toggle checked={false} onChange={() => {}} />
+						<Toggle checked={compact} onChange={setCompact} />
 					</Row>
 					<Row label="모션 줄이기" sub="애니메이션을 최소화합니다.">
-						<Toggle checked={false} onChange={() => {}} />
+						<Toggle checked={reduceMotion} onChange={setReduceMotion} />
 					</Row>
 				</CardBody>
 			</Card>
