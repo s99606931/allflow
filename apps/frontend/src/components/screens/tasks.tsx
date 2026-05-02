@@ -9,7 +9,7 @@ import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { StatusKey } from '@/lib/schemas';
 import { TaskDetailDialog } from './task-detail';
 import { TaskCreateDialog } from '@/components/dialogs/task-create-dialog';
-import { CheckCircle2, Circle, Filter, KanbanSquare, LayoutList, Plus, Search, CalendarDays, X, Check } from 'lucide-react';
+import { ArrowUpDown, CheckCircle2, Circle, Filter, KanbanSquare, LayoutList, Plus, Search, CalendarDays, X, Check } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 const COLS: { id: StatusKey; label: string; color: string }[] = [
@@ -30,6 +30,7 @@ export function TasksPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'med' | 'low'>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'due' | 'priority' | 'created'>('due');
 
   useEffect(() => {
     const a = searchParams.get('assignee');
@@ -55,15 +56,22 @@ export function TasksPage() {
     return /^\d{4}-\d{2}-\d{2}$/.test(due) && due < todayStr;
   }
 
-  const filtered = tasks.filter(t => {
-    if (assigneeFilter && t.assignee !== assigneeFilter) return false;
-    if (filter === 'mine' && t.assignee !== me?.id) return false;
-    if (filter === 'today' && !isDueToday(t.due)) return false;
-    if (filter === 'overdue' && !isOverdue(t.due, t.status)) return false;
-    if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
-    if (priorityFilter !== 'all' && t.priority !== priorityFilter) return false;
-    return true;
-  });
+  const PRIORITY_ORDER: Record<string, number> = { high: 0, med: 1, low: 2 };
+  const filtered = tasks
+    .filter(t => {
+      if (assigneeFilter && t.assignee !== assigneeFilter) return false;
+      if (filter === 'mine' && t.assignee !== me?.id) return false;
+      if (filter === 'today' && !isDueToday(t.due)) return false;
+      if (filter === 'overdue' && !isOverdue(t.due, t.status)) return false;
+      if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
+      if (priorityFilter !== 'all' && t.priority !== priorityFilter) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'due') return (a.due ?? '9999') < (b.due ?? '9999') ? -1 : 1;
+      if (sortBy === 'priority') return (PRIORITY_ORDER[a.priority ?? 'low'] ?? 2) - (PRIORITY_ORDER[b.priority ?? 'low'] ?? 2);
+      return (b.id ?? '').localeCompare(a.id ?? '');
+    });
 
   const filterCounts = {
     all: tasks.length,
@@ -120,6 +128,12 @@ export function TasksPage() {
         </div>
         <Button variant={filterOpen ? 'primary' : 'secondary'} size="sm" onClick={() => setFilterOpen(v => !v)}><Filter size={13} /> 필터</Button>
         <div className="flex-1" />
+        <button
+          onClick={() => setSortBy(s => s === 'due' ? 'priority' : s === 'priority' ? 'created' : 'due')}
+          className="flex items-center gap-1 h-8 px-2.5 rounded-md border border-border text-[12px] text-fg-2 hover:text-fg-1 hover:bg-hover transition-colors"
+        >
+          <ArrowUpDown size={12} /> {sortBy === 'due' ? '마감일순' : sortBy === 'priority' ? '우선순위순' : '최신순'}
+        </button>
         <div className="relative">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="태스크 검색..."
