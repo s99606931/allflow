@@ -19,6 +19,7 @@ import { NotifSection } from "./settings/notif-section";
 import { ProfileSection } from "./settings/profile-section";
 import { SecuritySection } from "./settings/security-section";
 import { ShortcutsSection } from "./settings/shortcuts-section";
+import { AiGuideWidget } from "@/components/ai/ai-guide-widget";
 
 const SECTIONS = [
 	{ id: "profile", label: "프로필", icon: User },
@@ -72,6 +73,14 @@ export function SettingsPage() {
 
 			<div className="flex-1 overflow-y-auto scroll">
 				<div className="max-w-[820px] mx-auto p-8">
+					<AiGuideWidget
+						systemContext={`설정 — ${SECTIONS.find(s => s.id === active)?.label ?? active} 섹션`}
+						hints={[
+							active === "security" ? "MFA 설정 방법 알려줘" : active === "notifications" ? "알림 설정 최적화해줘" : active === "integrations" ? "Notion 연동 설정 도와줘" : "설정 변경 가이드해줘",
+							active === "profile" ? "프로필 완성도 높이는 방법" : "계정 보안 점검해줘",
+							"자주 사용하는 설정 추천해줘",
+						]}
+					/>
 					{active === "profile" && <ProfileSection />}
 					{active === "notifications" && <NotifSection />}
 					{active === "security" && <SecuritySection />}
