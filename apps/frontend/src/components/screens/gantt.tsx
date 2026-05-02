@@ -3,14 +3,15 @@
 import { useState, useMemo } from 'react';
 import { useGantt, useGanttByAssignee, useProjects } from '@/lib/hooks/use-data';
 import type { GanttTask } from '@/lib/api/extended';
-import { ChevronLeft, ChevronRight, Filter, Sparkles, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Filter, Sparkles, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardBody, Button } from '@/components/ui/primitives';
 import { api } from '@/lib/api';
 import { GanttDepPanel } from './gantt-dep-panel';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
-const CELL_W = 32;
+const CELL_W_MIN = 16;
+const CELL_W_MAX = 64;
 const ROW_H = 40;
 const LABEL_W = 200;
 
@@ -118,6 +119,7 @@ function TaskBar({ task, startPx, widthPx, color, isMilestone }: {
 
 export function GanttPage() {
   const [offsetDays, setOffsetDays] = useState(0);
+  const [cellW, setCellW] = useState(32);
   const viewDays = 28;
   const [projectFilter, setProjectFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'project' | 'assignee'>('project');
@@ -161,8 +163,8 @@ export function GanttPage() {
   );
 
   const today = isoDate(new Date());
-  const todayOffsetPx = diffDays(viewStart, new Date()) * CELL_W;
-  const gridW = viewDays * CELL_W;
+  const todayOffsetPx = diffDays(viewStart, new Date()) * cellW;
+  const gridW = viewDays * cellW;
 
   const barMap = useMemo(() => {
     const map = new Map<string, { startPx: number; endPx: number; y: number }>();
@@ -176,8 +178,8 @@ export function GanttPage() {
       const clampedEnd = Math.min(viewDays, rawEnd);
       if (clampedEnd > clampedStart) {
         map.set(task.id, {
-          startPx: clampedStart * CELL_W,
-          endPx: clampedEnd * CELL_W,
+          startPx: clampedStart * cellW,
+          endPx: clampedEnd * cellW,
           y: idx * ROW_H + ROW_H / 2,
         });
       }
@@ -295,6 +297,26 @@ export function GanttPage() {
           {analyzing ? 'AI 분석 중…' : 'AI 위험 분석'}
         </Button>
 
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setCellW(w => Math.max(CELL_W_MIN, w - 8))}
+            disabled={cellW <= CELL_W_MIN}
+            className="h-7 w-7 flex items-center justify-center rounded border border-border hover:bg-hover disabled:opacity-40 transition-colors"
+            aria-label="축소"
+          >
+            <ZoomOut size={13} />
+          </button>
+          <span className="text-[11px] text-fg-3 w-8 text-center">{cellW}px</span>
+          <button
+            onClick={() => setCellW(w => Math.min(CELL_W_MAX, w + 8))}
+            disabled={cellW >= CELL_W_MAX}
+            className="h-7 w-7 flex items-center justify-center rounded border border-border hover:bg-hover disabled:opacity-40 transition-colors"
+            aria-label="확대"
+          >
+            <ZoomIn size={13} />
+          </button>
+        </div>
+
         <div className="flex items-center gap-1 ml-auto">
           <Filter size={13} className="text-fg-3" />
           <select
@@ -365,7 +387,7 @@ export function GanttPage() {
                     <div
                       key={iso}
                       style={{
-                        width: CELL_W,
+                        width: cellW,
                         flexShrink: 0,
                         height: 40,
                         display: 'flex',
@@ -406,8 +428,8 @@ export function GanttPage() {
                   const clampedEnd = Math.min(viewDays, rawEnd);
 
                   if (clampedEnd > clampedStart) {
-                    startPx = clampedStart * CELL_W;
-                    widthPx = Math.max((clampedEnd - clampedStart) * CELL_W, isMilestone ? 1 : 8);
+                    startPx = clampedStart * cellW;
+                    widthPx = Math.max((clampedEnd - clampedStart) * cellW, isMilestone ? 1 : 8);
                     visible = true;
                   }
                 }
@@ -427,9 +449,9 @@ export function GanttPage() {
                           key={i}
                           style={{
                             position: 'absolute',
-                            left: i * CELL_W,
+                            left: i * cellW,
                             top: 0,
-                            width: CELL_W,
+                            width: cellW,
                             height: ROW_H,
                             borderLeft: isMonday && i > 0 ? '1px solid var(--color-border, #e2e8f0)' : undefined,
                             background: isToday ? 'oklch(0.62 0.18 255 / 0.06)' : undefined,
