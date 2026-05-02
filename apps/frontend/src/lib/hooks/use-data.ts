@@ -255,7 +255,13 @@ export function useClientMutations() {
     onSuccess: () => { invalidate(); toast.success('고객사가 삭제되었습니다'); },
     onError,
   });
-  return { create, remove };
+  const update = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: { name?: string; contact?: string; email?: string; phone?: string; industry?: string } }) =>
+      api.updateClient(id, patch),
+    onSuccess: () => { invalidate(); toast.success('고객사가 수정되었습니다'); },
+    onError,
+  });
+  return { create, remove, update };
 }
 
 export function useEventMutations() {
@@ -271,7 +277,13 @@ export function useEventMutations() {
     onSuccess: () => { invalidate(); toast.success('일정이 삭제되었습니다'); },
     onError,
   });
-  return { create, remove };
+  const update = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: { title?: string; start?: string; end?: string; location?: string } }) =>
+      api.updateEvent(id, patch),
+    onSuccess: () => { invalidate(); toast.success('일정이 수정되었습니다'); },
+    onError,
+  });
+  return { create, remove, update };
 }
 
 export function useResourceMutations() {

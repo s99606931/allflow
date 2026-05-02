@@ -122,6 +122,9 @@ export const extendedApi = {
     await http.delete(`clients/${id}`);
   },
 
+  updateClient: async (id: string, patch: { name?: string; contact?: string; email?: string; phone?: string; industry?: string }): Promise<Client> =>
+    parsed(http.patch(`clients/${id}`, { json: patch }).json(), ClientSchema),
+
   /* Schedule events ------------------------------------------------------- */
   listEvents: async (filters?: { from?: string; to?: string }): Promise<Event[]> =>
     parsed(
@@ -135,6 +138,9 @@ export const extendedApi = {
   deleteEvent: async (id: string): Promise<void> => {
     await http.delete(`events/${id}`);
   },
+
+  updateEvent: async (id: string, patch: { title?: string; start?: string; end?: string; location?: string }): Promise<Event> =>
+    parsed(http.patch(`events/${id}`, { json: patch }).json(), EventSchema),
 
   /* Resources ------------------------------------------------------------- */
   listResources: async (): Promise<Resource[]> =>
