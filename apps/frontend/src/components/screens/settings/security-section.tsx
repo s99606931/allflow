@@ -277,9 +277,10 @@ export function SecuritySection() {
 							{showApi ? <EyeOff size={12} /> : <Eye size={12} />}
 						</IconButton>
 						<Button size="sm" variant="ghost" onClick={() => {
-							if (window.confirm("API 키를 재발급하면 기존 키는 즉시 만료됩니다. 계속하시겠습니까?")) {
-								toast.success("API 키가 재발급되었습니다. 새 키를 안전한 곳에 보관하세요.");
-							}
+							toast('API 키를 재발급하면 기존 키는 즉시 만료됩니다. 계속하시겠습니까?', {
+								action: { label: '재발급', onClick: () => toast.success('API 키가 재발급되었습니다. 새 키를 안전한 곳에 보관하세요.') },
+								cancel: '취소',
+							});
 						}}>
 							재발급
 						</Button>
@@ -294,11 +295,7 @@ export function SecuritySection() {
 						size="sm"
 						variant="secondary"
 						disabled={!hasOthers || revokeAllOthers.isPending}
-						onClick={() => {
-							if (window.confirm("다른 모든 세션을 종료하시겠습니까?")) {
-								revokeAllOthers.mutate();
-							}
-						}}
+						onClick={() => toast('다른 모든 세션을 종료하시겠습니까?', { action: { label: '종료', onClick: () => revokeAllOthers.mutate() }, cancel: '취소' })}
 					>
 						{revokeAllOthers.isPending ? '종료 중...' : '모든 다른 세션 종료'}
 					</Button>
@@ -331,11 +328,7 @@ export function SecuritySection() {
 										size="sm"
 										variant="ghost"
 										disabled={revokeSession.isPending}
-										onClick={() => {
-											if (window.confirm(`"${s.device}" 세션을 종료하시겠습니까?`)) {
-												revokeSession.mutate(s.id);
-											}
-										}}
+										onClick={() => toast(`"${s.device}" 세션을 종료하시겠습니까?`, { action: { label: '종료', onClick: () => revokeSession.mutate(s.id) }, cancel: '취소' })}
 									>
 										종료
 									</Button>

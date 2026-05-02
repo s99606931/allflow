@@ -5,6 +5,7 @@ import { Card, CardBody, CardHeader, CardTitle, Badge, Button } from '@/componen
 import { Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useMcpConnections, useMcpConnectionMutations } from '@/lib/hooks/use-data';
 import type { McpConnectionInput } from '@/lib/api/extended';
+import { toast } from 'sonner';
 
 export function McpConnectionsPanel() {
   const list = useMcpConnections();
@@ -81,7 +82,7 @@ export function McpConnectionsPanel() {
               type="button"
               aria-label="삭제"
               disabled={mut.remove.isPending}
-              onClick={() => { if (window.confirm(`"${conn.name}" MCP 연결을 삭제하시겠습니까?`)) mut.remove.mutate(conn.id); }}
+              onClick={() => toast(`"${conn.name}" MCP 연결을 삭제하시겠습니까?`, { action: { label: '삭제', onClick: () => mut.remove.mutate(conn.id) }, cancel: '취소' })}
               className="text-fg-3 hover:text-danger transition-colors"
             >
               <Trash2 size={14} />

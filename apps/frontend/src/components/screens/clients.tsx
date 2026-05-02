@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Card, CardBody, Button } from '@/components/ui/primitives';
 import { ChevronRight, Pencil, Plus, Search, Trash2, TrendingUp } from 'lucide-react';
 import { ClientForm } from '@/components/dialogs/client-form';
@@ -149,7 +150,7 @@ export function ClientsPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={e => { e.stopPropagation(); if (confirm(`"${c.name}" 고객사를 삭제하시겠습니까?`)) remove.mutate(c.id); }}
+                    onClick={e => { e.stopPropagation(); toast(`"${c.name}" 고객사를 삭제하시겠습니까?`, { action: { label: '삭제', onClick: () => remove.mutate(c.id) }, cancel: '취소' }); }}
                     className="opacity-0 group-hover:opacity-100 text-fg-3 hover:text-danger shrink-0 transition-opacity mt-0.5"
                     aria-label="고객사 삭제"
                   >

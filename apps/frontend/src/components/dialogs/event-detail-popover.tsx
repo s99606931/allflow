@@ -11,6 +11,7 @@ import { Avatar, Button } from '@/components/ui/primitives';
 import { Dialog, DialogFooter, TextInput } from '@/components/ui/dialog';
 import { useUsers, useEventMutations } from '@/lib/hooks/use-data';
 import { useTranslation } from '@/lib/i18n';
+import { toast } from 'sonner';
 
 export interface EventLike {
   id?: string;
@@ -111,7 +112,7 @@ export function EventDetailPopover({ event, onClose }: Props) {
                 type="button"
                 variant="danger"
                 disabled={remove.isPending}
-                onClick={() => { if (confirm(`"${event.title}" 일정을 삭제하시겠습니까?`)) remove.mutate(event.id!, { onSuccess: onClose }); }}
+                onClick={() => toast(`"${event.title}" 일정을 삭제하시겠습니까?`, { action: { label: '삭제', onClick: () => remove.mutate(event.id!, { onSuccess: onClose }) }, cancel: '취소' })}
               >
                 {remove.isPending ? '삭제 중...' : '삭제'}
               </Button>

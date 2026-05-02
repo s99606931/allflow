@@ -114,7 +114,7 @@ export function DocsPage() {
                         {summarizing[d.id] ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); if (confirm(`"${d.title}" 문서를 삭제하시겠습니까?`)) docMutations.remove.mutate(d.id); }}
+                        onClick={(e) => { e.stopPropagation(); toast(`"${d.title}" 문서를 삭제하시겠습니까?`, { action: { label: '삭제', onClick: () => docMutations.remove.mutate(d.id) }, cancel: '취소' }); }}
                         className="opacity-0 group-hover:opacity-100 text-fg-3 hover:text-danger shrink-0 transition-opacity"
                         aria-label="문서 삭제"
                       >

@@ -2,6 +2,7 @@
 
 import { Button, Card, CardBody } from "@/components/ui/primitives";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useDeleteAccount } from "@/lib/hooks/use-data";
 import { Section } from "./shared";
@@ -11,10 +12,9 @@ export function DangerSection() {
 	const deleteAccount = useDeleteAccount();
 
 	const onDelete = () => {
-		const confirmed = window.confirm("정말로 계정을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.");
-		if (!confirmed) return;
-		deleteAccount.mutate(undefined, {
-			onSuccess: () => router.push('/login'),
+		toast('정말로 계정을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.', {
+			action: { label: '영구 삭제', onClick: () => deleteAccount.mutate(undefined, { onSuccess: () => router.push('/login') }) },
+			cancel: '취소',
 		});
 	};
 

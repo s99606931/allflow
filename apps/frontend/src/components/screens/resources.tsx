@@ -146,6 +146,12 @@ export function ResourcesPage() {
         </div>
       )}
 
+      {!isLoading && !error && resources.length > 0 && filtered.length === 0 && (
+        <div className="py-12 text-center space-y-2">
+          <div className="text-[13px] font-semibold text-fg">검색 결과 없음</div>
+          <div className="text-[12px] text-fg-3">다른 검색어나 필터를 시도해보세요.</div>
+        </div>
+      )}
       {filtered.length > 0 && (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">

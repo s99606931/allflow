@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Card, CardBody, CardHeader, CardTitle, AvatarStack, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
 import { useProjects, useProjectMutations } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
@@ -105,7 +106,7 @@ export function ProjectsPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={e => { e.preventDefault(); if (confirm(`"${p.name}" 프로젝트를 삭제하시겠습니까?`)) remove.mutate(p.id); }}
+                  onClick={e => { e.preventDefault(); toast(`"${p.name}" 프로젝트를 삭제하시겠습니까?`, { action: { label: '삭제', onClick: () => remove.mutate(p.id) }, cancel: '취소' }); }}
                   className="p-1 rounded bg-bg-1 border border-border text-fg-2 hover:text-danger shadow-sm"
                   aria-label="프로젝트 삭제"
                 >

@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import Link from 'next/link';
 import { Card, CardBody, CardHeader, CardTitle, AvatarStack, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
 import { useProject, useTasks, useProjectMutations } from '@/lib/hooks/use-data';
@@ -89,11 +90,10 @@ export function ProjectDetail({ projectId }: Props) {
         </button>
         <button
           type="button"
-          onClick={async () => {
-            if (!confirm(`"${project.name}" 프로젝트를 삭제하시겠습니까?`)) return;
-            await remove.mutateAsync(project.id);
-            router.push('/projects');
-          }}
+          onClick={() => toast(`"${project.name}" 프로젝트를 삭제하시겠습니까?`, {
+            action: { label: '삭제', onClick: async () => { await remove.mutateAsync(project.id); router.push('/projects'); } },
+            cancel: '취소',
+          })}
           className="p-1.5 rounded text-fg-2 hover:text-danger hover:bg-bg-2 transition-colors"
           aria-label="프로젝트 삭제"
         >

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Card, CardBody, Avatar, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
 import type { IssueSev, IssuePrio } from '@/lib/types';
 import { CheckCircle2, Filter, Loader2, Plus, Search, Sparkles, Trash2, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import { useIssues, useIssueMutations, useMe } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';
@@ -165,11 +166,10 @@ export function IssuesPage() {
           <Button
             size="sm"
             variant="secondary"
-            onClick={async () => {
-              if (!confirm(`선택한 이슈 ${selectedIds.size}건을 삭제하시겠습니까?`)) return;
-              await Promise.all([...selectedIds].map(id => removeIssue.mutateAsync(id)));
-              setSelectedIds(new Set());
-            }}
+            onClick={() => toast(`선택한 이슈 ${selectedIds.size}건을 삭제하시겠습니까?`, {
+              action: { label: '삭제', onClick: async () => { await Promise.all([...selectedIds].map(id => removeIssue.mutateAsync(id))); setSelectedIds(new Set()); } },
+              cancel: '취소',
+            })}
             disabled={removeIssue.isPending}
           >
             <Trash2 size={13} /> 일괄 삭제
@@ -245,10 +245,7 @@ export function IssuesPage() {
               <div className="text-right text-[11px] text-fg-3">{iss.created}</div>
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (confirm(`"${iss.title}" 이슈를 삭제하시겠습니까?`)) removeIssue.mutate(iss.id);
-                }}
+                onClick={(e) => { e.stopPropagation(); toast(`"${iss.title}" 이슈를 삭제하시겠습니까?`, { action: { label: '삭제', onClick: () => removeIssue.mutate(iss.id) }, cancel: '취소' }); }}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded opacity-0 group-hover:opacity-100 text-fg-3 hover:text-danger hover:bg-bg-2 transition-opacity"
                 aria-label="이슈 삭제"
               >

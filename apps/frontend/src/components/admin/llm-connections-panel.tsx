@@ -21,6 +21,7 @@ import { useLlmConnectionMutations, useLlmConnections } from '@/lib/hooks/use-da
 import type { LlmConnection, LlmConnectionInput, LlmKind } from '@/lib/api/extended';
 import { Activity, CheckCircle2, Plus, Trash2, Zap } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 const KIND_OPTIONS: { value: LlmKind; label: string }[] = [
   { value: 'lmstudio', label: 'LMStudio (local)' },
@@ -90,13 +91,7 @@ export function LlmConnectionsPanel() {
                     onEdit={() => setDialog({ kind: 'edit', conn: r })}
                     onActivate={() => mut.activate.mutate(r.id)}
                     onTest={() => mut.test.mutate(r.id)}
-                    onDelete={() => {
-                      if (
-                        window.confirm(`"${r.name}" 연결을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)
-                      ) {
-                        mut.remove.mutate(r.id);
-                      }
-                    }}
+                    onDelete={() => toast(`"${r.name}" 연결을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`, { action: { label: '삭제', onClick: () => mut.remove.mutate(r.id) }, cancel: '취소' })}
                     isPending={
                       mut.activate.isPending ||
                       mut.test.isPending ||
