@@ -4,7 +4,7 @@ import { Card, CardBody, CardHeader, CardTitle, Avatar, AvatarStack, Badge, Butt
 import { useMe, useProjects, useTasks } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { Task, Project } from '@/lib/schemas';
-import { CheckCircle2, Circle, MoreHorizontal, Sparkles, Plus, Loader2, Calendar } from 'lucide-react';
+import { CheckCircle2, Circle, MoreHorizontal, Sparkles, Plus, Loader2, Calendar, X } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -12,6 +12,8 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 import { useState } from 'react';
 import { TaskCreateDialog } from '@/components/dialogs/task-create-dialog';
 import { TaskDetailDialog } from './task-detail';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
 
 export function DashboardPage() {
   const { data: me } = useMe();
@@ -22,6 +24,8 @@ export function DashboardPage() {
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const [insightPeriod, setInsightPeriod] = useState<'week' | 'month'>('week');
   const [insightMenuOpen, setInsightMenuOpen] = useState(false);
+  const [briefing, setBriefing] = useState<string | null>(null);
+  const [briefingLoading, setBriefingLoading] = useState(false);
   const router = useRouter();
 
   const todoCount = tasks.filter(t => t.status !== 'done').length;
@@ -30,6 +34,27 @@ export function DashboardPage() {
   const reviewCount = tasks.filter(t => t.status === 'review').length;
 
   const greetingName = me?.name ?? '';
+
+  async function generateBriefing() {
+    setBriefingLoading(true);
+    try {
+      const prompt = [
+        `오늘 날짜: ${new Date().toLocaleDateString('ko-KR')}`,
+        `사용자: ${greetingName || '팀원'}`,
+        `처리할 태스크: ${todoCount}개 (진행 중 ${doingCount}건, 리뷰 대기 ${reviewCount}건)`,
+        `오늘 완료: ${doneToday}건`,
+        `전체 프로젝트: ${projects.length}개`,
+        '',
+        '위 현황을 바탕으로 오늘의 업무 브리핑을 3~5줄로 간결하게 한국어로 작성해줘. 우선순위 제안과 주의할 점을 포함해줘.',
+      ].join('\n');
+      const result = await api.aiComplete(prompt);
+      setBriefing(result.text);
+    } catch {
+      toast.error('브리핑 생성에 실패했습니다.');
+    } finally {
+      setBriefingLoading(false);
+    }
+  }
 
   return (
     <div className="p-6 space-y-6 max-w-[1440px] mx-auto">
@@ -55,11 +80,33 @@ export function DashboardPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => setTaskDialogOpen(true)}><Plus size={14} /> 태스크 추가</Button>
+          <Button variant="secondary" onClick={generateBriefing} disabled={briefingLoading}>
+            {briefingLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+            오늘 브리핑
+          </Button>
           <Button variant="primary" onClick={() => router.push('/ai-auto')}><Sparkles size={14} /> AI에게 요청</Button>
         </div>
         <TaskCreateDialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen} />
         <TaskDetailDialog taskId={openTaskId} onClose={() => setOpenTaskId(null)} />
       </div>
+
+      {/* AI 오늘 브리핑 */}
+      {briefing && (
+        <Card className="!bg-accent-soft border-accent/20">
+          <CardBody>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5 text-[12.5px] font-semibold text-fg">
+                <Sparkles size={13} className="text-accent" />
+                AI 오늘 브리핑
+              </div>
+              <button type="button" onClick={() => setBriefing(null)} className="text-fg-3 hover:text-fg transition-colors" aria-label="닫기">
+                <X size={14} />
+              </button>
+            </div>
+            <p className="whitespace-pre-line text-[12.5px] text-fg-1 leading-relaxed">{briefing}</p>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Top metrics row */}
       <div className="grid grid-cols-4 gap-4">

@@ -3,7 +3,10 @@
 import { useState, useMemo } from 'react';
 import { useGantt, useGanttByAssignee, useProjects } from '@/lib/hooks/use-data';
 import type { GanttTask } from '@/lib/api/extended';
-import { ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Filter, Sparkles, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { Card, CardBody, Button } from '@/components/ui/primitives';
+import { api } from '@/lib/api';
 import { GanttDepPanel } from './gantt-dep-panel';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
@@ -119,6 +122,8 @@ export function GanttPage() {
   const [projectFilter, setProjectFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'project' | 'assignee'>('project');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [riskAnalysis, setRiskAnalysis] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
 
   const viewStart = useMemo(() => {
     const d = addDays(new Date(), -7 + offsetDays);
@@ -180,6 +185,29 @@ export function GanttPage() {
     return map;
   }, [tasks, viewStart, viewDays]);
 
+  async function runRiskAnalysis() {
+    const atRiskTasks = tasks.filter(
+      t => (t.status === 'in-progress' || t.status === 'doing') && t.progress < 70,
+    );
+    if (atRiskTasks.length === 0) {
+      toast.info('현재 위험 태스크가 없습니다 (진행률 70% 미만 태스크 없음)');
+      return;
+    }
+    setAnalyzing(true);
+    try {
+      const taskList = atRiskTasks
+        .map(t => `- ${t.title} [${t.status}] 진행률 ${t.progress}% / 마감 ${t.endDate ?? '미설정'}`)
+        .join('\n');
+      const prompt = `다음 진행 중인 태스크들의 지연 위험을 분석하고 우선순위별로 조치 방안을 알려주세요:\n\n${taskList}`;
+      const result = await api.aiComplete(prompt);
+      setRiskAnalysis(result.text);
+    } catch {
+      toast.error('AI 위험 분석 요청에 실패했습니다.');
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64 text-fg-3 text-sm">
@@ -201,6 +229,22 @@ export function GanttPage() {
           ];
         })()}
       />
+      {riskAnalysis && (
+        <Card className="border-accent/30 bg-accent-soft/20">
+          <CardBody className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-[12px] font-semibold text-accent">
+                <Sparkles size={13} /> AI 위험 분석 결과
+              </span>
+              <button type="button" onClick={() => setRiskAnalysis(null)} className="text-fg-3 hover:text-fg">
+                <X size={13} />
+              </button>
+            </div>
+            <p className="text-[12.5px] text-fg-1 leading-relaxed whitespace-pre-line">{riskAnalysis}</p>
+          </CardBody>
+        </Card>
+      )}
+
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-1">
@@ -239,6 +283,17 @@ export function GanttPage() {
             </button>
           ))}
         </div>
+
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={analyzing}
+          onClick={runRiskAnalysis}
+          className="flex items-center gap-1.5"
+        >
+          <Sparkles size={13} />
+          {analyzing ? 'AI 분석 중…' : 'AI 위험 분석'}
+        </Button>
 
         <div className="flex items-center gap-1 ml-auto">
           <Filter size={13} className="text-fg-3" />

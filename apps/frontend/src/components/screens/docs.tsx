@@ -8,6 +8,8 @@ import { useDocs, useDocMutations } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
 
 export function DocsPage() {
   const { data: docs = [], isLoading, error } = useDocs();
@@ -19,6 +21,7 @@ export function DocsPage() {
   const [starredIds, setStarredIds] = useState<Set<string>>(new Set());
   const [summaries, setSummaries] = useState<Record<string, string>>({});
   const [summaryDocId, setSummaryDocId] = useState<string | null>(null);
+  const [summarizing, setSummarizing] = useState<Record<string, boolean>>({});
   const { streaming, streamComplete } = useAiStream();
   const docMutations = useDocMutations();
   const [editing, setEditing] = useState(false);
@@ -77,20 +80,64 @@ export function DocsPage() {
               <div className="px-2 py-1.5 text-[11px] uppercase tracking-wider text-fg-3 font-semibold">전체 문서</div>
               {docs.filter(d => !docSearch.trim() || d.title.toLowerCase().includes(docSearch.toLowerCase())).map(d => {
                 const u = userMap.get(d.ownerId);
+                async function handleCardSummary(e: React.MouseEvent) {
+                  e.stopPropagation();
+                  if (summarizing[d.id]) return;
+                  setSummarizing(prev => ({ ...prev, [d.id]: true }));
+                  try {
+                    const body = (d.preview ?? d.title).slice(0, 500);
+                    const result = await api.aiComplete(
+                      `다음 문서를 3문장으로 요약해주세요:\n\n제목: ${d.title}\n\n내용: ${body}`,
+                    );
+                    setSummaries(prev => ({ ...prev, [d.id]: result.text }));
+                  } catch {
+                    toast.error('AI 요약에 실패했습니다.');
+                  } finally {
+                    setSummarizing(prev => ({ ...prev, [d.id]: false }));
+                  }
+                }
                 return (
-                  <div key={d.id} className={`group flex items-center gap-1 px-2 h-8 rounded transition-colors ${active === d.id ? 'bg-accent-soft text-accent-strong' : 'text-fg-1 hover:bg-hover'}`}>
-                    <button onClick={() => setSelectedId(d.id)} className="flex items-center gap-2 flex-1 min-w-0 text-[12.5px] font-[inherit] text-left">
-                      <FileText size={12} className="shrink-0" />
-                      <span className="flex-1 truncate">{d.title}</span>
-                      {u && <Avatar user={u} size={14} />}
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); if (confirm(`"${d.title}" 문서를 삭제하시겠습니까?`)) docMutations.remove.mutate(d.id); }}
-                      className="opacity-0 group-hover:opacity-100 text-fg-3 hover:text-danger shrink-0 transition-opacity"
-                      aria-label="문서 삭제"
-                    >
-                      <Trash2 size={11} />
-                    </button>
+                  <div key={d.id}>
+                    <div className={`group flex items-center gap-1 px-2 h-8 rounded transition-colors ${active === d.id ? 'bg-accent-soft text-accent-strong' : 'text-fg-1 hover:bg-hover'}`}>
+                      <button onClick={() => setSelectedId(d.id)} className="flex items-center gap-2 flex-1 min-w-0 text-[12.5px] font-[inherit] text-left">
+                        <FileText size={12} className="shrink-0" />
+                        <span className="flex-1 truncate">{d.title}</span>
+                        {u && <Avatar user={u} size={14} />}
+                      </button>
+                      <button
+                        onClick={handleCardSummary}
+                        disabled={summarizing[d.id]}
+                        className="opacity-0 group-hover:opacity-100 text-fg-3 hover:text-accent shrink-0 transition-opacity disabled:opacity-50"
+                        aria-label="AI 요약"
+                        title="AI 요약"
+                      >
+                        {summarizing[d.id] ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); if (confirm(`"${d.title}" 문서를 삭제하시겠습니까?`)) docMutations.remove.mutate(d.id); }}
+                        className="opacity-0 group-hover:opacity-100 text-fg-3 hover:text-danger shrink-0 transition-opacity"
+                        aria-label="문서 삭제"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
+                    {summaries[d.id] && (
+                      <div className="mx-2 mb-1 p-2 rounded-md bg-accent-soft border border-accent/20 text-[11.5px] text-fg-1 leading-relaxed">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="flex items-center gap-1 text-[10.5px] font-semibold text-accent-strong">
+                            <Sparkles size={10} /> AI 요약
+                          </span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSummaries(prev => { const next = { ...prev }; delete next[d.id]; return next; }); }}
+                            className="text-fg-3 hover:text-fg-1"
+                            aria-label="요약 닫기"
+                          >
+                            <X size={10} />
+                          </button>
+                        </div>
+                        {summaries[d.id]}
+                      </div>
+                    )}
                   </div>
                 );
               })}
