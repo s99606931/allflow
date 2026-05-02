@@ -4,7 +4,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress } from '@/components/ui/primitives';
 import { AiChatPanel } from '@/components/ai/ai-chat-panel';
-import { useAiMutations, useDocs, useProjects, useTaskMutations } from '@/lib/hooks/use-data';
+import { useAiMutations, useDocs, useMe, useProjects, useTaskMutations } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { useVoiceInput } from '@/lib/hooks/use-voice-input';
 import type { ExtractedAction } from '@/lib/schemas';
@@ -26,6 +26,7 @@ type AiItem = ExtractedAction & { id: number; proj: string; source?: string };
 export function AIAutoPage() {
   const router = useRouter();
   const projectsQuery = useProjects();
+  const { data: me } = useMe();
   const projects = useMemo(() => projectsQuery.data ?? [], [projectsQuery.data]);
   const firstProjectId = projects[0]?.id ?? '';
 
@@ -86,7 +87,7 @@ export function AIAutoPage() {
       await tasks.create.mutateAsync({
         title: p.title,
         projectId: p.proj,
-        assigneeId: p.assignee || 'me',
+        assigneeId: p.assignee || me?.id || '',
         due: p.due,
         priority: p.priority ?? 'med',
       });
