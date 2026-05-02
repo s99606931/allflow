@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ResourceBookDialog } from '@/components/dialogs/resource-book-dialog';
-import { useResources, useBookings } from '@/lib/hooks/use-data';
+import { useResources, useBookings, useMe } from '@/lib/hooks/use-data';
 import type { Resource } from '@/lib/schemas';
 
 type ResourceKind = Resource['kind'];
@@ -38,6 +38,8 @@ export function ResourcesPage() {
     return d.toISOString().slice(0, 10);
   }, [weekOffset]);
   const { data: existingBookings = [] } = useBookings(today);
+  const { data: me } = useMe();
+  const myBookingsToday = existingBookings.filter(b => b.bookedBy === me?.id).length;
 
   const filtered = useMemo(
     () => resources.filter(r => kind === 'all' || r.kind === kind),
@@ -157,8 +159,8 @@ export function ResourcesPage() {
         {[
           { k: '등록 리소스', v: String(resources.length), sub: `회의실 ${resources.filter(r => r.kind === 'room').length} · 장비 ${resources.filter(r => r.kind === 'equipment').length}` },
           { k: '평균 사용률', v: '—', sub: '데이터 수집 중' },
-          { k: '내 예약', v: '—', sub: '연동 예정' },
-          { k: 'No-show', v: '—', sub: '연동 예정' },
+          { k: '내 예약', v: String(myBookingsToday), sub: '오늘 기준' },
+          { k: '총 예약', v: String(existingBookings.length), sub: '오늘 기준' },
         ].map(s => (
           <Card key={s.k}>
             <CardBody>
