@@ -1,16 +1,23 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Card, Badge, Button, IconButton } from '@/components/ui/primitives';
 import { useNotifications, useNotificationMutations } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import {
   AlertCircle, AtSign, Bell, Sparkles,
-  Filter, Settings2, MessageSquare,
+  Filter, Settings2, MessageSquare, X as XIcon,
 } from 'lucide-react';
-import { toast } from 'sonner';
 
 type FilterKey = 'all' | 'mention' | 'sla' | 'ai' | 'comment';
+
+const DEFAULT_PREFS: Record<string, boolean> = {
+  mention: true, sla: true, ai: true, comment: true, system: true,
+};
+
+const PREF_LABELS: Record<string, string> = {
+  mention: '@멘션 알림', sla: 'SLA 경고', ai: 'AI 제안', comment: '코멘트', system: '시스템 공지',
+};
 
 const TYPE_ICON: Record<string, typeof AtSign> = {
   mention: AtSign, sla: AlertCircle, ai: Sparkles, system: Bell,
@@ -31,6 +38,9 @@ export function NotificationsPage() {
   const userMap = useUserMap();
   const [filter, setFilter] = useState<FilterKey>('all');
   const [filterOpen, setFilterOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [prefs, setPrefs] = useState<Record<string, boolean>>(DEFAULT_PREFS);
+  const togglePref = useCallback((key: string) => setPrefs(p => ({ ...p, [key]: !p[key] })), []);
 
   const filtered = useMemo(
     () => notifs.filter(n => filter === 'all' || n.kind === filter),
@@ -53,7 +63,7 @@ export function NotificationsPage() {
         >
           {markAll.isPending ? '처리 중...' : '모두 읽음'}
         </Button>
-        <IconButton size="sm" aria-label="설정" onClick={() => toast.info("알림 설정 페이지는 준비 중입니다.")}><Settings2 size={14} /></IconButton>
+        <IconButton size="sm" aria-label="알림 설정" onClick={() => setSettingsOpen(v => !v)}><Settings2 size={14} /></IconButton>
       </div>
 
       {filterOpen && (
@@ -69,6 +79,30 @@ export function NotificationsPage() {
               {c.label}
             </button>
           ))}
+        </div>
+      )}
+
+      {settingsOpen && (
+        <div className="rounded-lg border border-border bg-bg-elev p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] font-semibold text-fg">알림 유형 설정</span>
+            <button type="button" onClick={() => setSettingsOpen(false)} className="text-fg-3 hover:text-fg-1">
+              <XIcon size={14} />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {Object.entries(PREF_LABELS).map(([key, label]) => (
+              <label key={key} className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={!!prefs[key]}
+                  onChange={() => togglePref(key)}
+                  className="w-4 h-4 rounded accent-accent"
+                />
+                <span className="text-[12.5px] text-fg-1">{label}</span>
+              </label>
+            ))}
+          </div>
         </div>
       )}
 

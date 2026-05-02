@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Card, CardBody, Avatar, Badge, Button } from '@/components/ui/primitives';
-import { MoreHorizontal, Search, Shield, UserPlus, Filter, Download, X } from 'lucide-react';
+import { MoreHorizontal, Search, Shield, UserPlus, Filter, Download, X, Mail, Copy } from 'lucide-react';
 import { useUsers, useInviteUser } from '@/lib/hooks/use-data';
 import { toast } from 'sonner';
 import type { User } from '@/lib/schemas';
@@ -176,10 +176,51 @@ export function UsersPage() {
               </span>
             </div>
             <div className="text-[11.5px] mono text-fg-2">—</div>
-            <button className="text-fg-3 hover:text-fg-1" onClick={() => toast.info(`${u.name} 사용자 관리 메뉴는 준비 중입니다.`)}><MoreHorizontal size={14} /></button>
+            <UserMenu user={u} />
           </div>
         ))}
       </Card>
+    </div>
+  );
+}
+
+function UserMenu({ user }: { user: User }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        className="text-fg-3 hover:text-fg-1"
+        onClick={() => setOpen(v => !v)}
+        aria-label={`${user.name} 메뉴`}
+      >
+        <MoreHorizontal size={14} />
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 top-6 z-50 w-44 rounded-lg border border-border bg-bg-elev shadow-pop py-1"
+          onMouseLeave={() => setOpen(false)}
+        >
+          {user.email && (
+            <button
+              type="button"
+              className="w-full flex items-center gap-2 px-3 py-2 text-[12.5px] text-fg-1 hover:bg-hover"
+              onClick={() => { navigator.clipboard.writeText(user.email!); toast.success('이메일을 복사했습니다'); setOpen(false); }}
+            >
+              <Mail size={13} /> 이메일 복사
+            </button>
+          )}
+          <button
+            type="button"
+            className="w-full flex items-center gap-2 px-3 py-2 text-[12.5px] text-fg-1 hover:bg-hover"
+            onClick={() => { navigator.clipboard.writeText(user.id); toast.success('사용자 ID를 복사했습니다'); setOpen(false); }}
+          >
+            <Copy size={13} /> ID 복사
+          </button>
+        </div>
+      )}
     </div>
   );
 }

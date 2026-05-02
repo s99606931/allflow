@@ -5,6 +5,7 @@ import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import {
   FileSignature, Plus, Search, Inbox, Send, CheckCircle2, XCircle, Clock,
   FileText, Stamp, Sparkles, MoreHorizontal, Undo2, Edit2, X,
+  Link2, Printer, Trash2,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ApprovalForm } from '@/components/dialogs/approval-form';
@@ -242,6 +243,7 @@ function ApprovalDetail({ approval, onHold }: { approval: Approval; onHold: () =
   const approver = userMap.get(approval.approver);
   const { decide, remove } = useApprovalMutations();
   const [comment, setComment] = useState('');
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const onDecide = async (decision: 'approved' | 'rejected') => {
     try {
@@ -282,8 +284,37 @@ function ApprovalDetail({ approval, onHold }: { approval: Approval; onHold: () =
               <span>{relativeTime(approval.createdAt)}</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <IconButton size="sm" onClick={() => toast.info("추가 액션 메뉴는 준비 중입니다.")}><MoreHorizontal size={14} /></IconButton>
+          <div className="flex items-center gap-2 relative">
+            <IconButton size="sm" onClick={() => setMoreOpen(v => !v)} aria-label="더보기"><MoreHorizontal size={14} /></IconButton>
+            {moreOpen && (
+              <div
+                className="absolute top-8 right-0 z-50 w-44 rounded-lg border border-border bg-bg-elev shadow-pop py-1"
+                onMouseLeave={() => setMoreOpen(false)}
+              >
+                <button
+                  type="button"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[12.5px] text-fg-1 hover:bg-hover"
+                  onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success('링크를 복사했습니다'); setMoreOpen(false); }}
+                >
+                  <Link2 size={13} /> 링크 복사
+                </button>
+                <button
+                  type="button"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[12.5px] text-fg-1 hover:bg-hover"
+                  onClick={() => { window.print(); setMoreOpen(false); }}
+                >
+                  <Printer size={13} /> 인쇄
+                </button>
+                <div className="my-1 border-t border-border" />
+                <button
+                  type="button"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[12.5px] text-danger hover:bg-hover"
+                  onClick={async () => { if (!confirm('이 결재를 삭제하시겠습니까?')) return; setMoreOpen(false); try { await remove.mutateAsync(approval.id); } catch { toast.error('삭제에 실패했습니다'); } }}
+                >
+                  <Trash2 size={13} /> 삭제
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
