@@ -158,6 +158,28 @@ export function IssuesPage() {
         </div>
       )}
 
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-accent-soft border border-accent/30 text-[12.5px]">
+          <span className="font-semibold text-accent-strong">{selectedIds.size}건 선택됨</span>
+          <div className="flex-1" />
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={async () => {
+              if (!confirm(`선택한 이슈 ${selectedIds.size}건을 삭제하시겠습니까?`)) return;
+              await Promise.all([...selectedIds].map(id => removeIssue.mutateAsync(id)));
+              setSelectedIds(new Set());
+            }}
+            disabled={removeIssue.isPending}
+          >
+            <Trash2 size={13} /> 일괄 삭제
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+            선택 해제
+          </Button>
+        </div>
+      )}
+
       {/* Issue list */}
       <Card>
         <div className="grid grid-cols-[36px_80px_1fr_140px_120px_90px_28px_28px_64px] gap-3 px-4 h-9 items-center text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold border-b border-border">

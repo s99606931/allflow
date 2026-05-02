@@ -3,12 +3,14 @@
  */
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Card, CardBody, CardHeader, CardTitle, AvatarStack, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
 import { useProject, useTasks } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { TaskDetailDialog } from './task-detail';
 
 interface Props {
   projectId: string;
@@ -47,6 +49,7 @@ export function ProjectDetail({ projectId }: Props) {
     );
   }
 
+  const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const members = project.members.map(id => userMap.get(id)).filter((u): u is NonNullable<typeof u> => Boolean(u));
   const tasks = tasksQuery.data ?? [];
 
@@ -129,16 +132,18 @@ export function ProjectDetail({ projectId }: Props) {
           {tasks.map(task => {
             const owner = userMap.get(task.assignee);
             return (
-              <div
+              <button
                 key={task.id}
-                className="grid grid-cols-[100px_1fr_120px_140px_80px] gap-3 px-5 py-2.5 items-center text-[12.5px] border-b border-border last:border-0"
+                type="button"
+                onClick={() => setOpenTaskId(task.id)}
+                className="w-full grid grid-cols-[100px_1fr_120px_140px_80px] gap-3 px-5 py-2.5 items-center text-[12.5px] border-b border-border last:border-0 hover:bg-hover transition-colors text-left"
               >
                 <span className="mono text-[11px] text-fg-3">{task.id}</span>
                 <span className="font-medium text-fg truncate">{task.title}</span>
                 <span className="text-fg-2">{owner?.name ?? '미할당'}</span>
                 <span className="mono text-[11px] text-fg-2">{task.due || '—'}</span>
                 <Badge tone="neutral" className="mono">{STATUS_LABEL[task.status] ?? task.status}</Badge>
-              </div>
+              </button>
             );
           })}
         </CardBody>
@@ -149,6 +154,7 @@ export function ProjectDetail({ projectId }: Props) {
           새로고침
         </Button>
       </div>
+      <TaskDetailDialog taskId={openTaskId} onClose={() => setOpenTaskId(null)} />
     </div>
   );
 }
