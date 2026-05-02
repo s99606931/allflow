@@ -191,6 +191,10 @@ export const extendedApi = {
   bulkMarkRead: async (input: BulkMarkRead): Promise<{ count: number }> =>
     http.post('notifications/read-all', { json: input }).json<{ count: number }>(),
 
+  /* Users metrics --------------------------------------------------------- */
+  getUserMetrics: async (): Promise<{ total: number; pendingInvites: number }> =>
+    http.get('users/metrics').json<{ total: number; pendingInvites: number }>(),
+
   /* Profile --------------------------------------------------------------- */
   updateProfile: async (input: ProfilePatch): Promise<User> =>
     parsed(http.patch('users/me', { json: input }).json(), UserSchema),

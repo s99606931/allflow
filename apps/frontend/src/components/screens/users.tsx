@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Card, CardBody, Avatar, Badge, Button } from '@/components/ui/primitives';
 import { MoreHorizontal, Search, Shield, UserPlus, Filter, Download, X, Mail, Copy } from 'lucide-react';
-import { useUsers, useInviteUser } from '@/lib/hooks/use-data';
+import { useUsers, useInviteUser, useUserMetrics } from '@/lib/hooks/use-data';
 import { toast } from 'sonner';
 import type { User } from '@/lib/schemas';
 
@@ -22,6 +22,7 @@ function downloadCSV(users: User[]) {
 export function UsersPage() {
   const { data: users = [], isLoading, error } = useUsers();
   const inviteMutation = useInviteUser();
+  const { data: userMetrics } = useUserMetrics();
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -48,10 +49,10 @@ export function UsersPage() {
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <div className="grid grid-cols-4 gap-3">
         {[
-          { l: '전체 사용자', v: String(users.length), sub: undefined },
+          { l: '전체 사용자', v: userMetrics ? String(userMetrics.total) : String(users.length), sub: undefined },
           { l: '활성', v: String(users.length), sub: undefined },
           { l: 'MFA 활성', v: '—', sub: '미지원' },
-          { l: '대기 초대', v: '—', sub: undefined },
+          { l: '대기 초대', v: userMetrics ? String(userMetrics.pendingInvites) : '—', sub: undefined },
         ].map(m => (
           <Card key={m.l}>
             <CardBody className="!p-4">

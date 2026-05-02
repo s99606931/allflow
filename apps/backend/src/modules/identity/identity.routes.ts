@@ -89,6 +89,14 @@ export async function identityRoutes(app: FastifyInstance): Promise<void> {
     return users.map(serializeUser);
   });
 
+  app.get('/users/metrics', { preHandler: [app.authenticate] }, async () => {
+    const [total, pendingInvites] = await Promise.all([
+      app.prisma.user.count({ where: { deletedAt: null } }),
+      app.prisma.invitation.count({ where: { pending: true } }),
+    ]);
+    return { total, pendingInvites };
+  });
+
   app.post('/users/invite', { preHandler: [app.authenticate] }, async (req) => {
     // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
     const actorId = req.user!.id;

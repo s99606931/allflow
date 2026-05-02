@@ -147,6 +147,13 @@ export function useUsers() {
   return useQuery({ queryKey: keys.users.list(), queryFn: () => api.listUsers() });
 }
 
+export function useUserMetrics() {
+  return useQuery({
+    queryKey: [...keys.users.all(), 'metrics'],
+    queryFn: () => api.getUserMetrics(),
+  });
+}
+
 export function useInviteUser() {
   const qc = useQueryClient();
   return useMutation({
