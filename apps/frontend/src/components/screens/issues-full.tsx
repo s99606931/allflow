@@ -241,21 +241,38 @@ export function IssuesPageFull() {
           <Card className="col-span-3">
             <CardHeader><CardTitle>해결 속도 리더보드</CardTitle></CardHeader>
             <CardBody>
-              <div className="grid grid-cols-5 gap-3">
-                {['u3', 'u2', 'u1', 'u4', 'u5'].map((id, i) => {
-                  const u = userMap.get(id);
-                  if (!u) return null;
-                  return (
-                    <div key={id} className="rounded-lg border border-border p-3 text-center">
-                      <div className="text-[10px] mono text-fg-3">#{i + 1}</div>
-                      <Avatar user={u} size={36} className="mx-auto mt-1" />
-                      <div className="text-[12.5px] font-semibold text-fg mt-1.5">{u.name}</div>
-                      <div className="text-[18px] font-bold mono text-accent-strong mt-1">{(2.0 + i * 0.4).toFixed(1)}d</div>
-                      <div className="text-[10.5px] text-fg-3 mt-0.5">평균 해결</div>
-                    </div>
-                  );
-                })}
-              </div>
+              {(() => {
+                const resolvedByAssignee = new Map<string, { count: number; totalSlaPct: number }>();
+                for (const iss of issues) {
+                  if (!iss.resolved || !iss.assignee) continue;
+                  const cur = resolvedByAssignee.get(iss.assignee) ?? { count: 0, totalSlaPct: 0 };
+                  resolvedByAssignee.set(iss.assignee, { count: cur.count + 1, totalSlaPct: cur.totalSlaPct + iss.slaPct });
+                }
+                const board = Array.from(resolvedByAssignee.entries())
+                  .map(([id, { count, totalSlaPct }]) => ({ id, count, avgSlaPct: Math.round(totalSlaPct / count) }))
+                  .sort((a, b) => b.avgSlaPct - a.avgSlaPct || b.count - a.count)
+                  .slice(0, 5);
+                if (board.length === 0) {
+                  return <div className="py-4 text-center text-[12px] text-fg-3">해결된 이슈가 없습니다.</div>;
+                }
+                return (
+                  <div className="grid grid-cols-5 gap-3">
+                    {board.map(({ id, count, avgSlaPct }, i) => {
+                      const u = userMap.get(id);
+                      if (!u) return null;
+                      return (
+                        <div key={id} className="rounded-lg border border-border p-3 text-center">
+                          <div className="text-[10px] mono text-fg-3">#{i + 1}</div>
+                          <Avatar user={u} size={36} className="mx-auto mt-1" />
+                          <div className="text-[12.5px] font-semibold text-fg mt-1.5 truncate">{u.name}</div>
+                          <div className="text-[18px] font-bold mono text-accent-strong mt-1">{count}건</div>
+                          <div className="text-[10.5px] text-fg-3 mt-0.5">해결 · SLA {avgSlaPct}%</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </CardBody>
           </Card>
         </Tabs.Content>
