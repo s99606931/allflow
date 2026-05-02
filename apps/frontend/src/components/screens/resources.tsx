@@ -29,6 +29,8 @@ const COLOR_BY_KIND: Record<ResourceKind, string> = {
 export function ResourcesPage() {
   const { data: resources = [], isLoading, error } = useResources();
   const [kind, setKind] = useState<'all' | ResourceKind>('all');
+  const [resourceSearch, setResourceSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [bookOpen, setBookOpen] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
 
@@ -46,8 +48,11 @@ export function ResourcesPage() {
     : 0;
 
   const filtered = useMemo(
-    () => resources.filter(r => kind === 'all' || r.kind === kind),
-    [resources, kind],
+    () => resources.filter(r =>
+      (kind === 'all' || r.kind === kind) &&
+      (!resourceSearch.trim() || r.name.toLowerCase().includes(resourceSearch.toLowerCase()) || r.location?.toLowerCase().includes(resourceSearch.toLowerCase())),
+    ),
+    [resources, kind, resourceSearch],
   );
 
   const displayDate = useMemo(() => {
@@ -89,9 +94,23 @@ export function ResourcesPage() {
           ))}
         </div>
         <div className="flex-1" />
-        <button className="h-7 px-2.5 rounded-md bg-bg-2 hover:bg-hover border border-border text-[11.5px] text-fg-2 flex items-center gap-1.5">
-          <Search size={12} /><span>인원 / 장비 조건...</span>
-        </button>
+        {searchOpen ? (
+          <div className="relative">
+            <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
+            <input
+              autoFocus
+              value={resourceSearch}
+              onChange={e => setResourceSearch(e.target.value)}
+              onKeyDown={e => e.key === 'Escape' && (setSearchOpen(false), setResourceSearch(''))}
+              placeholder="이름·위치 검색..."
+              className="h-7 w-44 pl-6 pr-2 rounded-md bg-bg-2 border border-border text-[11.5px] focus:outline-none focus:border-accent"
+            />
+          </div>
+        ) : (
+          <button onClick={() => setSearchOpen(true)} className="h-7 px-2.5 rounded-md bg-bg-2 hover:bg-hover border border-border text-[11.5px] text-fg-2 flex items-center gap-1.5">
+            <Search size={12} /><span>인원 / 장비 조건...</span>
+          </button>
+        )}
       </div>
 
       <Card className="bg-accent-soft/30 border-accent/30">
