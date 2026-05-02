@@ -36,6 +36,7 @@ declare module 'fastify' {
   }
   interface FastifyRequest {
     user?: AuthUser;
+    tokenJti?: string;
   }
 }
 
@@ -122,6 +123,7 @@ async function plugin(app: FastifyInstance): Promise<void> {
         if (revoked) throw new AuthError('토큰이 폐기되었습니다');
       }
       req.user = user;
+      if (jti) req.tokenJti = jti;
     } catch (err) {
       if (err instanceof AuthError) throw err;
       throw new AuthError('토큰 검증 실패', { cause: (err as Error).message });

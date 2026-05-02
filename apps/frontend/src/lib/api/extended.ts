@@ -44,6 +44,17 @@ import {
   type User,
 } from '../schemas';
 
+export interface SessionItem {
+  id: string;
+  jti: string;
+  device: string;
+  userAgent: string | null;
+  ipAddress: string | null;
+  createdAt: string;
+  expiresAt: string;
+  current: boolean;
+}
+
 export interface GanttTask {
   id: string;
   title: string;
@@ -196,6 +207,18 @@ export const extendedApi = {
 
   revokeToken: async (input: RevokeToken): Promise<{ id: string; revoked: true }> =>
     http.post('auth/tokens/revoke', { json: input }).json<{ id: string; revoked: true }>(),
+
+  /* Sessions (활성 세션 관리) -------------------------------------------- */
+  listSessions: async (): Promise<{ items: SessionItem[] }> =>
+    http.get('auth/sessions').json<{ items: SessionItem[] }>(),
+
+  revokeSession: async (id: string): Promise<{ revoked: true; id: string }> => {
+    return http.delete(`auth/sessions/${id}`).json<{ revoked: true; id: string }>();
+  },
+
+  revokeAllOtherSessions: async (): Promise<{ revoked: number }> => {
+    return http.delete('auth/sessions').json<{ revoked: number }>();
+  },
 
   /* Notifications mutations ---------------------------------------------- */
   markNotificationRead: async (id: string): Promise<{ id: string; read: true }> =>

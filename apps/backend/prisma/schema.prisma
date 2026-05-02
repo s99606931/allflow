@@ -129,6 +129,7 @@ model User {
   approvedLeaves    LeaveRequest[]    @relation("LeaveApprover")
   notionConnections NotionConnection[] @relation("NotionConnections")
   docs      Doc[]
+  sessions  Session[]
 
   @@index([deletedAt])
   @@map("users")
@@ -714,6 +715,30 @@ model RevokedToken {
 
   @@index([userId])
   @@map("revoked_tokens")
+}
+
+// =====================================================================
+// Session (active JWT sessions for "활성 세션" management UI)
+// =====================================================================
+//
+// Created on /auth/login (jti embedded in JWT). DELETE /auth/sessions/:id
+// adds the jti to RevokedToken (blocklist) and removes the row.
+// Inactive rows (expiresAt < now) are filtered at read time; cleanup is
+// best-effort (no scheduled job required for the feature to be correct).
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  jti       String   @unique
+  userAgent String?  @map("user_agent")
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("sessions")
 }
 
 // =====================================================================

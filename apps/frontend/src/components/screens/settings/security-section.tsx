@@ -9,48 +9,54 @@ import {
 	CardTitle,
 	IconButton,
 } from "@/components/ui/primitives";
-import { useSecurityLog } from "@/lib/hooks/use-admin";
+import {
+	useRevokeAllOtherSessions,
+	useRevokeSession,
+	useSecurityLog,
+	useSessions,
+} from "@/lib/hooks/use-admin";
+import type { SessionItem } from "@/lib/api/extended";
 import { Check, Clock, Eye, EyeOff, MapPin, Monitor, Smartphone } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Row, Section } from "./shared";
 
-const SESSIONS = [
-	{
-		device: "MacBook Pro · Chrome",
-		loc: "서울, 대한민국",
-		ip: "125.232.•.•",
-		last: "지금",
-		icon: Monitor,
-		current: true,
-	},
-	{
-		device: "iPhone 15 Pro · iOS App",
-		loc: "서울, 대한민국",
-		ip: "125.232.•.•",
-		last: "12분 전",
-		icon: Smartphone,
-		current: false,
-	},
-	{
-		device: "iPad Pro · Safari",
-		loc: "판교, 대한민국",
-		ip: "203.241.•.•",
-		last: "3시간 전",
-		icon: Monitor,
-		current: false,
-	},
-] as const;
-
 const ACTION_LABELS: Record<string, string> = {
 	'auth.login.success': '로그인 성공',
 	'auth.token.revoke': '토큰 만료/로그아웃',
 	'auth.login.failed': '로그인 실패',
+	'auth.session.revoke': '세션 종료',
+	'auth.sessions.revoke_others': '다른 모든 세션 종료',
 };
+
+function relativeTime(iso: string): string {
+	const then = new Date(iso).getTime();
+	if (Number.isNaN(then)) return iso;
+	const diffMs = Date.now() - then;
+	if (diffMs < 60_000) return '방금';
+	const min = Math.floor(diffMs / 60_000);
+	if (min < 60) return `${min}분 전`;
+	const hr = Math.floor(min / 60);
+	if (hr < 24) return `${hr}시간 전`;
+	const day = Math.floor(hr / 24);
+	return `${day}일 전`;
+}
+
+function deviceIcon(device: string) {
+	if (device.toLowerCase().includes('iphone') || device.toLowerCase().includes('android')) {
+		return Smartphone;
+	}
+	return Monitor;
+}
 
 export function SecuritySection() {
 	const [showApi, setShowApi] = useState(false);
 	const { data: securityLog } = useSecurityLog(10);
+	const { data: sessionsData, isLoading: sessionsLoading } = useSessions();
+	const revokeSession = useRevokeSession();
+	const revokeAllOthers = useRevokeAllOtherSessions();
+	const sessions: SessionItem[] = sessionsData?.items ?? [];
+	const hasOthers = sessions.some((s) => !s.current);
 	return (
 		<Section
 			title="보안 / 세션"
@@ -97,20 +103,31 @@ export function SecuritySection() {
 			<Card>
 				<CardHeader>
 					<CardTitle>활성 세션</CardTitle>
-					<Button size="sm" variant="secondary" onClick={() => {
-						if (window.confirm("다른 모든 세션을 종료하시겠습니까?")) {
-							toast.success("다른 모든 세션이 종료되었습니다.");
-						}
-					}}>
-						모든 다른 세션 종료
+					<Button
+						size="sm"
+						variant="secondary"
+						disabled={!hasOthers || revokeAllOthers.isPending}
+						onClick={() => {
+							if (window.confirm("다른 모든 세션을 종료하시겠습니까?")) {
+								revokeAllOthers.mutate();
+							}
+						}}
+					>
+						{revokeAllOthers.isPending ? '종료 중...' : '모든 다른 세션 종료'}
 					</Button>
 				</CardHeader>
 				<CardBody className="space-y-1">
-					{SESSIONS.map((s, i) => {
-						const Icon = s.icon;
+					{sessionsLoading && (
+						<div className="py-4 text-center text-fg-3 text-[12px]">활성 세션을 불러오는 중...</div>
+					)}
+					{!sessionsLoading && sessions.length === 0 && (
+						<div className="py-4 text-center text-fg-3 text-[12px]">활성 세션이 없습니다.</div>
+					)}
+					{sessions.map((s) => {
+						const Icon = deviceIcon(s.device);
 						return (
 							<div
-								key={i}
+								key={s.id}
 								className="flex items-center gap-3 py-3 border-b border-border last:border-0"
 							>
 								<div className="w-9 h-9 rounded-md grid place-items-center bg-bg-1 border border-border">
@@ -125,20 +142,23 @@ export function SecuritySection() {
 									</div>
 									<div className="flex items-center gap-2 text-[11px] text-fg-3 mt-0.5">
 										<MapPin size={10} />
-										<span>{s.loc}</span>
-										<span>·</span>
-										<span className="mono">{s.ip}</span>
+										<span className="mono">{s.ipAddress ?? 'IP 미상'}</span>
 										<span>·</span>
 										<Clock size={10} />
-										<span>{s.last}</span>
+										<span>{relativeTime(s.createdAt)}</span>
 									</div>
 								</div>
 								{!s.current && (
-									<Button size="sm" variant="ghost" onClick={() => {
-										if (window.confirm(`"${s.device}" 세션을 종료하시겠습니까?`)) {
-											toast.success(`${s.device} 세션이 종료되었습니다.`);
-										}
-									}}>
+									<Button
+										size="sm"
+										variant="ghost"
+										disabled={revokeSession.isPending}
+										onClick={() => {
+											if (window.confirm(`"${s.device}" 세션을 종료하시겠습니까?`)) {
+												revokeSession.mutate(s.id);
+											}
+										}}
+									>
 										종료
 									</Button>
 								)}
