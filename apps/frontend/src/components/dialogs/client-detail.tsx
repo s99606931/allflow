@@ -25,22 +25,18 @@ export function ClientDetail({ client, onClose }: Props) {
   const { data: me } = useMe();
   const { t } = useTranslation();
   const [stage, setStage] = useState<CrmStage>('active');
-  const [activities, setActivities] = useState<CrmActivity[]>([
-    { id: 'a1', kind: 'meeting', at: '2일 전', by: '김지우', text: 'Q2 OKR 정합 미팅 — 다음 주 1차 검수 일정 확정', stage: 'active' },
-    { id: 'a2', kind: 'call', at: '4일 전', by: '이서연', text: '결제 PG 우회 라우트 확인 콜' },
-  ]);
+  const [activities, setActivities] = useState<CrmActivity[]>([]);
   const [composeOpen, setComposeOpen] = useState(false);
   const [draftKind, setDraftKind] = useState<CrmActivity['kind']>('note');
   const [draftText, setDraftText] = useState('');
 
   const stats = useMemo(
     () => [
-      { label: 'MRR', value: '₩12M' },
-      { label: 'ARR', value: '₩144M' },
-      { label: '활동(7d)', value: String(activities.length) },
+      { label: '업종', value: client?.tier ?? '—' },
+      { label: '활동', value: `${activities.length}건` },
       { label: '단계', value: t(`crm.stage.${stage}`) },
     ],
-    [activities.length, stage, t],
+    [activities.length, client?.tier, stage, t],
   );
 
   if (!client) return null;

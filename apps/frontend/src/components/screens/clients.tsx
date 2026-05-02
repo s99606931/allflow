@@ -94,7 +94,7 @@ export function ClientsPage() {
         <ClientForm open={createOpen} onOpenChange={setCreateOpen} />
         {selected && (
           <ClientDetail
-            client={{ id: selected.id, name: selected.name, code: codeOf(selected.name), tier: '진행' }}
+            client={{ id: selected.id, name: selected.name, code: codeOf(selected.name), tier: selected.industry ?? '' }}
             onClose={() => setSelected(null)}
           />
         )}
