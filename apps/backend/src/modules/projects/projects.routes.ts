@@ -193,6 +193,51 @@ export async function projectsRoutes(app: FastifyInstance): Promise<void> {
       return toApiProject(updated, done);
     },
   );
+
+  const MemberAdd = z.object({ userId: z.string().min(1).max(80) }).strict();
+
+  app.post(
+    '/projects/:id/members',
+    { preHandler: [app.authenticate, app.requireRole(['owner', 'admin'], 'id')] },
+    async (req, reply) => {
+      const { id } = req.params as { id: string };
+      const parsed = MemberAdd.safeParse(req.body);
+      if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+      const { userId } = parsed.data;
+
+      const user = await app.prisma.user.findUnique({ where: { id: userId } });
+      if (!user) throw new NotFoundError('User', userId);
+
+      const existing = await app.prisma.projectMember.findUnique({
+        where: { projectId_userId: { projectId: id, userId } },
+      });
+      if (existing) return reply.code(200).send({ projectId: id, userId, role: existing.role });
+
+      const member = await app.prisma.projectMember.create({
+        data: { projectId: id, userId, role: 'member' },
+      });
+      return reply.code(201).send({ projectId: member.projectId, userId: member.userId, role: member.role });
+    },
+  );
+
+  app.delete(
+    '/projects/:id/members/:userId',
+    { preHandler: [app.authenticate, app.requireRole(['owner', 'admin'], 'id')] },
+    async (req, reply) => {
+      const { id, userId } = req.params as { id: string; userId: string };
+
+      const member = await app.prisma.projectMember.findUnique({
+        where: { projectId_userId: { projectId: id, userId } },
+      });
+      if (!member) throw new NotFoundError('ProjectMember', userId);
+      if (member.role === 'owner') throw new ValidationError('owner는 제거할 수 없습니다');
+
+      await app.prisma.projectMember.delete({
+        where: { projectId_userId: { projectId: id, userId } },
+      });
+      return reply.code(204).send();
+    },
+  );
 }
 
 /** 프로젝트별 status='done' 태스크 개수를 한 번에 집계. */

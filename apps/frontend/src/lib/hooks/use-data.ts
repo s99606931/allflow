@@ -89,7 +89,27 @@ export function useProjectMutations() {
     },
     onError,
   });
-  return { create, update, remove };
+  const addMember = useMutation({
+    mutationFn: (vars: { projectId: string; userId: string }) =>
+      api.addProjectMember(vars.projectId, vars.userId),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: keys.projects.all() });
+      qc.invalidateQueries({ queryKey: keys.projects.detail(vars.projectId) });
+      toast.success('멤버가 추가되었습니다');
+    },
+    onError,
+  });
+  const removeMember = useMutation({
+    mutationFn: (vars: { projectId: string; userId: string }) =>
+      api.removeProjectMember(vars.projectId, vars.userId),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: keys.projects.all() });
+      qc.invalidateQueries({ queryKey: keys.projects.detail(vars.projectId) });
+      toast.success('멤버가 제거되었습니다');
+    },
+    onError,
+  });
+  return { create, update, remove, addMember, removeMember };
 }
 
 export function useTasks(filter?: { projectId?: string; assigneeId?: string }) {
@@ -150,7 +170,7 @@ export function useChannels() {
 export function useChannelMutations() {
   const qc = useQueryClient();
   const createChannel = useMutation({
-    mutationFn: (input: { name: string; kind: 'public' | 'private' }) => api.createChannel(input),
+    mutationFn: (input: { name: string; kind: 'public' | 'private' | 'dm' }) => api.createChannel(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.channels.list() });
       toast.success('채널이 생성되었습니다');

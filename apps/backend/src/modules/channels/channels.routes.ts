@@ -24,7 +24,7 @@ const CHANNEL_SEED = [
 const ChannelCreate = z
   .object({
     name: z.string().min(1).max(80),
-    kind: z.enum(['public', 'private']).default('public'),
+    kind: z.enum(['public', 'private', 'dm']).default('public'),
   })
   .strict();
 
@@ -62,9 +62,11 @@ export async function channelsRoutes(app: FastifyInstance): Promise<void> {
     if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
 
     const { name, kind } = parsed.data;
-    const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9가-힣-]/g, '');
-    const existing = await app.prisma.channel.findFirst({ where: { name } });
-    if (existing) throw new ValidationError(`이미 존재하는 채널 이름입니다: ${name}`);
+    const existing = await app.prisma.channel.findFirst({ where: { name, kind } });
+    if (existing) {
+      if (kind === 'dm') return reply.code(200).send({ id: existing.id, name: existing.name, kind: existing.kind, members: [] });
+      throw new ValidationError(`이미 존재하는 채널 이름입니다: ${name}`);
+    }
 
     const channel = await app.prisma.channel.create({ data: { name, kind } });
     return reply.code(201).send({ id: channel.id, name: channel.name, kind: channel.kind, members: [] });

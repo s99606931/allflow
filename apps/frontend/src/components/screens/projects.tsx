@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Card, CardBody, CardHeader, CardTitle, AvatarStack, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
-import { useProjects, useProjectMutations } from '@/lib/hooks/use-data';
+import { Card, CardBody, CardHeader, CardTitle, Avatar, AvatarStack, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
+import { useProjects, useProjectMutations, useUsers } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { ProjectCreateDialog } from '@/components/dialogs/project-create-dialog';
 import { ProjectEditDialog } from '@/components/dialogs/project-edit-dialog';
-import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Pencil, Plus, Trash2, UserPlus, X } from 'lucide-react';
 import Link from 'next/link';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import type { Project } from '@/lib/schemas';
@@ -15,8 +15,11 @@ import type { Project } from '@/lib/schemas';
 export function ProjectsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Project | null>(null);
+  const [memberMgmtId, setMemberMgmtId] = useState<string>('');
+  const [memberSearch, setMemberSearch] = useState('');
   const { data: projects = [], isLoading } = useProjects();
-  const { remove } = useProjectMutations();
+  const { remove, addMember, removeMember } = useProjectMutations();
+  const { data: allUsers = [] } = useUsers();
   const userMap = useUserMap();
   const activeCount = projects.filter(p => p.status !== 'done').length;
   const doneCount = projects.filter(p => p.status === 'done').length;
@@ -98,6 +101,14 @@ export function ProjectsPage() {
               <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                 <button
                   type="button"
+                  onClick={e => { e.preventDefault(); setMemberMgmtId(prev => prev === p.id ? '' : p.id); setMemberSearch(''); }}
+                  className="p-1 rounded bg-bg-1 border border-border text-fg-2 hover:text-accent shadow-sm"
+                  aria-label="멤버 관리"
+                >
+                  <UserPlus size={12} />
+                </button>
+                <button
+                  type="button"
                   onClick={e => { e.preventDefault(); setEditTarget(p); }}
                   className="p-1 rounded bg-bg-1 border border-border text-fg-2 hover:text-accent shadow-sm"
                   aria-label="프로젝트 수정"
@@ -113,6 +124,57 @@ export function ProjectsPage() {
                   <Trash2 size={12} />
                 </button>
               </div>
+              {memberMgmtId === p.id && (
+                <div
+                  role="dialog"
+                  aria-label="멤버 관리"
+                  className="absolute top-10 right-2 z-20 w-56 rounded-md border border-border bg-bg-elev shadow-lg"
+                  onClick={e => e.preventDefault()}
+                  onKeyDown={e => e.stopPropagation()}
+                >
+                  <div className="px-3 py-2 border-b border-border text-[11.5px] font-semibold text-fg flex items-center justify-between">
+                    멤버 관리
+                    <button type="button" onClick={e => { e.preventDefault(); setMemberMgmtId(''); }} className="text-fg-3 hover:text-fg-1"><X size={12} /></button>
+                  </div>
+                  <div className="p-2 space-y-1 max-h-32 overflow-y-auto">
+                    {p.members.map(uid => {
+                      const u = userMap.get(uid);
+                      if (!u) return null;
+                      return (
+                        <div key={uid} className="flex items-center gap-1.5 text-[11.5px]">
+                          <Avatar user={u} size={16} />
+                          <span className="flex-1 truncate text-fg-1">{u.name}</span>
+                          <button type="button" aria-label={`${u.name} 제거`}
+                            onClick={e => { e.preventDefault(); removeMember.mutate({ projectId: p.id, userId: uid }); }}
+                            className="text-fg-3 hover:text-danger">
+                            <X size={11} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="border-t border-border p-2">
+                    <input
+                      value={memberSearch}
+                      onChange={e => setMemberSearch(e.target.value)}
+                      placeholder="사용자 추가..."
+                      className="w-full h-6 px-2 text-[11.5px] rounded border border-border bg-bg focus:outline-none focus:border-accent"
+                    />
+                    {memberSearch.trim() && (
+                      <div className="mt-1 max-h-24 overflow-y-auto space-y-0.5">
+                        {allUsers.filter(u => !p.members.includes(u.id) && u.name.toLowerCase().includes(memberSearch.toLowerCase())).slice(0, 5).map(u => (
+                          <button key={u.id} type="button"
+                            onClick={e => { e.preventDefault(); addMember.mutate({ projectId: p.id, userId: u.id }); setMemberSearch(''); }}
+                            className="w-full flex items-center gap-1.5 px-1 py-0.5 rounded hover:bg-hover text-[11.5px] text-fg-1">
+                            <Avatar user={u} size={16} />
+                            <span className="truncate">{u.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

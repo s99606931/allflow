@@ -8,7 +8,6 @@ import { Composer } from '@/components/chat/composer';
 import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel';
 import { MentionPopover } from '@/components/chat/mention-popover';
 import { useChannelMutations, useChannels, useMe, useTaskMutations, useUsers, useProjects, usePins, usePinMutations } from '@/lib/hooks/use-data';
-import { toast } from 'sonner';
 import { useChatMessages, useMessageMutations, useSendMessage } from '@/lib/hooks/use-chat-messages';
 import type { PinnedMessageItem } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';
@@ -42,6 +41,8 @@ export function ChatPage() {
   const [newChannelOpen, setNewChannelOpen] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelKind, setNewChannelKind] = useState<'public' | 'private'>('public');
+  const [dmPickerOpen, setDmPickerOpen] = useState(false);
+  const [dmPickerSearch, setDmPickerSearch] = useState('');
   const { createChannel } = useChannelMutations();
   const [msgSearch, setMsgSearch] = useState('');
   const [msgSearchOpen, setMsgSearchOpen] = useState(false);
@@ -56,6 +57,23 @@ export function ChatPage() {
     () => msgSearch.trim() ? topLevelMessages.filter(m => m.content.toLowerCase().includes(msgSearch.toLowerCase())) : topLevelMessages,
     [topLevelMessages, msgSearch],
   );
+
+  const dmPickerUsers = users.filter(u => u.id !== me?.id && (!dmPickerSearch.trim() || u.name.toLowerCase().includes(dmPickerSearch.toLowerCase())));
+
+  const onStartDm = (targetUser: { id: string; name: string }) => {
+    if (!me) return;
+    const dmName = `${me.name} ↔ ${targetUser.name}`;
+    createChannel.mutate(
+      { name: dmName, kind: 'dm' },
+      {
+        onSuccess: (ch) => {
+          setActiveId(ch.id);
+          setDmPickerOpen(false);
+          setDmPickerSearch('');
+        },
+      },
+    );
+  };
 
   const threadParent = useMemo<ThreadMessage | null>(() => {
     const found = messages.find(m => m.id === openThreadId);
@@ -183,23 +201,41 @@ export function ChatPage() {
               <span className="flex-1 text-left truncate">{c.name}</span>
             </button>
           ))}
-          {dmChannels.length > 0 && (
-            <>
-              <div className="px-2 pt-4 pb-1 flex items-center justify-between">
-                <span className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold">DM</span>
-                <button type="button" aria-label="DM 추가" onClick={() => toast.info('DM 시작은 조직도에서 사용자를 선택하세요.')} className="text-fg-3 hover:text-fg-1"><Plus size={12} /></button>
+          <div className="px-2 pt-4 pb-1 flex items-center justify-between">
+            <span className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold">DM</span>
+            <button type="button" aria-label="DM 추가" onClick={() => setDmPickerOpen(v => !v)} className="text-fg-3 hover:text-fg-1"><Plus size={12} /></button>
+          </div>
+          {dmPickerOpen && (
+            <div className="mx-2 mb-2 rounded-md border border-border bg-bg-elev shadow-md z-10">
+              <input
+                autoFocus
+                value={dmPickerSearch}
+                onChange={e => setDmPickerSearch(e.target.value)}
+                placeholder="사용자 검색..."
+                className="w-full h-7 px-2 text-[12px] bg-transparent border-b border-border focus:outline-none"
+              />
+              <div className="max-h-36 overflow-y-auto">
+                {dmPickerUsers.length === 0 && <div className="px-2 py-2 text-[11.5px] text-fg-3">일치하는 사용자 없음</div>}
+                {dmPickerUsers.map(u => (
+                  <button key={u.id} type="button" onClick={() => onStartDm(u)}
+                    className="w-full flex items-center gap-2 px-2 h-7 hover:bg-hover text-[12px] text-fg-1">
+                    <Avatar user={u} size={18} />
+                    <span className="truncate">{u.name}</span>
+                    <span className="text-[10.5px] text-fg-3 ml-auto">{u.role?.split(' ')[0]}</span>
+                  </button>
+                ))}
               </div>
-              {dmChannels.map(c => (
-                <button key={c.id} onClick={() => setActiveId(c.id)}
-                  className={`w-full flex items-center gap-2 px-2 h-7 rounded text-[12.5px] transition-colors ${
-                    active === c.id ? 'bg-accent-soft text-accent-strong font-semibold' : 'text-fg-1 hover:bg-hover'
-                  }`}>
-                  <Hash size={12} />
-                  <span className="flex-1 text-left truncate">{c.name}</span>
-                </button>
-              ))}
-            </>
+            </div>
           )}
+          {dmChannels.map(c => (
+            <button key={c.id} onClick={() => setActiveId(c.id)}
+              className={`w-full flex items-center gap-2 px-2 h-7 rounded text-[12.5px] transition-colors ${
+                active === c.id ? 'bg-accent-soft text-accent-strong font-semibold' : 'text-fg-1 hover:bg-hover'
+              }`}>
+              <Hash size={12} />
+              <span className="flex-1 text-left truncate">{c.name}</span>
+            </button>
+          ))}
         </div>
       </div>
 

@@ -213,7 +213,7 @@ export const extendedApi = {
   listChannels: async (): Promise<Channel[]> =>
     parsed(http.get('channels').json(), z.array(ChannelSchema)),
 
-  createChannel: async (input: { name: string; kind: 'public' | 'private' }): Promise<Channel> =>
+  createChannel: async (input: { name: string; kind: 'public' | 'private' | 'dm' }): Promise<Channel> =>
     parsed(http.post('channels', { json: input }).json(), ChannelSchema),
 
   sendMessage: async (input: MessageSend): Promise<{ id: string }> =>
@@ -245,6 +245,13 @@ export const extendedApi = {
 
   deleteOrgUnit: async (id: string): Promise<void> => {
     await http.delete(`org/units/${id}`);
+  },
+
+  addProjectMember: async (projectId: string, userId: string): Promise<{ projectId: string; userId: string; role: string }> =>
+    http.post(`projects/${projectId}/members`, { json: { userId } }).json<{ projectId: string; userId: string; role: string }>(),
+
+  removeProjectMember: async (projectId: string, userId: string): Promise<void> => {
+    await http.delete(`projects/${projectId}/members/${userId}`);
   },
 
   revokeToken: async (input: RevokeToken): Promise<{ id: string; revoked: true }> =>
