@@ -8,6 +8,7 @@ import {
   AlertCircle, AtSign, Bell, Sparkles,
   Filter, Settings2, MessageSquare,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 type FilterKey = 'all' | 'mention' | 'sla' | 'ai' | 'comment';
 
@@ -52,7 +53,7 @@ export function NotificationsPage() {
         >
           {markAll.isPending ? '처리 중...' : '모두 읽음'}
         </Button>
-        <IconButton size="sm" aria-label="설정"><Settings2 size={14} /></IconButton>
+        <IconButton size="sm" aria-label="설정" onClick={() => toast.info("알림 설정 페이지는 준비 중입니다.")}><Settings2 size={14} /></IconButton>
       </div>
 
       {filterOpen && (

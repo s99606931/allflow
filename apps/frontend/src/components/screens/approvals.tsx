@@ -283,7 +283,7 @@ function ApprovalDetail({ approval, onHold }: { approval: Approval; onHold: () =
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <IconButton size="sm"><MoreHorizontal size={14} /></IconButton>
+            <IconButton size="sm" onClick={() => toast.info("추가 액션 메뉴는 준비 중입니다.")}><MoreHorizontal size={14} /></IconButton>
           </div>
         </div>
 

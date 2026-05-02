@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Avatar, Button, IconButton } from '@/components/ui/primitives';
 import { Hash, Lock, Plus, Search, Sparkles, MessageSquare, Pin, X, Pencil, Trash2, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { Composer } from '@/components/chat/composer';
 import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel';
@@ -142,8 +143,8 @@ export function ChatPage() {
           <h2 className="text-[14px] font-bold text-fg">{activeChannel?.name ?? '채널 선택'}</h2>
           {activeChannel && <span className="text-[12px] text-fg-3">· {activeChannel.members.length}명</span>}
           <div className="flex-1" />
-          <IconButton size="sm"><Pin size={13} /></IconButton>
-          <IconButton size="sm"><Search size={13} /></IconButton>
+          <IconButton size="sm" onClick={() => toast.info("고정 메시지 목록은 준비 중입니다.")}><Pin size={13} /></IconButton>
+          <IconButton size="sm" onClick={() => toast.info("채널 내 검색은 준비 중입니다.")}><Search size={13} /></IconButton>
           <Button variant={summaryOpen ? 'primary' : 'secondary'} size="sm" onClick={summarizeChat} disabled={summarizing || messages.length === 0}>
             <Sparkles size={12} /> {summarizing ? '요약 중...' : '대화 요약'}
           </Button>

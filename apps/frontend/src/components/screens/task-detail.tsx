@@ -17,6 +17,7 @@ import {
   Tag,
   X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface TaskDetailProps {
   taskId: string | null;
@@ -48,8 +49,8 @@ export function TaskDetailDialog({ taskId, onClose }: TaskDetailProps) {
             )}
             <span className="mono text-[12px] text-fg-3">{taskId ?? ''}</span>
             <div className="flex-1" />
-            <IconButton size="sm" aria-label="링크 복사"><Link2 size={14} /></IconButton>
-            <IconButton size="sm" aria-label="외부 열기"><ArrowUpRight size={14} /></IconButton>
+            <IconButton size="sm" aria-label="링크 복사" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/tasks?id=${taskId ?? ''}`); toast.success('링크가 복사되었습니다.'); }}><Link2 size={14} /></IconButton>
+            <IconButton size="sm" aria-label="외부 열기" onClick={() => window.open(`/tasks?id=${taskId ?? ''}`, '_blank', 'noopener,noreferrer')}><ArrowUpRight size={14} /></IconButton>
             <Dialog.Close asChild>
               <IconButton size="sm" aria-label="닫기"><X size={14} /></IconButton>
             </Dialog.Close>

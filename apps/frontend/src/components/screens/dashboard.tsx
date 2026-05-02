@@ -4,6 +4,7 @@ import { Card, CardBody, CardHeader, CardTitle, Avatar, AvatarStack, Badge, Butt
 import { useMe, useProjects, useTasks } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { CheckCircle2, Circle, MoreHorizontal, Sparkles, Plus, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -111,7 +112,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-1.5"><Sparkles size={14} className="text-accent" /> AI 인사이트</CardTitle>
-            <IconButton size="sm"><MoreHorizontal size={14} /></IconButton>
+            <IconButton size="sm" onClick={() => toast.info("AI 인사이트 설정은 준비 중입니다.")}><MoreHorizontal size={14} /></IconButton>
           </CardHeader>
           <CardBody className="space-y-3">
             <Insight tone="warning" title="결제 시스템 진척 둔화" body="지난 주 대비 진행률이 8%p 감소했어요. 차단된 태스크 2개가 원인입니다." cta="자세히 보기" onCta={() => router.push('/projects')} />

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Card, CardBody, Avatar, Badge, Button } from '@/components/ui/primitives';
 import { MoreHorizontal, Search, Shield, UserPlus, Filter, Download, X } from 'lucide-react';
 import { useUsers, useInviteUser } from '@/lib/hooks/use-data';
+import { toast } from 'sonner';
 import type { User } from '@/lib/schemas';
 
 function downloadCSV(users: User[]) {
@@ -174,7 +175,7 @@ export function UsersPage() {
               </span>
             </div>
             <div className="text-[11.5px] mono text-fg-2">—</div>
-            <button className="text-fg-3 hover:text-fg-1"><MoreHorizontal size={14} /></button>
+            <button className="text-fg-3 hover:text-fg-1" onClick={() => toast.info(`${u.name} 사용자 관리 메뉴는 준비 중입니다.`)}><MoreHorizontal size={14} /></button>
           </div>
         ))}
       </Card>
