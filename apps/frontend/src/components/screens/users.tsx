@@ -46,15 +46,16 @@ export function UsersPage() {
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <div className="grid grid-cols-4 gap-3">
         {[
-          { l: '전체 사용자', v: String(users.length) },
-          { l: '활성', v: String(users.length) },
-          { l: 'MFA 활성', v: '—' },
-          { l: '대기 초대', v: '—' },
+          { l: '전체 사용자', v: String(users.length), sub: undefined },
+          { l: '활성', v: String(users.length), sub: undefined },
+          { l: 'MFA 활성', v: '—', sub: '미지원' },
+          { l: '대기 초대', v: '—', sub: undefined },
         ].map(m => (
           <Card key={m.l}>
             <CardBody className="!p-4">
               <div className="text-[11px] text-fg-2">{m.l}</div>
               <div className="text-[24px] font-bold mono text-fg mt-1">{m.v}</div>
+              {m.sub && <div className="text-[10.5px] text-fg-3 mt-0.5">{m.sub}</div>}
             </CardBody>
           </Card>
         ))}

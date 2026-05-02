@@ -59,6 +59,12 @@ function makeStore() {
       const row = rows.get(args.where.id);
       if (!row) return null;
       if (args.data.deletedAt) row.deletedAt = args.data.deletedAt;
+      if (args.data.name !== undefined) row.name = args.data.name;
+      if (args.data.contact !== undefined) row.contact = args.data.contact;
+      if (args.data.email !== undefined) row.email = args.data.email;
+      if (args.data.phone !== undefined) row.phone = args.data.phone;
+      if (args.data.industry !== undefined) row.industry = args.data.industry;
+      row.updatedAt = new Date();
       return row;
     },
   };
@@ -203,6 +209,71 @@ describe('modules/clients — T1 Prisma', () => {
       headers: { authorization: `Bearer ${token}` },
     });
     expect(r.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('PATCH /clients/:id → 200 + 수정된 Client (name 변경)', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/clients',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Original Name' },
+    });
+    const { id } = post.json() as { id: string };
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: `/clients/${id}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Updated Name' },
+    });
+    expect(patch.statusCode).toBe(200);
+    expect(patch.json()).toMatchObject({ id, name: 'Updated Name' });
+    await app.close();
+  });
+
+  it('PATCH /clients/:id → 빈 body 400', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/clients',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'X' },
+    });
+    const { id } = post.json() as { id: string };
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: `/clients/${id}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: {},
+    });
+    expect(patch.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('PATCH /clients/:id → 없는 id 404', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/clients/non-existent-id',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'X' },
+    });
+    expect(r.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('PATCH /clients/:id → 인증 없으면 401', async () => {
+    const app = await buildTestApp();
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/clients/any-id',
+      payload: { name: 'X' },
+    });
+    expect(r.statusCode).toBe(401);
     await app.close();
   });
 

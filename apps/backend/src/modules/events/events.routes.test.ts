@@ -61,6 +61,18 @@ function makeStore() {
       return row;
     },
     findFirst: async (args: AnyArgs) => rows.get(args.where.id) ?? null,
+    update: async (args: AnyArgs) => {
+      const row = rows.get(args.where.id);
+      if (!row) return null;
+      if (args.data.title !== undefined) row.title = args.data.title;
+      if (args.data.start !== undefined) row.start = args.data.start;
+      if (args.data.end !== undefined) row.end = args.data.end;
+      if (args.data.location !== undefined) row.location = args.data.location;
+      if (args.data.attendees !== undefined) row.attendees = args.data.attendees;
+      if (args.data.resourceId !== undefined) row.resourceId = args.data.resourceId;
+      row.updatedAt = new Date();
+      return row;
+    },
     delete: async (args: AnyArgs) => {
       const row = rows.get(args.where.id);
       if (row) rows.delete(args.where.id);
@@ -201,6 +213,71 @@ describe('modules/events — T1 Prisma', () => {
     const token = await makeJws('u1');
     const r = await app.inject({ method: 'DELETE', url: '/events/no-such-evt', headers: { authorization: `Bearer ${token}` } });
     expect(r.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('PATCH /events/:id → 200 + 수정된 Event (title 변경)', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/events',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: 'Original Title', start: '2026-05-10T09:00:00Z', end: '2026-05-10T10:00:00Z' },
+    });
+    const { id } = post.json() as { id: string };
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: `/events/${id}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: 'Updated Title' },
+    });
+    expect(patch.statusCode).toBe(200);
+    expect(patch.json()).toMatchObject({ id, title: 'Updated Title' });
+    await app.close();
+  });
+
+  it('PATCH /events/:id → 빈 body 400', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/events',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: 'X', start: '2026-05-10T09:00:00Z', end: '2026-05-10T10:00:00Z' },
+    });
+    const { id } = post.json() as { id: string };
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: `/events/${id}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: {},
+    });
+    expect(patch.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('PATCH /events/:id → 없는 id 404', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/events/non-existent-id',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: 'X' },
+    });
+    expect(r.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('PATCH /events/:id → 인증 없으면 401', async () => {
+    const app = await buildTestApp();
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/events/any-id',
+      payload: { title: 'X' },
+    });
+    expect(r.statusCode).toBe(401);
     await app.close();
   });
 

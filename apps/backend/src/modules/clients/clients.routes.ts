@@ -5,6 +5,7 @@ import { NotFoundError, ValidationError } from '@all-flow/shared/errors';
  * 라우트:
  *   GET    /clients      — 고객 목록 (createdAt desc, soft-delete 제외)
  *   POST   /clients      — 고객 생성 (ownerId = req.user.id 자동 세팅)
+ *   PATCH  /clients/:id  — 고객 부분 수정
  *   DELETE /clients/:id  — 고객 삭제 (soft-delete, 204)
  */
 import type { FastifyInstance } from 'fastify';
@@ -19,6 +20,17 @@ const ClientCreate = z
     industry: z.string().min(1).max(80).optional(),
   })
   .strict();
+
+const ClientPatch = z
+  .object({
+    name: z.string().min(1).max(200).optional(),
+    contact: z.string().min(1).max(120).optional(),
+    email: z.string().email().optional(),
+    phone: z.string().min(1).max(40).optional(),
+    industry: z.string().min(1).max(80).optional(),
+  })
+  .strict()
+  .refine((d) => Object.keys(d).length > 0, { message: '수정할 필드가 하나 이상 필요합니다' });
 
 interface ClientRow {
   id: string;
@@ -79,6 +91,29 @@ export async function clientsRoutes(app: FastifyInstance): Promise<void> {
     );
 
     return reply.code(201).send(serialize(row));
+  });
+
+  app.patch('/clients/:id', { preHandler: [app.authenticate] }, async (req) => {
+    const { id } = req.params as { id: string };
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const parsed = ClientPatch.safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+
+    const existing = await app.prisma.client.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundError('Client', id);
+
+    const row = await app.prisma.client.update({
+      where: { id },
+      data: parsed.data,
+    });
+
+    app.log.info({ action: 'clients.update', actorId: userId, clientId: id }, 'client updated');
+    return serialize(row);
   });
 
   app.delete('/clients/:id', { preHandler: [app.authenticate] }, async (req, reply) => {

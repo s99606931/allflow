@@ -8,6 +8,10 @@ import { useProjects, useProjectMutations } from '@/lib/hooks/use-data';
 import type { Project, StatusKey } from '@/lib/schemas';
 import { LayoutGrid, GanttChart, HeartPulse, Plus } from 'lucide-react';
 
+/** 예산 소진 샘플 기준값 (Project 스키마에 budget 필드 없음) */
+const SAMPLE_BUDGET_BASE = 62;
+const SAMPLE_BUDGET_SPREAD = 20;
+
 const PROJECT_STATUS_OPTIONS: { value: StatusKey; label: string }[] = [
   { value: 'todo', label: '대기' },
   { value: 'doing', label: '진행' },
@@ -98,7 +102,10 @@ export function ProgressPage() {
                   <div><Progress value={planned} /><div className="text-[10.5px] mono text-fg-3 mt-0.5">{planned}%</div></div>
                   <div><Progress value={p.progress} tone={p.status === 'done' ? 'success' : 'accent'} /><div className="text-[10.5px] mono text-fg-1 mt-0.5 font-semibold">{p.progress}%</div></div>
                   <div className={`mono text-[12px] font-semibold ${diff < -5 ? 'text-danger' : diff < 0 ? 'text-warning' : 'text-success'}`}>{diff > 0 ? '+' : ''}{diff}%p</div>
-                  <div><Progress value={62 + (p.code.charCodeAt(p.code.length - 1) % 20)} tone="warning" /></div>
+                  <div>
+                    <Progress value={SAMPLE_BUDGET_BASE + (p.code.charCodeAt(p.code.length - 1) % SAMPLE_BUDGET_SPREAD)} tone="warning" />
+                    <div className="text-[10.5px] mono text-fg-3 mt-0.5">샘플 데이터</div>
+                  </div>
                   <div className="flex items-center gap-1">
                     <select
                       aria-label={`${p.name} 상태`}

@@ -5,6 +5,7 @@ import { NotFoundError, ValidationError } from '@all-flow/shared/errors';
  * 라우트:
  *   GET    /events?from&to   — 기간 필터 일정 목록 (start asc)
  *   POST   /events           — 일정 생성
+ *   PATCH  /events/:id       — 일정 부분 수정
  *   DELETE /events/:id       — 일정 삭제 (hard delete, 204)
  *
  * 검증:
@@ -27,6 +28,18 @@ const EventCreate = z
     resourceId: z.string().min(1).max(80).optional(),
   })
   .strict();
+
+const EventPatch = z
+  .object({
+    title: z.string().min(1).max(200).optional(),
+    start: z.string().refine(isoDateTime, { message: 'invalid datetime' }).optional(),
+    end: z.string().refine(isoDateTime, { message: 'invalid datetime' }).optional(),
+    location: z.string().min(1).max(200).optional(),
+    attendees: z.array(z.string().min(1)).optional(),
+    resourceId: z.string().min(1).max(80).optional(),
+  })
+  .strict()
+  .refine((d) => Object.keys(d).length > 0, { message: '수정할 필드가 하나 이상 필요합니다' });
 
 interface EventRow {
   id: string;
@@ -104,6 +117,33 @@ export async function eventsRoutes(app: FastifyInstance): Promise<void> {
     );
 
     return reply.code(201).send(serialize(row));
+  });
+
+  app.patch('/events/:id', { preHandler: [app.authenticate] }, async (req) => {
+    const { id } = req.params as { id: string };
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const parsed = EventPatch.safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+
+    const existing = await app.prisma.event.findFirst({
+      where: { id },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundError('Event', id);
+
+    const data: Record<string, unknown> = { ...parsed.data };
+    if (parsed.data.start) data.start = new Date(parsed.data.start);
+    if (parsed.data.end) data.end = new Date(parsed.data.end);
+
+    const row = await app.prisma.event.update({
+      where: { id },
+      data,
+    });
+
+    app.log.info({ action: 'events.update', actorId: userId, eventId: id }, 'event updated');
+    return serialize(row);
   });
 
   app.delete('/events/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
