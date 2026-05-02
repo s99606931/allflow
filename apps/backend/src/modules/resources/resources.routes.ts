@@ -3,8 +3,9 @@ import { ConflictError, ValidationError } from '@all-flow/shared/errors';
  * resources 모듈 — 리소스(회의실/장비) 도메인 (T1: Prisma 영속화).
  *
  * 라우트:
- *   GET  /resources       — 리소스 목록 (DB 기반, 비어 있으면 자동 시드)
- *   POST /resources/book  — 예약 (Booking 영속화 + 충돌 검증)
+ *   GET  /resources          — 리소스 목록 (DB 기반, 비어 있으면 자동 시드)
+ *   GET  /resources/bookings — 예약 목록 (date=YYYY-MM-DD, 기본 오늘)
+ *   POST /resources/book     — 예약 (Booking 영속화 + 충돌 검증)
  *
  * 충돌 규칙: 동일 resourceId 의 [start, end) 가 기존 예약과 겹치면 409.
  *           start <= existing.start < end  OR  start < existing.end <= end
@@ -77,6 +78,23 @@ export async function resourcesRoutes(app: FastifyInstance): Promise<void> {
     await ensureResourcesSeeded(app);
     const rows = await app.prisma.resource.findMany({ orderBy: { id: 'asc' } });
     return rows.map(serializeResource);
+  });
+
+  app.get('/resources/bookings', { preHandler: [app.authenticate] }, async (req) => {
+    const query = req.query as { date?: string };
+    const dateStr = query.date ?? new Date().toISOString().slice(0, 10);
+    const dayStart = new Date(`${dateStr}T00:00:00.000Z`);
+    const dayEnd = new Date(`${dateStr}T23:59:59.999Z`);
+    const rows = await app.prisma.booking.findMany({
+      where: { start: { gte: dayStart }, end: { lte: dayEnd } },
+      orderBy: { start: 'asc' },
+    });
+    return rows.map(r => ({
+      resourceId: r.resourceId,
+      start: r.start.toISOString(),
+      end: r.end.toISOString(),
+      bookedBy: r.bookedBy,
+    }));
   });
 
   app.post('/resources/book', { preHandler: [app.authenticate] }, async (req) => {

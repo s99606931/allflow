@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ResourceBookDialog } from '@/components/dialogs/resource-book-dialog';
-import { useResources } from '@/lib/hooks/use-data';
+import { useResources, useBookings } from '@/lib/hooks/use-data';
 import type { Resource } from '@/lib/schemas';
 
 type ResourceKind = Resource['kind'];
@@ -31,6 +31,13 @@ export function ResourcesPage() {
   const [kind, setKind] = useState<'all' | ResourceKind>('all');
   const [bookOpen, setBookOpen] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
+
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + weekOffset * 7);
+    return d.toISOString().slice(0, 10);
+  }, [weekOffset]);
+  const { data: existingBookings = [] } = useBookings(today);
 
   const filtered = useMemo(
     () => resources.filter(r => kind === 'all' || r.kind === kind),
@@ -59,7 +66,7 @@ export function ResourcesPage() {
           open={bookOpen}
           onOpenChange={setBookOpen}
           resources={resources.map(r => ({ id: r.id, name: r.name }))}
-          existingBookings={[]}
+          existingBookings={existingBookings}
         />
       </div>
 

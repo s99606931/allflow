@@ -126,6 +126,9 @@ export const extendedApi = {
   listResources: async (): Promise<Resource[]> =>
     parsed(http.get('resources').json(), z.array(ResourceSchema)),
 
+  listBookings: async (date?: string): Promise<ResourceBooking[]> =>
+    http.get('resources/bookings', { searchParams: date ? { date } : {} }).json<ResourceBooking[]>(),
+
   bookResource: async (input: ResourceBooking): Promise<ResourceBooking> =>
     http.post('resources/book', { json: input }).json<ResourceBooking>(),
 

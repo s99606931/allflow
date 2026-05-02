@@ -124,6 +124,13 @@ export function useResources() {
   return useQuery({ queryKey: keys.resources.list(), queryFn: () => api.listResources() });
 }
 
+export function useBookings(date?: string) {
+  return useQuery({
+    queryKey: ['bookings', date ?? 'today'],
+    queryFn: () => api.listBookings(date),
+  });
+}
+
 export function useDocs() {
   return useQuery({ queryKey: keys.docs.list(), queryFn: () => api.listDocs() });
 }
