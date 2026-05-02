@@ -7,7 +7,7 @@ import { IssueCreateDialog } from '@/components/dialogs/issue-create-dialog';
 import { useIssues, useIssueMutations } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { Issue, IssueSev, IssuePrio, IssueStatus } from '@/lib/schemas';
-import { Filter, Plus, Search, Sparkles, LayoutList, KanbanSquare, Clock, BarChart3 } from 'lucide-react';
+import { Plus, Search, Sparkles, LayoutList, KanbanSquare, Clock, BarChart3 } from 'lucide-react';
 
 const SEV_TONE: Record<IssueSev, 'danger' | 'warning' | 'info' | 'neutral'> = {
   critical: 'danger', high: 'warning', med: 'info', low: 'neutral',
@@ -50,6 +50,9 @@ function deriveHotspots(issues: Issue[]) {
 export function IssuesPageFull() {
   const [tab, setTab] = useState('list');
   const [createOpen, setCreateOpen] = useState(false);
+  const [listFilter, setListFilter] = useState(0);
+  const [listSearch, setListSearch] = useState('');
+  const [aiSuggestionDismissed, setAiSuggestionDismissed] = useState(false);
   const { data: issues = [] } = useIssues();
   const userMap = useUserMap();
   const stats = computeStats(issues);
@@ -98,9 +101,9 @@ export function IssuesPageFull() {
 
         {/* LIST */}
         <Tabs.Content value="list" className="pt-4 space-y-4 outline-none">
-          <Toolbar onCreate={() => setCreateOpen(true)} />
-          <IssueList />
-          <AISuggestion />
+          <Toolbar onCreate={() => setCreateOpen(true)} activeFilter={listFilter} onFilterChange={setListFilter} search={listSearch} onSearchChange={setListSearch} />
+          <IssueList filter={listFilter} search={listSearch} />
+          {!aiSuggestionDismissed && <AISuggestion onDismiss={() => setAiSuggestionDismissed(true)} />}
         </Tabs.Content>
 
         {/* BOARD */}
@@ -256,29 +259,42 @@ export function IssuesPageFull() {
   );
 }
 
-function Toolbar({ onCreate }: { onCreate: () => void }) {
+const FILTER_CHIPS = ['전체', '내 이슈', '🔥 Critical', 'Open', '⏰ SLA 임박'] as const;
+
+function Toolbar({ onCreate, activeFilter, onFilterChange, search, onSearchChange }: {
+  onCreate: () => void;
+  activeFilter: number;
+  onFilterChange: (i: number) => void;
+  search: string;
+  onSearchChange: (v: string) => void;
+}) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <div className="flex items-center gap-1 p-0.5 rounded-md bg-bg-2 border border-border">
-        {['전체', '내 이슈', '🔥 Critical', 'Open', '⏰ SLA 임박'].map((c, i) => (
-          <button key={c} className={`px-2.5 h-7 rounded text-[12px] font-medium transition-colors ${i === 0 ? 'bg-bg-elev text-fg shadow-sm' : 'text-fg-2 hover:text-fg-1'}`}>{c}</button>
+        {FILTER_CHIPS.map((c, i) => (
+          <button key={c} onClick={() => onFilterChange(i)} className={`px-2.5 h-7 rounded text-[12px] font-medium transition-colors ${i === activeFilter ? 'bg-bg-elev text-fg shadow-sm' : 'text-fg-2 hover:text-fg-1'}`}>{c}</button>
         ))}
       </div>
-      <Button variant="secondary" size="sm"><Filter size={13} /> 필터</Button>
       <div className="flex-1" />
       <div className="relative">
         <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
-        <input placeholder="이슈 검색..." className="h-8 w-56 pl-8 pr-3 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent" />
+        <input value={search} onChange={e => onSearchChange(e.target.value)} placeholder="이슈 검색..." className="h-8 w-56 pl-8 pr-3 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent" />
       </div>
-      <Button variant="secondary" size="sm"><Sparkles size={13} /> AI 자동 분류</Button>
       <Button variant="primary" size="sm" onClick={onCreate}><Plus size={13} /> 새 이슈</Button>
     </div>
   );
 }
 
-function IssueList() {
-  const { data: issues = [] } = useIssues();
+function IssueList({ filter, search }: { filter: number; search: string }) {
+  const { data: allIssues = [] } = useIssues();
   const userMap = useUserMap();
+  const issues = allIssues.filter(iss => {
+    if (search && !iss.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filter === 1) return iss.assignee === 'me';
+    if (filter === 2) return iss.sev === 'critical';
+    if (filter === 3) return iss.status === 'open';
+    return true;
+  });
   return (
     <Card>
       <div className="grid grid-cols-[80px_1fr_140px_120px_90px_64px] gap-3 px-4 h-9 items-center text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold border-b border-border">
@@ -364,7 +380,8 @@ function computeStats(issues: Issue[]) {
   };
 }
 
-function AISuggestion() {
+function AISuggestion({ onDismiss }: { onDismiss: () => void }) {
+  const [showEvidence, setShowEvidence] = useState(false);
   return (
     <Card className="!bg-accent-soft border-accent/20">
       <CardBody className="flex items-start gap-3">
@@ -374,10 +391,15 @@ function AISuggestion() {
           <p className="text-[12.5px] text-fg-1 mt-1 leading-relaxed">
             지난 30일 동안 동일 패턴 3회 발생. <strong>백업 PG 우회 라우트 활성화</strong>를 권장합니다.
           </p>
+          {showEvidence && (
+            <div className="mt-2 p-2.5 rounded-md bg-bg text-[11.5px] text-fg-2 leading-relaxed border border-border">
+              2024-04: P0 이슈 ISS-191 (4h 지연) · 2025-01: ISS-207 (2h 지연) · 2025-04: ISS-238 (현재) — 동일 PG 벤더.
+            </div>
+          )}
           <div className="flex gap-2 mt-2.5">
-            <Button variant="primary" size="sm">백업 라우트 활성화</Button>
-            <Button variant="secondary" size="sm">근거 보기</Button>
-            <Button variant="ghost" size="sm">무시</Button>
+            <Button variant="primary" size="sm" onClick={() => { const c = window.confirm('백업 PG 라우트를 활성화하시겠습니까?\n\n운영 팀에 의해 검토된 후 적용됩니다.'); if (c) onDismiss(); }}>백업 라우트 활성화</Button>
+            <Button variant="secondary" size="sm" onClick={() => setShowEvidence(v => !v)}>근거 {showEvidence ? '닫기' : '보기'}</Button>
+            <Button variant="ghost" size="sm" onClick={onDismiss}>무시</Button>
           </div>
         </div>
       </CardBody>
