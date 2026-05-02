@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress } from '@/components/ui/primitives';
 import { AiChatPanel } from '@/components/ai/ai-chat-panel';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import { useAiMutations, useDocs, useMe, useProjects, useTaskMutations } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { useVoiceInput } from '@/lib/hooks/use-voice-input';
@@ -96,10 +97,23 @@ export function AIAutoPage() {
     setSelected([]);
   }
 
+  const sourceLabel = SOURCES.find(s => s.id === source)?.label ?? source;
+
   return (
-    <div className="p-6 max-w-[1440px] mx-auto grid grid-cols-12 gap-5">
-      {/* LEFT — input */}
-      <div className="col-span-7 space-y-4">
+    <div className="p-6 max-w-[1440px] mx-auto space-y-5">
+      <AiGuideWidget
+        systemContext={`AI 자동화 — 소스: ${sourceLabel}, ${items.length}건 추출됨, 프로젝트 ${projects.length}개`}
+        hints={[
+          items.length > 0
+            ? `추출된 ${items.length}건 액션 아이템 우선순위 정해줘`
+            : `${sourceLabel}에서 액션 아이템 추출하는 방법 알려줘`,
+          source === 'voice' ? '음성 녹음으로 태스크 자동 생성하는 방법' : '회의록에서 담당자·마감일 자동 추론 정확도 높이는 팁',
+          projects.length === 0 ? '프로젝트 먼저 만들어야 하나요?' : `${projects.length}개 프로젝트 중 어디에 태스크 배분할지 추천해줘`,
+        ]}
+      />
+      <div className="grid grid-cols-12 gap-5">
+        {/* LEFT — input */}
+        <div className="col-span-7 space-y-4">
         <Card>
           <CardHeader>
             <CardTitle>입력 소스</CardTitle>
@@ -301,6 +315,7 @@ export function AIAutoPage() {
           </CardBody>
         </Card>
       </div>
+    </div>
     </div>
   );
 }
