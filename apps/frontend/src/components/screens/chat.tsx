@@ -7,7 +7,7 @@ import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { Composer } from '@/components/chat/composer';
 import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel';
 import { MentionPopover } from '@/components/chat/mention-popover';
-import { useChannels, useMe, useTaskMutations, useUsers, usePins, usePinMutations } from '@/lib/hooks/use-data';
+import { useChannels, useMe, useTaskMutations, useUsers, useProjects, usePins, usePinMutations } from '@/lib/hooks/use-data';
 import { useChatMessages, useMessageMutations, useSendMessage } from '@/lib/hooks/use-chat-messages';
 import type { PinnedMessageItem } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';
@@ -20,6 +20,7 @@ export function ChatPage() {
   const { data: users = [] } = useUsers();
   const { data: me } = useMe();
   const { data: channels = [], isLoading: channelsLoading, error: channelsError } = useChannels();
+  const { data: projects = [] } = useProjects();
   const [activeId, setActiveId] = useState<string>('');
   const active = activeId || channels[0]?.id || '';
   const [openThreadId, setOpenThreadId] = useState<string | null>(null);
@@ -94,7 +95,7 @@ export function ChatPage() {
     const title = bullet ? bullet[1].trim() : '채팅에서 추출된 액션';
     await taskMutations.create.mutateAsync({
       title,
-      projectId: 'PRJ-204',
+      projectId: projects[0]?.id ?? '',
       assigneeId: me?.id ?? '',
     });
     setExtractedDismissed(true);

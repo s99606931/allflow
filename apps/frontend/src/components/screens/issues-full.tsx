@@ -4,6 +4,7 @@ import { useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
 import { IssueCreateDialog } from '@/components/dialogs/issue-create-dialog';
+import { IssueEditDialog } from '@/components/dialogs/issue-edit-dialog';
 import { useIssues, useIssueMutations, useMe } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { Issue, IssueSev, IssuePrio, IssueStatus } from '@/lib/schemas';
@@ -307,6 +308,7 @@ function IssueList({ filter, search }: { filter: number; search: string }) {
   const userMap = useUserMap();
   const { remove } = useIssueMutations();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [editIssue, setEditIssue] = useState<Issue | null>(null);
   const issues = allIssues.filter(iss => {
     if (search && !iss.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (filter === 1) return iss.assignee === me?.id;
@@ -315,6 +317,7 @@ function IssueList({ filter, search }: { filter: number; search: string }) {
     return true;
   });
   return (
+    <>
     <Card>
       <div className="grid grid-cols-[36px_80px_1fr_140px_120px_90px_64px] gap-3 px-4 h-9 items-center text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold border-b border-border">
         <input type="checkbox" className="justify-self-center" checked={issues.length > 0 && selectedIds.size === issues.length} onChange={e => setSelectedIds(e.target.checked ? new Set(issues.map(i => i.id)) : new Set())} />
@@ -332,7 +335,13 @@ function IssueList({ filter, search }: { filter: number; search: string }) {
             <div className="min-w-0 flex items-center gap-2">
               <span className="px-1.5 h-4 rounded text-[10px] mono font-semibold text-white" style={{ background: iss.projColor }}>{iss.proj}</span>
               <Badge tone={SEV_TONE[iss.sev]}>{SEV_LABEL[iss.sev]}</Badge>
-              <span className="text-fg truncate font-medium">{iss.title}</span>
+              <button
+                type="button"
+                onClick={e => { e.stopPropagation(); setEditIssue(iss); }}
+                className="text-fg truncate font-medium hover:underline hover:text-accent text-left"
+              >
+                {iss.title}
+              </button>
             </div>
             <div><StatusDot status={iss.status === 'open' ? 'todo' : iss.status === 'in-progress' ? 'doing' : iss.status === 'in-review' ? 'review' : 'done'} /></div>
             <div className="space-y-1">
@@ -356,6 +365,10 @@ function IssueList({ filter, search }: { filter: number; search: string }) {
         );
       })}
     </Card>
+    {editIssue && (
+      <IssueEditDialog open={!!editIssue} onOpenChange={o => !o && setEditIssue(null)} issue={editIssue} />
+    )}
+    </>
   );
 }
 
