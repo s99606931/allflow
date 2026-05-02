@@ -1,6 +1,6 @@
 # 운영 오픈 전수검사 체크리스트
 
-> **생성일**: 2026-04-30 | **마지막 업데이트**: 2026-05-02 테스트 커버리지 대폭 확대
+> **생성일**: 2026-04-30 | **마지막 업데이트**: 2026-05-02 DELETE 엔드포인트 + 예약충돌 + AI분류 + 테스트 590
 > **서비스**: AllFlow | **환경**: localhost (FE:80, BE:8080)
 > **범례**: ✅ PASS | ❌ FAIL | ⚠️ 주의 (P1) | 🔄 테스트 중
 
@@ -169,6 +169,10 @@
 | 9 | 테스트 커버리지 대폭 확대 (FE+BE) | ✅ FE 81→167 / BE 542→583 | 2026-05-02 |
 | 10 | FE 미배선 UI 버튼 전수 배선 | ✅ 16건 → 0건 (ai-auto/issues/dashboard/users/docs/chat/org/report/notion) | 2026-05-02 |
 | 11 | FE TS typecheck 오류 3건 수정 | ✅ Zod v4 origin / TanStack v5 undefined / unknown as cast | 2026-05-02 |
+| 12 | DELETE /clients\|/docs\|/events + FE 삭제 UI | ✅ BE 3 엔드포인트 + FE hook + group-hover Trash2 | 2026-05-02 |
+| 13 | 예약 충돌 감지 실데이터 연결 | ✅ GET /resources/bookings + useBookings + existingBookings 실데이터 | 2026-05-02 |
+| 14 | issues AI 자동 분류 활성화 | ✅ 스트리밍 우선순위 분석 결과 패널 | 2026-05-02 |
+| 15 | BE 테스트 +7 (DELETE/bookings 커버리지) | ✅ BE 583→590 | 2026-05-02 |
 
 **잔여 P2 항목**:
 - T2: E2E 전수 회귀 (docker-compose 환경 필요)
