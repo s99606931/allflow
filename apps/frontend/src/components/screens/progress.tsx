@@ -100,11 +100,11 @@ export function ProgressPage() {
         <Tabs.Content value="portfolio" className="pt-4 outline-none">
           <Card>
             <div className="grid grid-cols-[1fr_120px_120px_120px_120px_100px] gap-3 px-4 h-9 items-center text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold border-b border-border">
-              <div>프로젝트</div><div>계획</div><div>실적</div><div>일정 차이</div><div>예산 소진</div><div>리스크</div>
+              <div>프로젝트</div><div>태스크율</div><div>진행률</div><div>차이</div><div>예산 소진</div><div>리스크</div>
             </div>
             {PROJECTS.map(p => {
-              const planned = Math.min(100, p.progress + 8);
-              const diff = p.progress - planned;
+              const taskRate = p.tasks.total > 0 ? Math.round((p.tasks.done / p.tasks.total) * 100) : 0;
+              const diff = p.progress - taskRate;
               return (
                 <div key={p.id} className="grid grid-cols-[1fr_120px_120px_120px_120px_100px] gap-3 px-4 py-3 items-center text-[12.5px] border-b border-border last:border-0">
                   <div className="flex items-center gap-2">
@@ -112,7 +112,7 @@ export function ProgressPage() {
                     <span className="font-medium text-fg truncate">{p.name}</span>
                     <Badge tone="neutral" className="mono">{p.code}</Badge>
                   </div>
-                  <div><Progress value={planned} /><div className="text-[10.5px] mono text-fg-3 mt-0.5">{planned}%</div></div>
+                  <div><Progress value={taskRate} /><div className="text-[10.5px] mono text-fg-3 mt-0.5">{taskRate}%</div></div>
                   <div><Progress value={p.progress} tone={p.status === 'done' ? 'success' : 'accent'} /><div className="text-[10.5px] mono text-fg-1 mt-0.5 font-semibold">{p.progress}%</div></div>
                   <div className={`mono text-[12px] font-semibold ${diff < -5 ? 'text-danger' : diff < 0 ? 'text-warning' : 'text-success'}`}>{diff > 0 ? '+' : ''}{diff}%p</div>
                   <div>

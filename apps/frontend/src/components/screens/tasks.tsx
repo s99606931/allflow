@@ -40,6 +40,13 @@ export function TasksPage() {
     return true;
   });
 
+  const filterCounts = {
+    all: tasks.length,
+    mine: tasks.filter(t => t.assignee === 'me').length,
+    today: tasks.filter(t => t.due === '오늘').length,
+    overdue: tasks.filter(t => t.status !== 'done' && t.due && t.due < new Date().toISOString().slice(0, 10)).length,
+  };
+
   const onCreate = () => setCreateOpen(true);
 
   return (
@@ -62,7 +69,14 @@ export function TasksPage() {
             <button key={c.id} onClick={() => setFilter(c.id)}
               className={`px-2.5 h-7 rounded text-[12px] font-medium transition-colors ${
                 filter === c.id ? 'bg-bg-elev text-fg shadow-sm' : 'text-fg-2 hover:text-fg-1'
-              }`}>{c.label}</button>
+              }`}>
+              {c.label}
+              {filterCounts[c.id] > 0 && (
+                <span className={`ml-1 text-[10px] px-1 py-0.5 rounded-full ${filter === c.id ? 'bg-accent/20 text-accent' : 'bg-bg-1 text-fg-3'}`}>
+                  {filterCounts[c.id]}
+                </span>
+              )}
+            </button>
           ))}
         </div>
         <Button variant={filterOpen ? 'primary' : 'secondary'} size="sm" onClick={() => setFilterOpen(v => !v)}><Filter size={13} /> 필터</Button>

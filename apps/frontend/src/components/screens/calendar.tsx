@@ -65,6 +65,13 @@ export function CalendarPage() {
     source: e.source,
   }));
 
+  const totalMeetingHours = events.reduce((acc, e) => {
+    const len = (new Date(e.end).getTime() - new Date(e.start).getTime()) / 3600_000;
+    return acc + Math.max(0, len);
+  }, 0);
+  const workHoursInWeek = 5 * 8;
+  const freeWorkHours = Math.max(0, workHoursInWeek - totalMeetingHours);
+
   /** Compute grid placement for an event (gridRow + gridColumn + length). */
   const placed = events.map(e => {
     const start = new Date(e.start);
@@ -79,7 +86,7 @@ export function CalendarPage() {
   return (
     <div className="p-6 space-y-4 max-w-[1440px] mx-auto">
       <AiGuideWidget
-        systemContext="캘린더 — 이벤트·회의 일정·리소스 예약·AI 일정 조정 화면"
+        systemContext={`캘린더 — 이번 주 ${events.length}건 일정, 총 ${Math.round(totalMeetingHours)}시간 회의, 집중 가능 ${Math.round(freeWorkHours)}시간`}
         hints={['이번 주 일정 요약해줘', '일정 충돌 확인해줘', '바쁜 시간대 분석해줘']}
       />
       {/* Toolbar */}
@@ -159,12 +166,21 @@ export function CalendarPage() {
         )}
       </Card>
 
-      {/* AI summary */}
+      {/* AI summary — computed from real events */}
       <Card className="!bg-accent-soft border-accent/20">
         <CardBody className="flex items-start gap-3">
           <div className="w-8 h-8 rounded-md bg-accent text-accent-fg grid place-items-center shrink-0"><Sparkles size={14} /></div>
           <div className="flex-1 text-[12.5px] text-fg-1">
-            <strong className="text-fg">이번 주 회의 14건</strong> · 딥워크 4시간 확보됨 · 수요일 14시 CEO 보고 준비 시간 2시간 부족합니다. 화요일 오후 1:1을 30분 단축 권장.
+            {events.length === 0 ? (
+              <span className="text-fg-2">이번 주 일정이 없습니다. 새 일정을 추가해 보세요.</span>
+            ) : (
+              <>
+                <strong className="text-fg">이번 주 일정 {events.length}건</strong>
+                {' · '}회의 {Math.round(totalMeetingHours)}시간
+                {' · '}집중 가능 시간 <strong className="text-fg">{Math.round(freeWorkHours)}시간</strong>
+                {freeWorkHours < 10 && <span className="text-warning-strong"> · 여유 시간이 부족합니다</span>}
+              </>
+            )}
           </div>
           <Button variant="primary" size="sm" onClick={() => toast.success('AI 일정 조정 제안이 적용되었습니다.')}>자동 조정</Button>
         </CardBody>

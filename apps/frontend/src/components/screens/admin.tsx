@@ -124,9 +124,21 @@ export function AdminPage() {
       <Card>
         <CardHeader>
           <CardTitle>실시간 감사 로그</CardTitle>
-          <Badge tone={auditLogQuery.isSuccess ? 'success' : 'neutral'}>
-            {auditLogQuery.isSuccess ? `${auditLogQuery.data.total}건` : '연결 중'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {auditLogQuery.isSuccess && auditLogQuery.data.items.length > 0 && (() => {
+              const counts = auditLogQuery.data.items.reduce<Record<string, number>>((acc, e) => {
+                const prefix = e.action.split('.')[0] ?? e.action;
+                acc[prefix] = (acc[prefix] ?? 0) + 1;
+                return acc;
+              }, {});
+              return Object.entries(counts).map(([prefix, n]) => (
+                <Badge key={prefix} tone="neutral" className="mono text-[10px]">{prefix} {n}</Badge>
+              ));
+            })()}
+            <Badge tone={auditLogQuery.isSuccess ? 'success' : 'neutral'}>
+              {auditLogQuery.isSuccess ? `${auditLogQuery.data.total}건` : '연결 중'}
+            </Badge>
+          </div>
         </CardHeader>
         <CardBody>
           {auditLogQuery.isLoading && (
