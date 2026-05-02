@@ -8,6 +8,7 @@ import { Composer } from '@/components/chat/composer';
 import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel';
 import { MentionPopover } from '@/components/chat/mention-popover';
 import { useChannels, useMe, useTaskMutations, useUsers, useProjects, usePins, usePinMutations } from '@/lib/hooks/use-data';
+import { toast } from 'sonner';
 import { useChatMessages, useMessageMutations, useSendMessage } from '@/lib/hooks/use-chat-messages';
 import type { PinnedMessageItem } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';

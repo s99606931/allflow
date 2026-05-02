@@ -5,13 +5,20 @@ import { Loader2, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAiStream } from '@/lib/hooks/use-ai';
 
+interface QuickAction {
+  label: string;
+  icon?: React.ReactNode;
+  onClick: () => void;
+}
+
 interface AiGuideWidgetProps {
   hints: readonly string[];
   systemContext: string;
+  quickActions?: readonly QuickAction[];
   className?: string;
 }
 
-export function AiGuideWidget({ hints, systemContext, className }: AiGuideWidgetProps) {
+export function AiGuideWidget({ hints, systemContext, quickActions, className }: AiGuideWidgetProps) {
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeHint, setActiveHint] = useState<string | null>(null);
@@ -63,6 +70,22 @@ export function AiGuideWidget({ hints, systemContext, className }: AiGuideWidget
               {h}
             </button>
           ))}
+          {quickActions && quickActions.length > 0 && (
+            <>
+              <span className="text-fg-3 text-[11px] self-center">|</span>
+              {quickActions.map((qa) => (
+                <button
+                  key={qa.label}
+                  type="button"
+                  onClick={qa.onClick}
+                  className="text-[11px] px-2.5 py-0.5 rounded-full border border-dashed border-accent/30 bg-transparent text-accent-strong hover:bg-accent/10 transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  {qa.icon}
+                  {qa.label}
+                </button>
+              ))}
+            </>
+          )}
         </div>
         {(response || loading) && (
           <button

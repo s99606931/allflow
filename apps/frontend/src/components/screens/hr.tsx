@@ -4,9 +4,10 @@ import { Badge, Button, Card, CardBody, CardHeader, CardTitle } from '@/componen
 import { DateInput } from '@/components/ui/dialog';
 import { useCancelLeave, useCreateLeave, useLeaveRequests, useUpdateLeave, type LeaveRequest } from '@/lib/hooks/use-hr';
 import { useMe, useOrgUnits } from '@/lib/hooks/use-data';
-import { Award, Briefcase, CalendarClock, Plane, Plus, Users, X, Pencil, Check } from 'lucide-react';
+import { Award, Briefcase, CalendarClock, Plane, Plus, Users, X, Pencil, Check, Loader2, Sparkles } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import { useState } from 'react';
+import { useAiStream } from '@/lib/hooks/use-ai';
 import { toast } from 'sonner';
 
 const TABS = ['휴가 / 연차', '근태', '평가 / OKR', '1:1 미팅'] as const;
@@ -29,6 +30,9 @@ export function HRPage() {
           pendingLeaves > 0 ? `휴가 승인 대기 ${pendingLeaves}건 처리 방법` : '연차 현황 알려줘',
           'OKR 달성률 점검해줘',
           '1:1 미팅 준비 도와줘',
+        ]}
+        quickActions={[
+          ...(pendingLeaves > 0 ? [{ label: `1:1 토픽 추천`, onClick: () => setTab('1:1 미팅') }] : []),
         ]}
       />
       <div className="flex items-center gap-2">
@@ -406,19 +410,61 @@ function EvalTab() {
 
 /* 1:1 ------------------------------------------------------------ */
 function OneOnOneTab() {
+  const [topics, setTopics] = useState('');
+  const [topicsLoading, setTopicsLoading] = useState(false);
+  const { streamComplete } = useAiStream();
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>1:1 미팅</CardTitle>
-      </CardHeader>
-      <CardBody>
-        <EmptyState
-          icon={<Briefcase size={36} className="text-fg-3 opacity-50 mx-auto" />}
-          title="1:1 모듈 백엔드 미연결"
-          description="1:1 일정, 노트, AI 토픽 추천은 캘린더·문서 모듈과 연동 후 활성화됩니다."
-        />
-      </CardBody>
-    </Card>
+    <div className="space-y-4">
+      <Card className="bg-accent-soft/30 border-accent/30">
+        <CardBody className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles size={14} className="text-accent shrink-0" />
+            <span className="text-[13px] font-semibold text-accent-strong">AI 1:1 토픽 추천</span>
+            <div className="flex-1" />
+            {topics ? (
+              <button type="button" onClick={() => setTopics('')} className="text-[11px] text-fg-3 hover:text-fg transition-colors">새로 추천받기</button>
+            ) : (
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={topicsLoading}
+                onClick={async () => {
+                  setTopics('');
+                  setTopicsLoading(true);
+                  await streamComplete(
+                    '다음 1:1 미팅에서 매니저와 나눌 수 있는 효과적인 대화 주제 5가지를 번호 목록으로 추천해줘. 성장·업무 진행·피드백·팀 이슈·커리어 개발 측면을 고루 포함해서 2~3문장으로 간결하게.',
+                    (delta) => setTopics(prev => prev + delta),
+                    () => setTopicsLoading(false),
+                    { useTools: false },
+                  );
+                }}
+              >
+                {topicsLoading ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+                {topicsLoading ? '생성 중...' : '토픽 추천받기'}
+              </Button>
+            )}
+          </div>
+          {topicsLoading && !topics && <Loader2 size={12} className="animate-spin text-accent-strong" />}
+          {topics && <p className="text-[12px] text-fg-1 leading-relaxed whitespace-pre-wrap">{topics}</p>}
+          {!topics && !topicsLoading && (
+            <p className="text-[12px] text-fg-3">버튼을 클릭하면 AI가 이번 1:1 미팅 주제를 제안합니다.</p>
+          )}
+        </CardBody>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>1:1 미팅</CardTitle>
+        </CardHeader>
+        <CardBody>
+          <EmptyState
+            icon={<Briefcase size={36} className="text-fg-3 opacity-50 mx-auto" />}
+            title="1:1 모듈 백엔드 미연결"
+            description="1:1 일정, 노트 기록은 캘린더·문서 모듈과 연동 후 활성화됩니다."
+          />
+        </CardBody>
+      </Card>
+    </div>
   );
 }
 

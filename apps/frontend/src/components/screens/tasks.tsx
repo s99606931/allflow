@@ -89,6 +89,10 @@ export function TasksPage() {
           filterCounts.today > 0 ? `오늘 마감 ${filterCounts.today}건 우선순위 정해줘` : '우선순위 재조정 제안해줘',
           '블로킹 태스크 찾아줘',
         ]}
+        quickActions={[
+          ...(filterCounts.overdue > 0 ? [{ label: `기한 초과 ${filterCounts.overdue}건`, onClick: () => setFilter('overdue') }] : []),
+          ...(filterCounts.today > 0 ? [{ label: `오늘 마감 ${filterCounts.today}건`, onClick: () => setFilter('today') }] : []),
+        ]}
       />
       {/* Filter chips */}
       <div className="flex items-center gap-2 flex-wrap">

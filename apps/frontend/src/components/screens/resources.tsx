@@ -2,13 +2,14 @@
 
 import { Card, CardBody, Button, IconButton } from '@/components/ui/primitives';
 import {
-  Users, Monitor, MapPin, Mic, Plus, ChevronLeft, ChevronRight, Search, Sparkles, Car, Box, CalendarPlus, X,
+  Users, Monitor, MapPin, Mic, Plus, ChevronLeft, ChevronRight, Search, Sparkles, Car, Box, CalendarPlus, X, Loader2,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ResourceBookDialog } from '@/components/dialogs/resource-book-dialog';
 import { useResources, useBookings, useMe, useResourceMutations } from '@/lib/hooks/use-data';
 import type { Resource } from '@/lib/schemas';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { useAiStream } from '@/lib/hooks/use-ai';
 
 type ResourceKind = Resource['kind'];
 
@@ -44,6 +45,9 @@ export function ResourcesPage() {
   const { data: existingBookings = [] } = useBookings(today);
   const { data: me } = useMe();
   const { cancelBooking } = useResourceMutations();
+  const [aiRec, setAiRec] = useState('');
+  const [aiRecLoading, setAiRecLoading] = useState(false);
+  const { streamComplete } = useAiStream();
   const myBookingsToday = existingBookings.filter(b => b.bookedBy === me?.id).length;
   const bookedResourceIds = new Set(existingBookings.map(b => b.resourceId));
   const utilizationRate = resources.length > 0
@@ -131,9 +135,35 @@ export function ResourcesPage() {
           <div className="flex items-center gap-2.5">
             <Sparkles size={14} className="text-accent shrink-0" />
             <span className="text-[12.5px] text-fg-1">
-              <span className="font-semibold text-accent-strong">AI 추천</span> · 조건에 맞는 리소스를 자동으로 찾아드립니다.
+              <span className="font-semibold text-accent-strong">AI 추천</span> · 현재 사용 가능한 최적 리소스를 추천받으세요.
             </span>
+            <div className="flex-1" />
+            {aiRec ? (
+              <button type="button" onClick={() => setAiRec('')} className="text-[11px] text-fg-3 hover:text-fg transition-colors">닫기</button>
+            ) : (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={async () => {
+                  const available = resources.filter(r => kind === 'all' || r.kind === kind).filter(r => !bookedResourceIds.has(r.id));
+                  setAiRec('');
+                  setAiRecLoading(true);
+                  await streamComplete(
+                    `[리소스 현황: 총 ${resources.length}개, 현재 사용 가능 ${available.length}개 (${available.slice(0, 3).map(r => r.name).join(', ')}${available.length > 3 ? ' 외' : ''}), 사용률 ${utilizationRate}%]\n\n지금 바로 예약하기 좋은 리소스 2~3개를 추천하고 이유를 2~3문장으로 설명해줘.`,
+                    (delta) => setAiRec(prev => prev + delta),
+                    () => setAiRecLoading(false),
+                    { useTools: false },
+                  );
+                }}
+                disabled={aiRecLoading || resources.length === 0}
+              >
+                {aiRecLoading ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+                {aiRecLoading ? '분석 중...' : '자동 추천'}
+              </Button>
+            )}
           </div>
+          {aiRecLoading && !aiRec && <Loader2 size={12} className="animate-spin text-accent-strong mt-2" />}
+          {aiRec && <p className="text-[12px] text-fg-1 leading-relaxed mt-2 whitespace-pre-wrap">{aiRec}</p>}
         </CardBody>
       </Card>
 

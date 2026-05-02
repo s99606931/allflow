@@ -65,6 +65,10 @@ export function IssuesPage() {
           p0Count > 0 ? `P0 이슈 ${p0Count}건 대응 플레이북 알려줘` : '미배정 이슈 정리해줘',
           'Critical 이슈 대응방안 알려줘',
         ]}
+        quickActions={[
+          ...(p0Count > 0 ? [{ label: `P0 이슈 ${p0Count}건`, onClick: () => setActiveFilter('🔥 Critical') }] : []),
+          ...(slaAtRisk > 0 ? [{ label: `SLA 임박 ${slaAtRisk}건`, onClick: () => setActiveFilter('⏰ SLA 임박') }] : []),
+        ]}
       />
       <div className="grid grid-cols-6 gap-3">
         {[
