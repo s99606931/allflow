@@ -9,6 +9,7 @@ import {
 import { useMe, useProfileMutations } from "@/lib/hooks/use-data";
 import { Camera } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Row, Section } from "./shared";
 
 export function ProfileSection() {
@@ -62,7 +63,7 @@ export function ProfileSection() {
 							{isLoading && (
 								<div className="text-[11px] text-fg-3 mt-1">불러오는 중...</div>
 							)}
-							<Button size="sm" variant="secondary" className="mt-2">
+							<Button size="sm" variant="secondary" className="mt-2" onClick={() => toast.info("프로필 사진 변경 기능은 준비 중입니다.")}>
 								사진 변경
 							</Button>
 						</div>

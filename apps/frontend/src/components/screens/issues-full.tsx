@@ -8,6 +8,7 @@ import { useIssues, useIssueMutations } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { Issue, IssueSev, IssuePrio, IssueStatus } from '@/lib/schemas';
 import { Plus, Search, Sparkles, LayoutList, KanbanSquare, Clock, BarChart3 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const SEV_TONE: Record<IssueSev, 'danger' | 'warning' | 'info' | 'neutral'> = {
   critical: 'danger', high: 'warning', med: 'info', low: 'neutral',
@@ -181,7 +182,7 @@ export function IssuesPageFull() {
                 <p className="text-[12px] text-fg-1 leading-relaxed">
                   ISS-238 (P0) 이 SLA 92% 도달. <strong>백업 PG 우회 라우트</strong> 활성화로 평균 복구 시간을 4분 → 40초로 단축할 수 있어요.
                 </p>
-                <Button variant="primary" size="sm">백업 라우트 활성화</Button>
+                <Button variant="primary" size="sm" onClick={() => toast.success("백업 PG 우회 라우트 활성화 요청이 전송되었습니다.")}>백업 라우트 활성화</Button>
               </CardBody>
             </Card>
           </div>

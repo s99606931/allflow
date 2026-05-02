@@ -2,6 +2,7 @@
 
 import { Button, Card, CardBody } from "@/components/ui/primitives";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Section } from "./shared";
 
 export function DangerSection() {
@@ -22,7 +23,12 @@ export function DangerSection() {
 						</div>
 					</div>
 					<div className="flex justify-end gap-2 pt-2 border-t border-border">
-						<Button size="md" variant="danger">
+						<Button size="md" variant="danger" onClick={() => {
+							const confirmed = window.confirm("정말로 계정을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.");
+							if (confirmed) {
+								toast.error("계정 삭제 기능은 준비 중입니다. 관리자에게 문의해 주세요.");
+							}
+						}}>
 							<Trash2 size={13} /> 계정 영구 삭제
 						</Button>
 					</div>

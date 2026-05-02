@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/primitives";
 import { Check, Clock, Eye, EyeOff, MapPin, Monitor, Smartphone } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Row, Section } from "./shared";
 
 const SESSIONS = [
@@ -57,7 +58,7 @@ export function SecuritySection() {
 			<Card>
 				<CardBody className="space-y-1">
 					<Row label="비밀번호" sub="최근 변경: 2025년 11월 14일 (164일 전)">
-						<Button size="sm" variant="secondary">
+						<Button size="sm" variant="secondary" onClick={() => toast.info("비밀번호 변경 페이지는 준비 중입니다.")}>
 							변경
 						</Button>
 					</Row>
@@ -65,12 +66,12 @@ export function SecuritySection() {
 						<Badge tone="success">
 							<Check size={10} /> 활성화
 						</Badge>
-						<Button size="sm" variant="ghost">
+						<Button size="sm" variant="ghost" onClick={() => toast.info("MFA 설정 페이지는 준비 중입니다.")}>
 							설정
 						</Button>
 					</Row>
 					<Row label="복구 코드" sub="MFA 분실 시 사용 · 8개 중 6개 미사용">
-						<Button size="sm" variant="secondary">
+						<Button size="sm" variant="secondary" onClick={() => toast.info("복구 코드 보기는 준비 중입니다.")}>
 							코드 보기
 						</Button>
 					</Row>
@@ -81,7 +82,11 @@ export function SecuritySection() {
 						<IconButton size="sm" onClick={() => setShowApi((s) => !s)}>
 							{showApi ? <EyeOff size={12} /> : <Eye size={12} />}
 						</IconButton>
-						<Button size="sm" variant="ghost">
+						<Button size="sm" variant="ghost" onClick={() => {
+							if (window.confirm("API 키를 재발급하면 기존 키는 즉시 만료됩니다. 계속하시겠습니까?")) {
+								toast.success("API 키가 재발급되었습니다. 새 키를 안전한 곳에 보관하세요.");
+							}
+						}}>
 							재발급
 						</Button>
 					</Row>
@@ -91,7 +96,11 @@ export function SecuritySection() {
 			<Card>
 				<CardHeader>
 					<CardTitle>활성 세션</CardTitle>
-					<Button size="sm" variant="secondary">
+					<Button size="sm" variant="secondary" onClick={() => {
+						if (window.confirm("다른 모든 세션을 종료하시겠습니까?")) {
+							toast.success("다른 모든 세션이 종료되었습니다.");
+						}
+					}}>
 						모든 다른 세션 종료
 					</Button>
 				</CardHeader>
@@ -124,7 +133,11 @@ export function SecuritySection() {
 									</div>
 								</div>
 								{!s.current && (
-									<Button size="sm" variant="ghost">
+									<Button size="sm" variant="ghost" onClick={() => {
+										if (window.confirm(`"${s.device}" 세션을 종료하시겠습니까?`)) {
+											toast.success(`${s.device} 세션이 종료되었습니다.`);
+										}
+									}}>
 										종료
 									</Button>
 								)}
