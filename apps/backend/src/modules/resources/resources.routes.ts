@@ -129,6 +129,59 @@ export async function resourcesRoutes(app: FastifyInstance): Promise<void> {
     }));
   });
 
+  // PATCH /resources/bookings/:id — start/end 변경 + 충돌 재검증
+  const BookingPatch = z
+    .object({
+      start: z
+        .string()
+        .refine(isoDateTime, { message: 'invalid datetime' })
+        .optional(),
+      end: z.string().refine(isoDateTime, { message: 'invalid datetime' }).optional(),
+    })
+    .strict()
+    .refine((d) => Object.keys(d).length > 0, { message: '변경할 필드를 1개 이상 전달하세요' });
+
+  app.patch('/resources/bookings/:id', { preHandler: [app.authenticate] }, async (req) => {
+    const { id } = req.params as { id: string };
+    const parsed = BookingPatch.safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+
+    const existing = await app.prisma.booking.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundError('Booking', id);
+
+    const start = parsed.data.start ? new Date(parsed.data.start) : existing.start;
+    const end = parsed.data.end ? new Date(parsed.data.end) : existing.end;
+    if (end.getTime() <= start.getTime()) {
+      throw new ValidationError('end 는 start 이후여야 합니다');
+    }
+
+    const conflict = await app.prisma.booking.findFirst({
+      where: {
+        resourceId: existing.resourceId,
+        id: { not: id },
+        start: { lt: end },
+        end: { gt: start },
+      },
+    });
+    if (conflict) {
+      throw new ConflictError(
+        `해당 시간대에 이미 예약이 있습니다: ${conflict.start.toISOString()} ~ ${conflict.end.toISOString()}`,
+      );
+    }
+
+    const updated = await app.prisma.booking.update({
+      where: { id },
+      data: { start, end },
+    });
+    return {
+      id: updated.id,
+      resourceId: updated.resourceId,
+      start: updated.start.toISOString(),
+      end: updated.end.toISOString(),
+      bookedBy: updated.bookedBy,
+    };
+  });
+
   app.delete('/resources/bookings/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const booking = await app.prisma.booking.findUnique({ where: { id } });

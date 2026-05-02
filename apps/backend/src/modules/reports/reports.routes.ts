@@ -99,6 +99,55 @@ export async function reportsRoutes(
     return serializeReport(row);
   });
 
+  // PATCH /reports/:id — 작성자만 tldr/kpis/sections 부분 갱신.
+  app.patch('/reports/:id', { preHandler: [app.authenticate] }, async (req) => {
+    const { id } = req.params as { id: string };
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const Body = z
+      .object({
+        tldr: z.string().max(2000).optional(),
+        kpis: z.array(z.unknown()).optional(),
+        sections: z.array(z.unknown()).optional(),
+      })
+      .strict()
+      .refine((d) => Object.keys(d).length > 0, {
+        message: '변경할 필드를 1개 이상 전달하세요',
+      });
+    const parsed = Body.safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+
+    const existing = await app.prisma.report.findFirst({
+      where: { id, authorId: userId },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundError('리포트를 찾을 수 없습니다');
+
+    const data: Record<string, unknown> = {};
+    if (parsed.data.tldr !== undefined) data.tldr = parsed.data.tldr;
+    if (parsed.data.kpis !== undefined)
+      data.kpis = parsed.data.kpis as unknown as Prisma.InputJsonValue;
+    if (parsed.data.sections !== undefined)
+      data.sections = parsed.data.sections as unknown as Prisma.InputJsonValue;
+
+    const row = await app.prisma.report.update({
+      where: { id },
+      data,
+      select: {
+        id: true,
+        kind: true,
+        periodStart: true,
+        periodEnd: true,
+        generatedAt: true,
+        tldr: true,
+        kpis: true,
+        sections: true,
+      },
+    });
+    return serializeReport(row);
+  });
+
   app.post('/reports/weekly', { preHandler: [app.authenticate] }, async (req, reply) => {
     const parsed = WeeklyRequest.safeParse(req.body);
     if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);

@@ -40,9 +40,9 @@
 
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
-| 역할 변경 | 사용자 역할 드롭다운 변경 | ✅ | 🔗 PATCH /users/:id (role) | ⬜ |
-| 사용자 비활성화 | 계정 비활성화 처리 | ✅ | 🔗 PATCH /users/:id (status) | ⬜ |
-| 더보기 메뉴 | MoreHorizontal → 역할변경/비활성화 드롭다운 | ✅ | 🔗 | ⬜ |
+| 역할 변경 | 사용자 역할 드롭다운 변경 | ✅ | 🔗 PATCH /users/:id (role) | 🧪 menus/org-users-hr.spec.ts |
+| 사용자 비활성화 | 계정 비활성화 처리 | ✅ | 🔗 PATCH /users/:id (status) | 🧪 menus/org-users-hr.spec.ts |
+| 더보기 메뉴 | MoreHorizontal → 역할변경/비활성화 드롭다운 | ✅ | 🔗 | 🧪 menus/org-users-hr.spec.ts |
 
 ### 5. AI 가이드 위젯
 

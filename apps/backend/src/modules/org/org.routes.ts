@@ -151,4 +151,49 @@ export async function orgRoutes(app: FastifyInstance): Promise<void> {
 
     return reply.code(201).send({ id: row.id, pending: row.pending });
   });
+
+  // DELETE /org/invitations/:id — 초대 취소. soft-delete 가 아니라 row 삭제.
+  app.delete('/org/invitations/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const existing = await app.prisma.invitation.findUnique({ where: { id } });
+    if (!existing) throw new ValidationError(`존재하지 않는 초대: ${id}`);
+    await app.prisma.invitation.delete({ where: { id } });
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const actorId = req.user!.id;
+    app.log.info(
+      { action: 'org.invite.cancel', actorId, invitationId: id },
+      'invitation cancelled',
+    );
+    return reply.code(204).send();
+  });
+
+  // DELETE /org/workspace — 위험 작업: 모든 OrgUnit + Invitation 비우기.
+  // 본 사이클에선 'admin' role 만 허용. confirm="DELETE" 토큰 필수.
+  app.delete('/org/workspace', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const Body = z.object({ confirm: z.string().min(1) }).strict();
+    const parsed = Body.safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+    if (parsed.data.confirm !== 'DELETE') {
+      throw new ValidationError('확인 문자열이 일치하지 않습니다 (필요: "DELETE")');
+    }
+
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const actorId = req.user!.id;
+    const actor = await app.prisma.user.findFirst({
+      where: { id: actorId, deletedAt: null },
+      select: { role: true },
+    });
+    if (!actor || actor.role !== 'admin') {
+      throw new ValidationError('관리자만 워크스페이스를 삭제할 수 있습니다');
+    }
+
+    await app.prisma.invitation.deleteMany();
+    await app.prisma.orgUnit.deleteMany();
+
+    app.log.warn(
+      { action: 'org.workspace.delete', actorId },
+      'workspace wiped (org units + invitations)',
+    );
+    return reply.code(204).send();
+  });
 }

@@ -195,6 +195,12 @@ export const extendedApi = {
     await http.delete(`resources/bookings/${id}`);
   },
 
+  updateBooking: async (
+    id: string,
+    patch: { start?: string; end?: string },
+  ): Promise<ResourceBooking> =>
+    http.patch(`resources/bookings/${id}`, { json: patch }).json<ResourceBooking>(),
+
   /* Documents (TipTap) ---------------------------------------------------- */
   listDocs: async (): Promise<Doc[]> =>
     parsed(http.get('docs').json(), z.array(DocSchema)),
@@ -284,8 +290,109 @@ export const extendedApi = {
   updateProfile: async (input: ProfilePatch): Promise<User> =>
     parsed(http.patch('users/me', { json: input }).json(), UserSchema),
 
+  /** Alias of updateProfile mapped to /identity/profile (FE 스펙 호환). */
+  updateIdentityProfile: async (input: ProfilePatch): Promise<User> =>
+    parsed(http.patch('identity/profile', { json: input }).json(), UserSchema),
+
   deleteAccount: async (): Promise<void> => {
     await http.delete('users/me');
+  },
+
+  /** Admin: 사용자 role 또는 status(active|inactive) 변경. */
+  updateUser: async (
+    id: string,
+    patch: { role?: string; status?: 'active' | 'inactive' },
+  ): Promise<User> => parsed(http.patch(`users/${id}`, { json: patch }).json(), UserSchema),
+
+  /* Notification settings (per-user, single row) ------------------------ */
+  getNotificationSettings: async (): Promise<{
+    channels: Record<string, boolean>;
+    types: Record<string, boolean>;
+    digestHour: number;
+  }> => http.get('identity/notification-settings').json(),
+
+  updateNotificationSettings: async (input: {
+    channels?: Record<string, boolean>;
+    types?: Record<string, boolean>;
+    digestHour?: number;
+  }): Promise<{
+    channels: Record<string, boolean>;
+    types: Record<string, boolean>;
+    digestHour: number;
+  }> => http.patch('identity/notification-settings', { json: input }).json(),
+
+  /* Personal API tokens -------------------------------------------------- */
+  listApiTokens: async (): Promise<
+    Array<{
+      id: string;
+      name: string;
+      prefix: string;
+      scopes: string[];
+      lastUsedAt: string | null;
+      expiresAt: string | null;
+      createdAt: string;
+    }>
+  > => http.get('identity/api-tokens').json(),
+
+  createApiToken: async (input: {
+    name: string;
+    scopes: Array<'read' | 'write' | 'admin'>;
+    expiresInDays?: number;
+  }): Promise<{
+    id: string;
+    name: string;
+    prefix: string;
+    scopes: string[];
+    expiresAt: string | null;
+    createdAt: string;
+    /** Plain-text token, returned ONCE. */
+    token: string;
+  }> => http.post('identity/api-tokens', { json: input }).json(),
+
+  revokeApiToken: async (id: string): Promise<void> => {
+    await http.delete(`identity/api-tokens/${id}`);
+  },
+
+  /* OTel runtime config -------------------------------------------------- */
+  getOtelConfig: async (): Promise<{
+    enabled: boolean;
+    endpoint: string | null;
+    serviceName: string;
+  }> => http.get('otel/config').json(),
+
+  updateOtelConfig: async (input: {
+    enabled?: boolean;
+    endpoint?: string | null;
+    serviceName?: string;
+  }): Promise<{
+    enabled: boolean;
+    endpoint: string | null;
+    serviceName: string;
+    note?: string;
+  }> => http.patch('otel/config', { json: input }).json(),
+
+  /* Notion sync + status ------------------------------------------------- */
+  getNotionStatus: async (): Promise<{
+    connected: boolean;
+    connectionCount: number;
+    lastWorkspaceName: string | null;
+    lastSyncedAt: string | null;
+  }> => http.get('integrations/notion/status').json(),
+
+  syncNotion: async (): Promise<{
+    synced: number;
+    syncedAt?: string;
+    message?: string;
+  }> => http.post('integrations/notion/sync').json(),
+
+  /* Org invitations ------------------------------------------------------ */
+  cancelInvitation: async (id: string): Promise<void> => {
+    await http.delete(`org/invitations/${id}`);
+  },
+
+  /** Admin destructive: workspace 전체 삭제 (orgUnits + invitations). */
+  deleteWorkspace: async (confirm: 'DELETE'): Promise<void> => {
+    await http.delete('org/workspace', { json: { confirm } });
   },
 
   /* Comments (tasks · issues) ------------------------------------------- */
@@ -315,6 +422,12 @@ export const extendedApi = {
     http
       .post(`reports/${reportId}/send`, { json: input })
       .json<{ queued: number; recipients: string[] }>(),
+
+  updateReport: async (
+    reportId: string,
+    input: { tldr?: string; kpis?: unknown[]; sections?: unknown[] },
+  ): Promise<ReportSummary> =>
+    http.patch(`reports/${reportId}`, { json: input }).json<ReportSummary>(),
 
   /* Gantt ----------------------------------------------------------------- */
   getGantt: async (params?: {

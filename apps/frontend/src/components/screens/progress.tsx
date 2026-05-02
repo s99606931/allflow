@@ -228,22 +228,37 @@ export function ProgressPage() {
                 {['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12'].map(w => <div key={w} className="text-center">{w}</div>)}
               </div>
             </div>
-            {PROJECTS.map((p, i) => (
-              <div key={p.id} className="grid grid-cols-[200px_1fr] border-b border-border last:border-0 items-center">
-                <div className="px-3 py-3 flex items-center gap-2 text-[12.5px]">
-                  <span className="w-2 h-2 rounded-full" style={{ background: p.color }} /><span className="truncate">{p.name}</span>
-                </div>
-                <div className="relative h-10">
-                  <div className="absolute top-2.5 h-5 rounded-md flex items-center px-2 text-[10px] text-white font-medium" style={{
-                    left: `${i * 5}%`, width: `${30 + p.progress * 0.4}%`, background: p.color, opacity: 0.85,
-                  }}>
-                    {p.code} · {p.progress}%
+            {PROJECTS.map((p, i) => {
+              // milestone: 프로젝트 due 가 있으면 12-week 분기 윈도우 내 위치(%)로 계산.
+              // 없으면 진행률 기반 fallback.
+              const now = new Date();
+              const qStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+              const windowMs = 84 * 24 * 3600 * 1000;
+              const milestonePct = p.due
+                ? Math.min(100, Math.max(0, ((new Date(p.due).getTime() - qStart.getTime()) / windowMs) * 100))
+                : i * 5 + 30 + p.progress * 0.4;
+              const hasMilestone = Boolean(p.due);
+              return (
+                <div key={p.id} className="grid grid-cols-[200px_1fr] border-b border-border last:border-0 items-center">
+                  <div className="px-3 py-3 flex items-center gap-2 text-[12.5px]">
+                    <span className="w-2 h-2 rounded-full" style={{ background: p.color }} /><span className="truncate">{p.name}</span>
                   </div>
-                  {/* milestone */}
-                  <div className="absolute top-3 w-3 h-3 rotate-45" style={{ left: `${i * 5 + 30 + p.progress * 0.4 - 1.5}%`, background: 'var(--color-warning)' }} />
+                  <div className="relative h-10">
+                    <div className="absolute top-2.5 h-5 rounded-md flex items-center px-2 text-[10px] text-white font-medium" style={{
+                      left: `${i * 5}%`, width: `${30 + p.progress * 0.4}%`, background: p.color, opacity: 0.85,
+                    }}>
+                      {p.code} · {p.progress}%
+                    </div>
+                    {/* milestone (due-based when available) */}
+                    <div
+                      className="absolute top-3 w-3 h-3 rotate-45"
+                      style={{ left: `${milestonePct - 1.5}%`, background: 'var(--color-warning)' }}
+                      title={hasMilestone ? `마일스톤: ${p.due}` : '예상 마일스톤'}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {/* today line — dynamic position in 12-week quarter window */}
             <div className="absolute top-0 bottom-0 w-px bg-danger" style={{ left: `${todayPct}%` }} />
           </Card>

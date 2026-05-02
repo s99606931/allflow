@@ -42,7 +42,7 @@
 
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
-| OTel 엔드포인트 설정 | 트레이싱 수신 서버 설정 | ✅ | 🔗 GET/PATCH /otel/config | ⬜ |
+| OTel 엔드포인트 설정 | 트레이싱 수신 서버 설정 | ✅ | 🔗 GET/PATCH /otel/config | 🧪 menus/admin-notifications-settings.spec.ts |
 
 ### 5. AI 가이드 위젯
 

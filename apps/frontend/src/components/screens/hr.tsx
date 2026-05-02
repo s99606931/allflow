@@ -252,8 +252,84 @@ function LeaveTab() {
             }}
           />
         )}
+
+        {!isLoading && <AnnualLeaveCalendar leaves={leaves ?? []} />}
       </CardBody>
     </Card>
+  );
+}
+
+/**
+ * AnnualLeaveCalendar — 연간(12개월) 휴가 캘린더.
+ * 승인된 휴가의 일자 셀에 색을 칠해 1년 한 눈 보기.
+ */
+function AnnualLeaveCalendar({ leaves }: { leaves: LeaveRequest[] }) {
+  const year = new Date().getFullYear();
+  // 일자별 leave 매핑 — Map<"MM-DD", LeaveType[]>
+  const dayMap = new Map<string, LeaveRequest['type'][]>();
+  for (const leave of leaves) {
+    if (leave.status !== 'APPROVED') continue;
+    const start = new Date(leave.startDate);
+    const end = new Date(leave.endDate);
+    if (start.getFullYear() !== year && end.getFullYear() !== year) continue;
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      if (d.getFullYear() !== year) continue;
+      const key = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const arr = dayMap.get(key) ?? [];
+      arr.push(leave.type);
+      dayMap.set(key, arr);
+    }
+  }
+
+  return (
+    <div className="border border-border rounded-md p-4 bg-bg-2 space-y-3">
+      <div className="flex items-center gap-2">
+        <CalendarClock size={14} className="text-accent" />
+        <span className="text-[13px] font-semibold text-fg">{year}년 연간 캘린더</span>
+        <span className="text-[11px] text-fg-3 ml-auto">승인된 휴가만 표시</span>
+      </div>
+      <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+        {Array.from({ length: 12 }, (_, m) => {
+          const monthIdx = m;
+          const firstDow = new Date(year, monthIdx, 1).getDay();
+          const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
+          const cells: (number | null)[] = [];
+          for (let i = 0; i < firstDow; i++) cells.push(null);
+          for (let day = 1; day <= daysInMonth; day++) cells.push(day);
+          return (
+            <div key={monthIdx} className="rounded border border-border bg-bg-elev p-2">
+              <div className="text-[11px] font-semibold text-fg mb-1.5">{monthIdx + 1}월</div>
+              <div className="grid grid-cols-7 gap-px text-[9px] text-fg-3">
+                {['일', '월', '화', '수', '목', '금', '토'].map((d) => (
+                  <div key={d} className="text-center">{d}</div>
+                ))}
+                {cells.map((day, idx) => {
+                  if (day === null) return <div key={`e-${idx}`} />;
+                  const key = `${String(monthIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  const types = dayMap.get(key);
+                  const tone = types
+                    ? types.includes('SICK')
+                      ? 'bg-danger/30 text-danger-1'
+                      : types.includes('VACATION') || types.includes('ANNUAL')
+                        ? 'bg-accent/30 text-accent-1'
+                        : 'bg-warning/30 text-warning-1'
+                    : 'text-fg-2';
+                  return (
+                    <div
+                      key={key}
+                      className={`text-center text-[9.5px] rounded ${tone}`}
+                      title={types ? types.join(', ') : undefined}
+                    >
+                      {day}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

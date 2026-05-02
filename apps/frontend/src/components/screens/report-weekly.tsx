@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardBody, CardHeader, CardTitle, Button } from '@/components/ui/primitives';
-import { Calendar, Download, RefreshCw, Send, Sparkles } from 'lucide-react';
+import { Calendar, Download, Link as LinkIcon, RefreshCw, Send, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
 import { ReportRecipientsEditor } from '@/components/dialogs/report-recipients-editor';
 import { useAiMutations, useProjects, useReports } from '@/lib/hooks/use-data';
 import type { Report } from '@/lib/schemas';
@@ -54,6 +55,15 @@ export function ReportWeeklyPage() {
   const { data: projects = [] } = useProjects();
   const { data: history = [] } = useReports();
   const [scope, setScope] = useState<Set<string>>(new Set());
+  const searchParams = useSearchParams();
+
+  // Deep-link: /reports/weekly?id=<reportId> 가 들어오면 history 에서 자동 선택.
+  useEffect(() => {
+    const id = searchParams?.get('id');
+    if (!id || report?.id === id) return;
+    const found = history.find((r) => r.id === id);
+    if (found) setReport(found as unknown as Report);
+  }, [searchParams, history, report?.id]);
 
   const onGenerate = async () => {
     if (reportType === '월간') {
@@ -172,6 +182,21 @@ export function ReportWeeklyPage() {
               >
                 <Download size={13} /> PDF
               </ReportDownloadButton>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={async () => {
+                  const url = `${window.location.origin}/reports/weekly?id=${report.id}`;
+                  try {
+                    await navigator.clipboard.writeText(url);
+                    toast.success('보고서 링크가 클립보드에 복사되었습니다');
+                  } catch {
+                    toast.error('링크 복사에 실패했습니다');
+                  }
+                }}
+              >
+                <LinkIcon size={13} /> 링크 공유
+              </Button>
               <Button variant="primary" size="sm" onClick={() => setSendOpen(true)}><Send size={13} /> 발송</Button>
               <ReportRecipientsEditor
                 open={sendOpen}

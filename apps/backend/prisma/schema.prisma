@@ -806,3 +806,60 @@ model Invitation {
   @@index([email])
   @@map("invitations")
 }
+
+// =====================================================================
+// UserNotificationSettings — per-user channel preferences (FE settings page)
+// =====================================================================
+//
+// Single row per user. JSONB로 channels(email/inApp/desktop/mobile)와
+// types(approvals/mentions/digests 등) 토글을 저장한다. PATCH 멱등.
+
+model UserNotificationSettings {
+  userId    String   @id @map("user_id")
+  channels  Json     @default("{\"email\":true,\"inApp\":true,\"desktop\":false,\"mobile\":false}")
+  types     Json     @default("{\"approvals\":true,\"mentions\":true,\"digests\":false}")
+  digestHour Int     @default(9) @map("digest_hour")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("user_notification_settings")
+}
+
+// =====================================================================
+// ApiToken — personal access tokens for headless / script use
+// =====================================================================
+//
+// 토큰 노출은 발급 시 1회만(plaintext 응답), 저장은 SHA-256 해시.
+// scopes는 문자열 배열(read/write/admin 등). lastUsedAt 갱신은 별도 미들웨어로 가능.
+
+model ApiToken {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  name        String
+  tokenHash   String    @unique @map("token_hash")
+  prefix      String    @db.VarChar(8) // ex: "av_a1b2"
+  scopes      String[]  @default([])
+  lastUsedAt  DateTime? @map("last_used_at")
+  expiresAt   DateTime? @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("api_tokens")
+}
+
+// =====================================================================
+// OtelConfig — runtime-mutable OTel exporter endpoint (single row)
+// =====================================================================
+//
+// id="default" 하나만 사용. enabled=false 일 때 기존 정적 OTel 비활성.
+// 변경은 즉시 반영하지 않고 서버 재시작 후 적용 (간단한 영속 설정).
+
+model OtelConfig {
+  id           String   @id @default("default")
+  enabled      Boolean  @default(false)
+  endpoint     String?
+  serviceName  String   @default("all-flow-backend") @map("service_name")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("otel_config")
+}

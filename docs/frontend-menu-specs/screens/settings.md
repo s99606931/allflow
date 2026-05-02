@@ -33,7 +33,7 @@
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
 | 언어 선택 | 한국어/English 선택 | ✅ | 🔌 (zustand persist + i18n shim) | 🧪 i18n.test.ts |
-| 날짜 형식 | 날짜 표시 형식 선택 | ⚠️ | 🔌 | ⬜ |
+| 날짜 형식 | 날짜 표시 형식 선택 | ✅ | 🔌 | 🧪 menus/admin-notifications-settings.spec.ts |
 
 ### 4. 알림 설정 (NotifSection)
 

@@ -24,7 +24,7 @@
 |------|------|------|--------|--------|
 | 태스크 완료율 | 완료 태스크 / 전체 태스크 비율 | ✅ | 🔗 GET /tasks | 🧪 menus/calendar-progress-gantt.spec.ts |
 | 예산 소진율 | 예산 대비 실제 사용 비율 | ✅ | 🔗 (project budget 필드) | 🧪 menus/calendar-progress-gantt.spec.ts |
-| 마일스톤 현황 | 마일스톤 달성 여부 | ⚠️ | 🔗 | ⬜ |
+| 마일스톤 현황 | 마일스톤 달성 여부 | ✅ | 🔗 | 🧪 menus/calendar-progress-gantt.spec.ts |
 
 ### 3. AI 가이드 위젯
 
