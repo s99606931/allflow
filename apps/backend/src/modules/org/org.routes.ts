@@ -94,7 +94,10 @@ export async function orgRoutes(app: FastifyInstance): Promise<void> {
     if (!existing) throw new ValidationError(`존재하지 않는 조직 단위: ${id}`);
 
     const children = await app.prisma.orgUnit.count({ where: { parentId: id } });
-    if (children > 0) throw new ValidationError('하위 부서가 있는 부서는 삭제할 수 없습니다. 먼저 하위 부서를 삭제하거나 이동하세요.');
+    if (children > 0)
+      throw new ValidationError(
+        '하위 부서가 있는 부서는 삭제할 수 없습니다. 먼저 하위 부서를 삭제하거나 이동하세요.',
+      );
 
     await app.prisma.orgUnit.delete({ where: { id } });
     return reply.code(204).send();

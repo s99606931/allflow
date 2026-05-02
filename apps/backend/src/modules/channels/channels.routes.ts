@@ -64,12 +64,17 @@ export async function channelsRoutes(app: FastifyInstance): Promise<void> {
     const { name, kind } = parsed.data;
     const existing = await app.prisma.channel.findFirst({ where: { name, kind } });
     if (existing) {
-      if (kind === 'dm') return reply.code(200).send({ id: existing.id, name: existing.name, kind: existing.kind, members: [] });
+      if (kind === 'dm')
+        return reply
+          .code(200)
+          .send({ id: existing.id, name: existing.name, kind: existing.kind, members: [] });
       throw new ValidationError(`이미 존재하는 채널 이름입니다: ${name}`);
     }
 
     const channel = await app.prisma.channel.create({ data: { name, kind } });
-    return reply.code(201).send({ id: channel.id, name: channel.name, kind: channel.kind, members: [] });
+    return reply
+      .code(201)
+      .send({ id: channel.id, name: channel.name, kind: channel.kind, members: [] });
   });
 
   app.get('/channels/:channelId/messages', { preHandler: [app.authenticate] }, async (req) => {

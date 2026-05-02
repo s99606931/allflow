@@ -216,7 +216,9 @@ export async function projectsRoutes(app: FastifyInstance): Promise<void> {
       const member = await app.prisma.projectMember.create({
         data: { projectId: id, userId, role: 'member' },
       });
-      return reply.code(201).send({ projectId: member.projectId, userId: member.userId, role: member.role });
+      return reply
+        .code(201)
+        .send({ projectId: member.projectId, userId: member.userId, role: member.role });
     },
   );
 

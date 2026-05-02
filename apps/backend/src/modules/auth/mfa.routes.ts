@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { ValidationError } from '@all-flow/shared/errors';
 import type { FastifyInstance } from 'fastify';
-import * as OTPAuth from 'otpauth';
+import * as OTPAuth from 'otpauth/dist/otpauth.node.cjs';
 import { z } from 'zod';
 
 const ISSUER = 'ALL-Flow';
