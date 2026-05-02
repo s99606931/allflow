@@ -1,10 +1,11 @@
-import { ValidationError } from '@all-flow/shared/errors';
+import { NotFoundError, ValidationError } from '@all-flow/shared/errors';
 /**
  * clients 모듈 — CRM 고객 도메인 (T1: Prisma 영속화).
  *
  * 라우트:
- *   GET  /clients   — 고객 목록 (createdAt desc, soft-delete 제외)
- *   POST /clients   — 고객 생성 (ownerId = req.user.id 자동 세팅)
+ *   GET    /clients      — 고객 목록 (createdAt desc, soft-delete 제외)
+ *   POST   /clients      — 고객 생성 (ownerId = req.user.id 자동 세팅)
+ *   DELETE /clients/:id  — 고객 삭제 (soft-delete, 204)
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -78,5 +79,26 @@ export async function clientsRoutes(app: FastifyInstance): Promise<void> {
     );
 
     return reply.code(201).send(serialize(row));
+  });
+
+  app.delete('/clients/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const existing = await app.prisma.client.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundError('Client', id);
+
+    await app.prisma.client.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    app.log.info({ action: 'clients.delete', actorId: userId, clientId: id }, 'client deleted');
+    reply.code(204);
+    return null;
   });
 }

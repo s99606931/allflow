@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { Card, CardBody, Button } from '@/components/ui/primitives';
-import { ChevronRight, Plus, Search, TrendingUp } from 'lucide-react';
+import { ChevronRight, Plus, Search, Trash2, TrendingUp } from 'lucide-react';
 import { ClientForm } from '@/components/dialogs/client-form';
 import { ClientDetail } from '@/components/dialogs/client-detail';
-import { useClients } from '@/lib/hooks/use-data';
+import { useClients, useClientMutations } from '@/lib/hooks/use-data';
 import type { Client } from '@/lib/schemas';
 
 /** Derive a 2-letter code from the client name for the avatar badge. */
@@ -31,6 +31,7 @@ export function ClientsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<Client | null>(null);
   const { data: clients = [], isLoading, error } = useClients();
+  const { remove } = useClientMutations();
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
@@ -97,7 +98,8 @@ export function ClientsPage() {
                   setSelected(c);
                 }
               }}
-              aria-label={`${c.name} 상세 보기`}>
+              aria-label={`${c.name} 상세 보기`}
+              className="group">
               <CardBody className="space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-lg bg-accent-soft text-accent-strong grid place-items-center font-bold mono shrink-0">{codeOf(c.name)}</div>
@@ -105,6 +107,14 @@ export function ClientsPage() {
                     <div className="text-[14px] font-semibold text-fg truncate">{c.name}</div>
                     {c.industry && <div className="text-[11px] text-fg-3 truncate mt-0.5">{c.industry}</div>}
                   </div>
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); if (confirm(`"${c.name}" 고객사를 삭제하시겠습니까?`)) remove.mutate(c.id); }}
+                    className="opacity-0 group-hover:opacity-100 text-fg-3 hover:text-danger shrink-0 transition-opacity mt-0.5"
+                    aria-label="고객사 삭제"
+                  >
+                    <Trash2 size={13} />
+                  </button>
                   <ChevronRight size={14} className="text-fg-3 mt-1" />
                 </div>
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border text-[11px]">

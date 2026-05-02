@@ -215,28 +215,34 @@ export function useApprovalMutations() {
 
 export function useClientMutations() {
   const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: keys.clients.all() });
   const create = useMutation({
     mutationFn: (input: ClientCreate) => api.createClient(input),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: keys.clients.all() });
-      toast.success('고객사가 등록되었습니다');
-    },
+    onSuccess: () => { invalidate(); toast.success('고객사가 등록되었습니다'); },
     onError,
   });
-  return { create };
+  const remove = useMutation({
+    mutationFn: (id: string) => api.deleteClient(id),
+    onSuccess: () => { invalidate(); toast.success('고객사가 삭제되었습니다'); },
+    onError,
+  });
+  return { create, remove };
 }
 
 export function useEventMutations() {
   const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: keys.events.all() });
   const create = useMutation({
     mutationFn: (input: EventCreate) => api.createEvent(input),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: keys.events.all() });
-      toast.success('일정이 추가되었습니다');
-    },
+    onSuccess: () => { invalidate(); toast.success('일정이 추가되었습니다'); },
     onError,
   });
-  return { create };
+  const remove = useMutation({
+    mutationFn: (id: string) => api.deleteEvent(id),
+    onSuccess: () => { invalidate(); toast.success('일정이 삭제되었습니다'); },
+    onError,
+  });
+  return { create, remove };
 }
 
 export function useResourceMutations() {
@@ -250,15 +256,18 @@ export function useResourceMutations() {
 
 export function useDocMutations() {
   const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: keys.docs.all() });
   const create = useMutation({
     mutationFn: (input: DocCreate) => api.createDoc(input),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: keys.docs.all() });
-      toast.success('문서가 생성되었습니다');
-    },
+    onSuccess: () => { invalidate(); toast.success('문서가 생성되었습니다'); },
     onError,
   });
-  return { create };
+  const remove = useMutation({
+    mutationFn: (id: string) => api.deleteDoc(id),
+    onSuccess: () => { invalidate(); toast.success('문서가 삭제되었습니다'); },
+    onError,
+  });
+  return { create, remove };
 }
 
 export function useMessageMutations() {

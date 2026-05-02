@@ -1,10 +1,11 @@
-import { ValidationError } from '@all-flow/shared/errors';
+import { NotFoundError, ValidationError } from '@all-flow/shared/errors';
 /**
  * docs 모듈 — 문서 도메인 (BE-N5, Prisma 영속화).
  *
  * 라우트:
- *   GET  /docs   — 문서 목록 (updatedAt desc). 비어 있으면 3건 자동 시드.
- *   POST /docs   — 문서 생성 (201)
+ *   GET    /docs      — 문서 목록 (updatedAt desc). 비어 있으면 3건 자동 시드.
+ *   POST   /docs      — 문서 생성 (201)
+ *   DELETE /docs/:id  — 문서 삭제 (soft-delete, 204)
  *
  * preview 는 content 첫 200자 추출.
  */
@@ -98,5 +99,23 @@ export async function docsRoutes(app: FastifyInstance): Promise<void> {
     );
 
     return reply.code(201).send(serialize(row));
+  });
+
+  app.delete('/docs/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const existing = await app.prisma.doc.findFirst({
+      where: { id },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundError('Doc', id);
+
+    await app.prisma.doc.delete({ where: { id } });
+
+    app.log.info({ action: 'docs.delete', actorId: userId, docId: id }, 'doc deleted');
+    reply.code(204);
+    return null;
   });
 }

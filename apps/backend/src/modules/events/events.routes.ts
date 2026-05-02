@@ -1,10 +1,11 @@
-import { ValidationError } from '@all-flow/shared/errors';
+import { NotFoundError, ValidationError } from '@all-flow/shared/errors';
 /**
  * events 모듈 — 일정 도메인 (T1: Prisma 영속화).
  *
  * 라우트:
- *   GET  /events?from&to   — 기간 필터 일정 목록 (start asc)
- *   POST /events           — 일정 생성
+ *   GET    /events?from&to   — 기간 필터 일정 목록 (start asc)
+ *   POST   /events           — 일정 생성
+ *   DELETE /events/:id       — 일정 삭제 (hard delete, 204)
  *
  * 검증:
  *  - start/end 는 ISO 8601 (Date.parse 검증)
@@ -103,5 +104,23 @@ export async function eventsRoutes(app: FastifyInstance): Promise<void> {
     );
 
     return reply.code(201).send(serialize(row));
+  });
+
+  app.delete('/events/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const existing = await app.prisma.event.findFirst({
+      where: { id },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundError('Event', id);
+
+    await app.prisma.event.delete({ where: { id } });
+
+    app.log.info({ action: 'events.delete', actorId: userId, eventId: id }, 'event deleted');
+    reply.code(204);
+    return null;
   });
 }

@@ -7,10 +7,11 @@
 
 import { Avatar, Button } from '@/components/ui/primitives';
 import { Dialog, DialogFooter } from '@/components/ui/dialog';
-import { useUsers } from '@/lib/hooks/use-data';
+import { useUsers, useEventMutations } from '@/lib/hooks/use-data';
 import { useTranslation } from '@/lib/i18n';
 
 export interface EventLike {
+  id?: string;
   title: string;
   start: string;
   end: string;
@@ -27,6 +28,7 @@ interface Props {
 export function EventDetailPopover({ event, onClose }: Props) {
   const { t } = useTranslation();
   const { data: users = [] } = useUsers();
+  const { remove } = useEventMutations();
   if (!event) return null;
   const attendees = users.filter(u => event.attendees.includes(u.id));
   return (
@@ -59,6 +61,16 @@ export function EventDetailPopover({ event, onClose }: Props) {
         )}
       </div>
       <DialogFooter>
+        {event.id && event.source !== 'google' && event.source !== 'outlook' && (
+          <Button
+            type="button"
+            variant="danger"
+            disabled={remove.isPending}
+            onClick={() => { if (confirm(`"${event.title}" 일정을 삭제하시겠습니까?`)) remove.mutate(event.id!, { onSuccess: onClose }); }}
+          >
+            {remove.isPending ? '삭제 중...' : '삭제'}
+          </Button>
+        )}
         <Button type="button" variant="primary" onClick={onClose}>
           {t('common.close')}
         </Button>

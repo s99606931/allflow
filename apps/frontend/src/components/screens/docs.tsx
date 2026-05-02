@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { Avatar, Button, IconButton } from '@/components/ui/primitives';
-import { FileText, Loader2, Plus, Search, Sparkles, Star, ChevronRight, Hash, Clock } from 'lucide-react';
+import { FileText, Loader2, Plus, Search, Sparkles, Star, Trash2, ChevronRight, Hash, Clock } from 'lucide-react';
 import { DocCreateDialog } from '@/components/dialogs/doc-create-dialog';
-import { useDocs } from '@/lib/hooks/use-data';
+import { useDocs, useDocMutations } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 
@@ -18,6 +18,7 @@ export function DocsPage() {
   const [summaries, setSummaries] = useState<Record<string, string>>({});
   const [summaryDocId, setSummaryDocId] = useState<string | null>(null);
   const { streaming, streamComplete } = useAiStream();
+  const docMutations = useDocMutations();
 
   const activeDoc = docs.find(d => d.id === active) ?? null;
 
@@ -57,12 +58,20 @@ export function DocsPage() {
               {docs.map(d => {
                 const u = userMap.get(d.ownerId);
                 return (
-                  <button key={d.id} onClick={() => setSelectedId(d.id)}
-                    className={`w-full flex items-center gap-2 px-2 h-8 rounded text-[12.5px] transition-colors ${active === d.id ? 'bg-accent-soft text-accent-strong font-semibold' : 'text-fg-1 hover:bg-hover'}`}>
-                    <FileText size={12} className="shrink-0" />
-                    <span className="flex-1 text-left truncate">{d.title}</span>
-                    {u && <Avatar user={u} size={14} />}
-                  </button>
+                  <div key={d.id} className={`group flex items-center gap-1 px-2 h-8 rounded transition-colors ${active === d.id ? 'bg-accent-soft text-accent-strong' : 'text-fg-1 hover:bg-hover'}`}>
+                    <button onClick={() => setSelectedId(d.id)} className="flex items-center gap-2 flex-1 min-w-0 text-[12.5px] font-[inherit] text-left">
+                      <FileText size={12} className="shrink-0" />
+                      <span className="flex-1 truncate">{d.title}</span>
+                      {u && <Avatar user={u} size={14} />}
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); if (confirm(`"${d.title}" 문서를 삭제하시겠습니까?`)) docMutations.remove.mutate(d.id); }}
+                      className="opacity-0 group-hover:opacity-100 text-fg-3 hover:text-danger shrink-0 transition-opacity"
+                      aria-label="문서 삭제"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </div>
                 );
               })}
             </div>

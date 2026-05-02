@@ -44,6 +44,7 @@ export function CalendarPage() {
   const userMap = useUserMap();
 
   const isoEvents: EventLike[] = events.map(e => ({
+    id: e.id,
     title: e.title,
     start: e.start.slice(0, 16),
     end: e.end.slice(0, 16),

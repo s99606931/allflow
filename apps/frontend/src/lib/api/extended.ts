@@ -104,6 +104,10 @@ export const extendedApi = {
   createClient: async (input: ClientCreate): Promise<Client> =>
     parsed(http.post('clients', { json: input }).json(), ClientSchema),
 
+  deleteClient: async (id: string): Promise<void> => {
+    await http.delete(`clients/${id}`);
+  },
+
   /* Schedule events ------------------------------------------------------- */
   listEvents: async (filters?: { from?: string; to?: string }): Promise<Event[]> =>
     parsed(
@@ -113,6 +117,10 @@ export const extendedApi = {
 
   createEvent: async (input: EventCreate): Promise<Event> =>
     parsed(http.post('events', { json: input }).json(), EventSchema),
+
+  deleteEvent: async (id: string): Promise<void> => {
+    await http.delete(`events/${id}`);
+  },
 
   /* Resources ------------------------------------------------------------- */
   listResources: async (): Promise<Resource[]> =>
@@ -127,6 +135,10 @@ export const extendedApi = {
 
   createDoc: async (input: DocCreate): Promise<Doc> =>
     parsed(http.post('docs', { json: input }).json(), DocSchema),
+
+  deleteDoc: async (id: string): Promise<void> => {
+    await http.delete(`docs/${id}`);
+  },
 
   /* Chat ------------------------------------------------------------------ */
   listChannels: async (): Promise<Channel[]> =>
