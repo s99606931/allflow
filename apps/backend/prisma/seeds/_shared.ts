@@ -53,19 +53,20 @@ export interface SeedProject {
   code: string;
   color: string;
   progress: number;
+  budget?: number;
   status: 'todo' | 'doing' | 'review' | 'done' | 'blocked';
   due: string;
   members: string[];
 }
 
 export const DEMO_PROJECTS: SeedProject[] = [
-  { id: 'p1', name: '모바일 앱 v3.0 리뉴얼', code: 'MOB', color: '#5B6CFF', progress: 68, status: 'doing', due: '2026-05-22', members: ['me', 'u1', 'u2', 'u4'] },
-  { id: 'p2', name: 'B2B 어드민 대시보드', code: 'ADM', color: '#34B27D', progress: 42, status: 'doing', due: '2026-06-10', members: ['me', 'u3', 'u2'] },
-  { id: 'p3', name: 'Q2 마케팅 캠페인', code: 'MKT', color: '#FF7A6B', progress: 91, status: 'review', due: '2026-05-05', members: ['u5', 'u1', 'me'] },
-  { id: 'p4', name: '결제 시스템 리팩터링', code: 'PAY', color: '#A66CFF', progress: 23, status: 'doing', due: '2026-07-15', members: ['u3', 'u6'] },
-  { id: 'p5', name: '신규 사옥 IT 구축', code: 'OFC', color: '#F2A93B', progress: 100, status: 'done', due: '2026-04-12', members: ['u6', 'u3'] },
-  { id: 'p6', name: '데이터 파이프라인 v2', code: 'DAT', color: '#2A86E0', progress: 15, status: 'doing', due: '2026-08-30', members: ['u3', 'u6', 'u2'] },
-  { id: 'p7', name: '온보딩 디자인 시스템', code: 'DSN', color: '#E94B8A', progress: 55, status: 'doing', due: '2026-06-20', members: ['u1', 'me'] },
+  { id: 'p1', name: '모바일 앱 v3.0 리뉴얼', code: 'MOB', color: '#5B6CFF', progress: 68, budget: 120000000, status: 'doing', due: '2026-05-22', members: ['me', 'u1', 'u2', 'u4'] },
+  { id: 'p2', name: 'B2B 어드민 대시보드', code: 'ADM', color: '#34B27D', progress: 42, budget: 80000000, status: 'doing', due: '2026-06-10', members: ['me', 'u3', 'u2'] },
+  { id: 'p3', name: 'Q2 마케팅 캠페인', code: 'MKT', color: '#FF7A6B', progress: 91, budget: 50000000, status: 'review', due: '2026-05-05', members: ['u5', 'u1', 'me'] },
+  { id: 'p4', name: '결제 시스템 리팩터링', code: 'PAY', color: '#A66CFF', progress: 23, budget: 45000000, status: 'doing', due: '2026-07-15', members: ['u3', 'u6'] },
+  { id: 'p5', name: '신규 사옥 IT 구축', code: 'OFC', color: '#F2A93B', progress: 100, budget: 200000000, status: 'done', due: '2026-04-12', members: ['u6', 'u3'] },
+  { id: 'p6', name: '데이터 파이프라인 v2', code: 'DAT', color: '#2A86E0', progress: 15, budget: 60000000, status: 'doing', due: '2026-08-30', members: ['u3', 'u6', 'u2'] },
+  { id: 'p7', name: '온보딩 디자인 시스템', code: 'DSN', color: '#E94B8A', progress: 55, budget: 30000000, status: 'doing', due: '2026-06-20', members: ['u1', 'me'] },
   { id: 'p8', name: '백오피스 사용자 관리', code: 'USR', color: '#34B27D', progress: 30, status: 'todo', due: '2026-07-05', members: ['u3', 'me'] },
 ];
 
