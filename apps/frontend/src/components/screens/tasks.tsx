@@ -9,6 +9,7 @@ import type { StatusKey } from '@/lib/schemas';
 import { TaskDetailDialog } from './task-detail';
 import { TaskCreateDialog } from '@/components/dialogs/task-create-dialog';
 import { CheckCircle2, Circle, Filter, KanbanSquare, LayoutList, Plus, Search, CalendarDays } from 'lucide-react';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 const COLS: { id: StatusKey; label: string; color: string }[] = [
   { id: 'todo', label: '대기', color: 'oklch(0.7 0.01 250)' },
@@ -43,6 +44,10 @@ export function TasksPage() {
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
+      <AiGuideWidget
+        systemContext="태스크 관리 — 칸반보드·리스트·캘린더 뷰, 태스크 상태·우선순위·마감일 관리"
+        hints={['마감 임박 태스크 알려줘', '우선순위 재조정 제안해줘', '블로킹 태스크 찾아줘']}
+      />
       {/* Filter chips */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-1 p-0.5 rounded-md bg-bg-2 border border-border">

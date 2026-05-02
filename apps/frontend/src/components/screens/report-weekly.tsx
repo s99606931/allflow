@@ -7,6 +7,7 @@ import { Calendar, Download, RefreshCw, Send, Sparkles } from 'lucide-react';
 import { ReportRecipientsEditor } from '@/components/dialogs/report-recipients-editor';
 import { useAiMutations, useProjects } from '@/lib/hooks/use-data';
 import type { Report } from '@/lib/schemas';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 const ReportDownloadButton = dynamic(
   () => import('@/lib/pdf-reports').then(m => m.ReportDownloadButton),
@@ -48,6 +49,12 @@ export function ReportWeeklyPage() {
 
   return (
     <div className="p-6 grid grid-cols-12 gap-5 max-w-[1440px] mx-auto">
+      <div className="col-span-12">
+        <AiGuideWidget
+          systemContext="주간 보고 — 태스크 완료·이슈 현황·팀 진행률 주간 리포트 작성 화면"
+          hints={['이번 주 하이라이트 알려줘', '지연 항목 분석해줘', '보고서 작성 가이드해줘']}
+        />
+      </div>
       <div className="col-span-4 space-y-4">
         <Card>
           <CardHeader><CardTitle>보고 설정</CardTitle></CardHeader>

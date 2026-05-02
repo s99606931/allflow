@@ -7,6 +7,7 @@ import { DocCreateDialog } from '@/components/dialogs/doc-create-dialog';
 import { useDocs, useDocMutations } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 export function DocsPage() {
   const { data: docs = [], isLoading, error } = useDocs();
@@ -99,6 +100,11 @@ export function DocsPage() {
       {/* Editor */}
       <div className="overflow-y-auto scroll">
         <div className="max-w-[760px] mx-auto px-10 py-8">
+          <AiGuideWidget
+            systemContext="문서 관리 — 마크다운 문서 작성·편집·AI 요약·버전 관리 화면"
+            hints={['문서 구조 개선 제안해줘', '오래된 문서 찾아줘', '이 문서 요약해줘']}
+            className="mb-6"
+          />
           {!activeDoc && (
             <div className="py-24 text-center text-[13px] text-fg-3">
               {isLoading ? '문서를 불러오는 중...' : '왼쪽에서 문서를 선택하거나 새 문서를 생성하세요.'}

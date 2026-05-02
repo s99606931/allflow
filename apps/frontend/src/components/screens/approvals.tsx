@@ -12,6 +12,7 @@ import { ApprovalForm } from '@/components/dialogs/approval-form';
 import { useApprovals, useApprovalMutations } from '@/lib/hooks/use-data';
 import { toast } from 'sonner';
 import type { Approval } from '@/lib/schemas';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 const STATUS_META: Record<Approval['status'], { tone: 'neutral' | 'warning' | 'success' | 'danger' | 'accent'; label: string }> = {
   pending:   { tone: 'warning', label: '결재 대기' },
@@ -84,6 +85,11 @@ export function ApprovalsPage() {
             <Button size="sm" variant="primary" onClick={() => setCreateOpen(true)}><Plus size={13} /> 새 결재</Button>
             <ApprovalForm open={createOpen} onOpenChange={setCreateOpen} />
           </div>
+          <AiGuideWidget
+            systemContext="전자결재 — 결재 상신·검토·승인·반려·에스컬레이션 관리 화면"
+            hints={['대기 중인 결재 요약해줘', '에스컬레이션 위험 찾아줘', '결재 프로세스 가이드해줘']}
+            className="mx-0 my-2 rounded-lg"
+          />
           {searchOpen ? (
             <div className="relative">
               <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />

@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react';
 import { ResourceBookDialog } from '@/components/dialogs/resource-book-dialog';
 import { useResources, useBookings, useMe } from '@/lib/hooks/use-data';
 import type { Resource } from '@/lib/schemas';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 type ResourceKind = Resource['kind'];
 
@@ -63,6 +64,10 @@ export function ResourcesPage() {
 
   return (
     <div className="p-6 max-w-[1440px] mx-auto space-y-5">
+      <AiGuideWidget
+        systemContext="회의실·리소스 예약 — 주간 예약 현황·가용 자원·충돌 관리 화면"
+        hints={['예약 충돌 확인해줘', '빈 자원 찾아줘', '이번 주 예약 현황 요약해줘']}
+      />
       <div className="flex items-center gap-2">
         <h2 className="text-[18px] font-bold text-fg">회의실 / 리소스 예약</h2>
         <span className="text-[12px] text-fg-3" suppressHydrationWarning>{displayDate}</span>

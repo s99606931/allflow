@@ -7,6 +7,7 @@ import { ClientForm } from '@/components/dialogs/client-form';
 import { ClientDetail } from '@/components/dialogs/client-detail';
 import { useClients, useClientMutations } from '@/lib/hooks/use-data';
 import type { Client } from '@/lib/schemas';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 /** Derive a 2-letter code from the client name for the avatar badge. */
 function codeOf(name: string): string {
@@ -51,6 +52,10 @@ export function ClientsPage() {
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
+      <AiGuideWidget
+        systemContext="고객사 관리 — 계약·이벤트·담당자·파이프라인 관리 화면"
+        hints={['팔로업 필요한 고객사 찾아줘', '계약 갱신 임박 알려줘', '고객사 현황 요약해줘']}
+      />
       <div className="grid grid-cols-4 gap-3">
         {[
           { l: '활성 고객사', v: String(clients.length), d: '+0' },

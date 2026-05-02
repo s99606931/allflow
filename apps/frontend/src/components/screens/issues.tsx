@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Card, CardBody, Avatar, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
 import type { IssueSev, IssuePrio } from '@/lib/types';
 import { CheckCircle2, Filter, Loader2, Plus, Search, Sparkles, Trash2, X } from 'lucide-react';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import { useIssues, useIssueMutations } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
@@ -53,6 +54,10 @@ export function IssuesPage() {
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
+      <AiGuideWidget
+        systemContext="이슈 트래커 — SLA 관리·P0~P3 우선순위·이슈 배정·상태 전환 화면"
+        hints={['SLA 위반 위험 이슈 찾아줘', '미배정 이슈 정리해줘', 'Critical 이슈 대응방안 알려줘']}
+      />
       <div className="grid grid-cols-6 gap-3">
         {[
           { l: '오픈 이슈', v: String(newCount), t: '' },

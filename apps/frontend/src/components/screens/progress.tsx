@@ -7,6 +7,7 @@ import { Card, CardBody, CardHeader, CardTitle, Badge, Button, Progress } from '
 import { useProjects, useProjectMutations } from '@/lib/hooks/use-data';
 import type { Project, StatusKey } from '@/lib/schemas';
 import { LayoutGrid, GanttChart, HeartPulse, Plus } from 'lucide-react';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 
 const PROJECT_STATUS_OPTIONS: { value: StatusKey; label: string }[] = [
@@ -66,6 +67,10 @@ export function ProgressPage() {
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
+      <AiGuideWidget
+        systemContext="프로젝트 현황 — 전체 프로젝트 목록·예산·진행률·Gantt·헬스 대시보드"
+        hints={['예산 초과 위험 프로젝트 찾아줘', '일정 지연 프로젝트 알려줘', '프로젝트 현황 요약해줘']}
+      />
       <Tabs.Root value={tab} onValueChange={setTab}>
         <div className="flex items-center justify-between border-b border-border">
           <Tabs.List className="flex items-center gap-1">

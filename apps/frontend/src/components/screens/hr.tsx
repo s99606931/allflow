@@ -5,6 +5,7 @@ import { DateInput } from '@/components/ui/dialog';
 import { useCancelLeave, useCreateLeave, useLeaveRequests, type LeaveRequest } from '@/lib/hooks/use-hr';
 import { useMe, useOrgUnits } from '@/lib/hooks/use-data';
 import { Award, Briefcase, CalendarClock, Plane, Plus, Users, X } from 'lucide-react';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import { useState } from 'react';
 
 const TABS = ['휴가 / 연차', '근태', '평가 / OKR', '1:1 미팅'] as const;
@@ -18,6 +19,10 @@ export function HRPage() {
   const [tab, setTab] = useState<Tab>('휴가 / 연차');
   return (
     <div className="p-6 max-w-[1280px] mx-auto space-y-5">
+      <AiGuideWidget
+        systemContext="HR 화면 — 휴가/연차 신청·승인·근태 관리·OKR 평가·1:1 미팅 관리"
+        hints={['연차 현황 알려줘', 'OKR 달성률 점검해줘', '1:1 미팅 준비 도와줘']}
+      />
       <div className="flex items-center gap-2">
         <h2 className="text-[18px] font-bold text-fg">인사 / HR</h2>
         <span className="text-[12px] text-fg-3">개인 인사정보 · 휴가 · 평가</span>

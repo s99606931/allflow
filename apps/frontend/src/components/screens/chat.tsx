@@ -11,6 +11,7 @@ import { useChannels, useMe, useTaskMutations, useUsers, usePins, usePinMutation
 import { useChatMessages, useMessageMutations, useSendMessage } from '@/lib/hooks/use-chat-messages';
 import { useAiStream } from '@/lib/hooks/use-ai';
 import { useTranslation } from '@/lib/i18n';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 export function ChatPage() {
   const { t } = useTranslation();
@@ -188,6 +189,12 @@ export function ChatPage() {
           </div>
         )}
 
+        <div className="px-4 pt-2">
+          <AiGuideWidget
+            systemContext="팀 채팅 — 채널 메시지·스레드·고정 메시지·멘션·번역 화면"
+            hints={['이 채널 대화 요약해줘', '액션 아이템 추출해줘', '중요 결정 사항 찾아줘']}
+          />
+        </div>
         {summaryOpen && chatSummary && (
           <div className="mx-4 mt-3 p-3 rounded-lg border border-accent/20 bg-accent-soft text-[12.5px] text-fg-1 leading-relaxed flex gap-2">
             <Sparkles size={13} className="text-accent-strong shrink-0 mt-0.5" />

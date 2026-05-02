@@ -7,6 +7,7 @@ import { Download, Send, Sparkles } from 'lucide-react';
 import { ReportRecipientsEditor } from '@/components/dialogs/report-recipients-editor';
 import { useAiMutations } from '@/lib/hooks/use-data';
 import type { Report } from '@/lib/schemas';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 const ReportDownloadButton = dynamic(
   () => import('@/lib/pdf-reports').then(m => m.ReportDownloadButton),
@@ -34,6 +35,10 @@ export function ReportMonthlyPage() {
 
   return (
     <div className="p-6 max-w-[1100px] mx-auto space-y-5">
+      <AiGuideWidget
+        systemContext="월간 보고 — 팀 성과·KPI·이슈 통계 월간 리포트 생성 화면"
+        hints={['이번 달 핵심 성과 찾아줘', 'KPI 달성률 분석해줘', '개선 포인트 제안해줘']}
+      />
       <div className="flex items-center gap-2">
         <h2 className="text-[16px] font-bold text-fg flex-1" suppressHydrationWarning>월간 보고 — {period.label}</h2>
         <Button

@@ -4,6 +4,7 @@ import { Card, CardBody, CardHeader, CardTitle, Avatar, AvatarStack, Badge, Butt
 import { useMe, useProjects, useTasks } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { CheckCircle2, Circle, MoreHorizontal, Sparkles, Plus, Loader2, Calendar } from 'lucide-react';
+import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -28,6 +29,10 @@ export function DashboardPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-[1440px] mx-auto">
+      <AiGuideWidget
+        systemContext="대시보드 — 팀 전체 현황·태스크 요약·프로젝트 진행률·최근 활동 화면"
+        hints={['오늘 우선순위 알려줘', '지연 위험 항목 찾아줘', '팀 현황 요약해줘']}
+      />
       {/* Hero greeting */}
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
