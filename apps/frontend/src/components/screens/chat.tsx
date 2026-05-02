@@ -124,7 +124,7 @@ export function ChatPage() {
         <div className="flex-1 overflow-y-auto scroll p-2">
           <div className="px-2 pt-2 pb-1 flex items-center justify-between">
             <span className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold">채널</span>
-            <button className="text-fg-3 hover:text-fg-1"><Plus size={12} /></button>
+            <button type="button" aria-label="채널 추가" onClick={() => toast.info('채널 생성은 관리자 설정에서 가능합니다.')} className="text-fg-3 hover:text-fg-1"><Plus size={12} /></button>
           </div>
           {channelsLoading && <div className="px-3 py-4 text-[12px] text-fg-3">불러오는 중...</div>}
           {channelsError && <div className="px-3 py-4 text-[12px] text-danger">채널 로딩 실패</div>}
@@ -144,7 +144,7 @@ export function ChatPage() {
             <>
               <div className="px-2 pt-4 pb-1 flex items-center justify-between">
                 <span className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold">DM</span>
-                <button className="text-fg-3 hover:text-fg-1"><Plus size={12} /></button>
+                <button type="button" aria-label="DM 추가" onClick={() => toast.info('DM 시작은 조직도에서 사용자를 선택하세요.')} className="text-fg-3 hover:text-fg-1"><Plus size={12} /></button>
               </div>
               {dmChannels.map(c => (
                 <button key={c.id} onClick={() => setActiveId(c.id)}

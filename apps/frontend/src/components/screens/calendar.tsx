@@ -36,6 +36,36 @@ function computeWeekWindow(anchor?: Date): { from: string; to: string; days: { l
   return { from, to: friday.toISOString().slice(0, 10), days };
 }
 
+/** Build a 6-row × 7-col month grid (Mon first) and return {from, to, weeks}. */
+function computeMonthWindow(anchor?: Date) {
+  const now = anchor ?? new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  // align to Monday
+  const startDow = (firstDay.getDay() + 6) % 7; // 0=Mon
+  const gridStart = new Date(firstDay);
+  gridStart.setDate(firstDay.getDate() - startDow);
+  const weeks: Date[][] = [];
+  for (let w = 0; w < 6; w++) {
+    const row: Date[] = [];
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(gridStart);
+      day.setDate(gridStart.getDate() + w * 7 + d);
+      row.push(day);
+    }
+    weeks.push(row);
+  }
+  return {
+    label: `${year}년 ${month + 1}월`,
+    year, month,
+    from: new Date(year, month, 1).toISOString().slice(0, 10),
+    to: lastDay.toISOString().slice(0, 10),
+    weeks,
+  };
+}
+
 export function CalendarPage() {
   const router = useRouter();
   const [view, setView] = useState<'week' | 'month'>('week');
@@ -46,17 +76,30 @@ export function CalendarPage() {
 
   const [weekAnchor, setWeekAnchor] = useState<Date | null>(null);
   const [weekWindow, setWeekWindow] = useState<ReturnType<typeof computeWeekWindow> | null>(null);
-  useEffect(() => { const now = new Date(); setWeekAnchor(now); setWeekWindow(computeWeekWindow(now)); }, []);
+  const [monthWindow, setMonthWindow] = useState<ReturnType<typeof computeMonthWindow> | null>(null);
+  useEffect(() => {
+    const now = new Date();
+    setWeekAnchor(now);
+    setWeekWindow(computeWeekWindow(now));
+    setMonthWindow(computeMonthWindow(now));
+  }, []);
 
   function shiftWeek(delta: number) {
     const base = weekAnchor ?? new Date();
     const next = new Date(base);
-    next.setDate(base.getDate() + delta * 7);
+    if (view === 'month') {
+      next.setMonth(base.getMonth() + delta);
+    } else {
+      next.setDate(base.getDate() + delta * 7);
+    }
     setWeekAnchor(next);
     setWeekWindow(computeWeekWindow(next));
+    setMonthWindow(computeMonthWindow(next));
   }
   const window = weekWindow;
-  const { data: events = [], isLoading, error } = useEvents({ from: window?.from ?? '', to: window?.to ?? '' });
+  const activeFrom = view === 'month' ? (monthWindow?.from ?? '') : (window?.from ?? '');
+  const activeTo = view === 'month' ? (monthWindow?.to ?? '') : (window?.to ?? '');
+  const { data: events = [], isLoading, error } = useEvents({ from: activeFrom, to: activeTo });
   const userMap = useUserMap();
 
   const isoEvents: EventLike[] = events.map(e => ({
@@ -119,7 +162,9 @@ export function CalendarPage() {
           <Button variant="ghost" size="sm" onClick={() => shiftWeek(-1)}><ChevronLeft size={14} /></Button>
           <Button variant="ghost" size="sm" onClick={() => shiftWeek(1)}><ChevronRight size={14} /></Button>
         </div>
-        <h2 className="text-[16px] font-bold text-fg ml-1">{window ? `${window.from} — ${window.to}` : '...'}</h2>
+        <h2 className="text-[16px] font-bold text-fg ml-1">
+          {view === 'month' ? (monthWindow?.label ?? '...') : (window ? `${window.from} — ${window.to}` : '...')}
+        </h2>
         <div className="flex-1" />
         <div className="flex items-center gap-1 p-0.5 rounded-md bg-bg-2 border border-border">
           {(['week', 'month'] as const).map(v => (
@@ -139,7 +184,49 @@ export function CalendarPage() {
 
       <CalendarLinkCard />
 
-      <Card className="overflow-hidden">
+      {/* Month view grid */}
+      {view === 'month' && monthWindow && (
+        <Card className="overflow-hidden">
+          <div className="grid grid-cols-7 border-b border-border">
+            {['월', '화', '수', '목', '금', '토', '일'].map(d => (
+              <div key={d} className="px-2 py-2 text-center text-[10.5px] font-semibold uppercase tracking-wider text-fg-3 border-l first:border-l-0 border-border">{d}</div>
+            ))}
+          </div>
+          {isLoading && <div className="py-12 text-center text-[12px] text-fg-3">불러오는 중...</div>}
+          {error && <div className="py-12 text-center text-[12px] text-danger">일정을 불러오지 못했습니다.</div>}
+          {!isLoading && !error && monthWindow.weeks.map((week, wi) => (
+            <div key={wi} className="grid grid-cols-7 border-t border-border">
+              {week.map((day, di) => {
+                const isCurrentMonth = day.getMonth() === monthWindow.month;
+                const isToday = day.toDateString() === new Date().toDateString();
+                const dayStr = day.toISOString().slice(0, 10);
+                const dayEvents = events.filter(e => e.start.slice(0, 10) === dayStr);
+                return (
+                  <div key={di} className={`min-h-[80px] p-1.5 border-l first:border-l-0 border-border ${isCurrentMonth ? '' : 'bg-bg-1'}`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11.5px] font-semibold mb-1 ${isToday ? 'bg-accent text-white' : isCurrentMonth ? 'text-fg' : 'text-fg-4'}`}>
+                      {day.getDate()}
+                    </div>
+                    <div className="space-y-0.5">
+                      {dayEvents.slice(0, 3).map(ev => (
+                        <button key={ev.id} type="button"
+                          onClick={() => setDetail({ id: ev.id, title: ev.title, start: ev.start.slice(0, 16), end: ev.end.slice(0, 16), attendees: ev.attendees, source: ev.source })}
+                          className="w-full text-left text-[10px] truncate px-1 py-0.5 rounded text-white leading-tight"
+                          style={{ background: TYPE_COLOR_DEFAULT }}>
+                          {ev.title}
+                        </button>
+                      ))}
+                      {dayEvents.length > 3 && <div className="text-[9.5px] text-fg-3 px-1">+{dayEvents.length - 3}건</div>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* Week view grid */}
+      {view === 'week' && <Card className="overflow-hidden">
         <div className="grid grid-cols-[60px_repeat(5,1fr)] border-b border-border">
           <div />
           {(window?.days ?? []).map((d, i) => (
@@ -187,7 +274,7 @@ export function CalendarPage() {
             ))}
           </div>
         )}
-      </Card>
+      </Card>}
 
       {/* AI summary — computed from real events */}
       <Card className="!bg-accent-soft border-accent/20">
