@@ -52,7 +52,7 @@ export function NotificationsPage() {
   return (
     <div className="p-6 max-w-[920px] mx-auto space-y-4">
       <AiGuideWidget
-        systemContext="알림 센터 — 태스크·이슈·멘션·결재 요청·시스템 알림 관리 화면"
+        systemContext={`알림 센터 — 전체 ${notifs.length}건, 미확인 ${unread.length}건`}
         hints={['중요 알림 분류해줘', '읽지 않은 항목 요약해줘', '알림 설정 최적화 도와줘']}
       />
       <div className="flex items-center gap-2">

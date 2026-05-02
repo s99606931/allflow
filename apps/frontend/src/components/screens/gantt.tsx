@@ -191,7 +191,7 @@ export function GanttPage() {
   return (
     <div className="p-6 space-y-4 max-w-[1600px] mx-auto">
       <AiGuideWidget
-        systemContext="간트 차트 — 태스크 일정·의존성·크리티컬 패스 관리 화면"
+        systemContext={`간트 차트 — ${tasks.length}개 태스크, 진행중 ${tasks.filter(t => t.status === 'doing').length}건, 위험 ${tasks.filter(t => t.status === 'doing' && t.progress < 50).length}건`}
         hints={['크리티컬 패스를 찾아줘', '지연 위험 태스크 알려줘', '의존성 충돌 확인해줘']}
       />
       {/* Toolbar */}

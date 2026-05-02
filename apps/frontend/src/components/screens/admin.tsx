@@ -42,7 +42,7 @@ export function AdminPage() {
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <AiGuideWidget
-        systemContext="관리자 — 시스템 상태·LLM 연결·MCP 서버·사용자 초대 관리 화면"
+        systemContext={`관리자 — 시스템 ${health?.status ?? '확인중'}, 감사로그 ${auditLogQuery.data?.total ?? 0}건`}
         hints={['시스템 상태 점검해줘', 'LLM 연결 설정 가이드해줘', 'MCP 서버 추가 방법 알려줘']}
       />
       {/* Real health (BE GET /health) */}

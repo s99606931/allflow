@@ -62,7 +62,7 @@ export function IssuesPageFull() {
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <AiGuideWidget
-        systemContext="이슈 심층 분석 — SLA 정책·칸반보드·분석 차트·AI 권장 액션 화면"
+        systemContext={`이슈 심층 분석 — 전체 ${issues.length}건, P0 ${stats.p0}건, SLA 준수 ${stats.slaRate}%, 해결 ${stats.resolvedCount}건`}
         hints={['SLA 정책 최적화 제안해줘', '이슈 트렌드 분석해줘', 'P0 대응 플레이북 알려줘']}
       />
       {/* KPI strip */}
