@@ -3,8 +3,9 @@
 import { useMemo, useState } from 'react';
 import { Card, CardBody, Avatar, Badge, Button, Progress, StatusDot } from '@/components/ui/primitives';
 import type { IssueSev, IssuePrio } from '@/lib/types';
-import { CheckCircle2, Filter, Plus, Search, Sparkles } from 'lucide-react';
+import { CheckCircle2, Filter, Loader2, Plus, Search, Sparkles, X } from 'lucide-react';
 import { useIssues } from '@/lib/hooks/use-data';
+import { useAiStream } from '@/lib/hooks/use-ai';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { IssueCreateDialog } from '@/components/dialogs/issue-create-dialog';
 
@@ -27,6 +28,9 @@ export function IssuesPage() {
   const [aiDismissed, setAiDismissed] = useState(false);
   const [aiApproved, setAiApproved] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [classifyResult, setClassifyResult] = useState('');
+  const [classifyOpen, setClassifyOpen] = useState(false);
+  const { streaming, streamComplete } = useAiStream();
   const { data: issues = [], isLoading, error } = useIssues();
   const userMap = useUserMap();
   const p0Count = issues.filter(i => i.prio === 'P0' && (i.status === 'open' || i.status === 'in-progress')).length;
@@ -95,10 +99,41 @@ export function IssuesPage() {
             className="h-8 w-56 pl-8 pr-3 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent"
           />
         </div>
-        <Button variant="secondary" size="sm" disabled><Sparkles size={13} /> AI 자동 분류</Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={streaming || issues.length === 0}
+          onClick={async () => {
+            if (streaming) return;
+            setClassifyResult('');
+            setClassifyOpen(true);
+            const summary = issues.slice(0, 20).map(i => `- [${i.prio}] ${i.title} (${i.status}, sev=${i.sev})`).join('\n');
+            await streamComplete(
+              `다음 이슈 목록을 분석하여 우선순위 조정 제안을 한국어로 3~5줄로 요약해주세요:\n\n${summary}`,
+              delta => setClassifyResult(prev => prev + delta),
+              () => {},
+            );
+          }}
+        >
+          {streaming && classifyOpen ? <><Loader2 size={13} className="animate-spin" /> 분류 중...</> : <><Sparkles size={13} /> AI 자동 분류</>}
+        </Button>
         <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}><Plus size={13} /> 새 이슈</Button>
         <IssueCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
       </div>
+
+      {/* AI classify result */}
+      {classifyOpen && classifyResult && (
+        <div className="rounded-lg border border-accent/20 bg-accent-soft p-3.5 text-[12.5px] text-fg-1 leading-relaxed relative">
+          <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-accent-strong">
+            <Sparkles size={11} /> AI 우선순위 분류 결과
+          </div>
+          {classifyResult}
+          {streaming && <span className="inline-block w-1.5 h-3.5 bg-accent-strong ml-0.5 animate-pulse" />}
+          <button type="button" onClick={() => setClassifyOpen(false)} className="absolute top-2.5 right-2.5 text-fg-3 hover:text-fg-1">
+            <X size={13} />
+          </button>
+        </div>
+      )}
 
       {/* Issue list */}
       <Card>
