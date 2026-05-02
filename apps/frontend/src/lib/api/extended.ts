@@ -208,7 +208,13 @@ export const extendedApi = {
   createIssueComment: async (issueId: string, input: CommentCreate): Promise<Comment> =>
     parsed(http.post(`issues/${issueId}/comments`, { json: input }).json(), CommentSchema),
 
-  /* Reports send --------------------------------------------------------- */
+  /* Reports ------------------------------------------------------------- */
+  listReports: async (): Promise<ReportSummary[]> =>
+    http.get('reports').json<ReportSummary[]>(),
+
+  getReport: async (id: string): Promise<ReportSummary> =>
+    http.get(`reports/${id}`).json<ReportSummary>(),
+
   sendReport: async (
     reportId: string,
     input: { recipients: string[] },
@@ -308,4 +314,15 @@ export interface LlmConnectionInput {
   baseUrl: string;
   model: string;
   apiKey?: string | null;
+}
+
+export interface ReportSummary {
+  id: string;
+  kind: 'weekly' | 'monthly';
+  periodStart: string;
+  periodEnd: string;
+  generatedAt: string;
+  tldr: string;
+  kpis: unknown[];
+  sections: unknown[];
 }

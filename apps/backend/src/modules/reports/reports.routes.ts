@@ -1,4 +1,4 @@
-import { ForbiddenError, ValidationError } from '@all-flow/shared/errors';
+import { ForbiddenError, NotFoundError, ValidationError } from '@all-flow/shared/errors';
 import type { Prisma } from '@prisma/client';
 /**
  * Reports 라우트 — T-404 (POST /reports/weekly), T-405 (POST /reports/monthly).
@@ -49,10 +49,56 @@ export interface ReportsRoutesOptions {
   registry: AIAdapterRegistry;
 }
 
+function serializeReport(row: {
+  id: string;
+  kind: string;
+  periodStart: Date;
+  periodEnd: Date;
+  generatedAt: Date;
+  tldr: string | null;
+  kpis: unknown;
+  sections: unknown;
+}): ReportResponse {
+  return {
+    id: row.id,
+    kind: row.kind as 'weekly' | 'monthly',
+    periodStart: formatDate(row.periodStart),
+    periodEnd: formatDate(row.periodEnd),
+    generatedAt: row.generatedAt.toISOString(),
+    tldr: row.tldr ?? '',
+    kpis: (row.kpis as unknown as unknown[]) ?? [],
+    sections: (row.sections as unknown as unknown[]) ?? [],
+  };
+}
+
 export async function reportsRoutes(
   app: FastifyInstance,
   opts: ReportsRoutesOptions,
 ): Promise<void> {
+  app.get('/reports', { preHandler: [app.authenticate] }, async (req) => {
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+    const rows = await app.prisma.report.findMany({
+      where: { authorId: userId },
+      orderBy: { generatedAt: 'desc' },
+      take: 50,
+      select: { id: true, kind: true, periodStart: true, periodEnd: true, generatedAt: true, tldr: true, kpis: true, sections: true },
+    });
+    return rows.map(serializeReport);
+  });
+
+  app.get('/reports/:id', { preHandler: [app.authenticate] }, async (req) => {
+    const { id } = req.params as { id: string };
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+    const row = await app.prisma.report.findFirst({
+      where: { id, authorId: userId },
+      select: { id: true, kind: true, periodStart: true, periodEnd: true, generatedAt: true, tldr: true, kpis: true, sections: true },
+    });
+    if (!row) throw new NotFoundError('리포트를 찾을 수 없습니다');
+    return serializeReport(row);
+  });
+
   app.post('/reports/weekly', { preHandler: [app.authenticate] }, async (req, reply) => {
     const parsed = WeeklyRequest.safeParse(req.body);
     if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);

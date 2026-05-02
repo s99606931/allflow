@@ -13,9 +13,9 @@ const TYPE_COLOR_DEFAULT = 'oklch(0.62 0.18 255)';
 const HOURS = Array.from({ length: 11 }, (_, i) => 8 + i);
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
-/** Compute Monday-based 5-day window centered on today. */
-function computeWeekWindow(): { from: string; to: string; days: { label: string; date: string }[] } {
-  const now = new Date();
+/** Compute Monday-based 5-day window centered on a given date. */
+function computeWeekWindow(anchor?: Date): { from: string; to: string; days: { label: string; date: string }[] } {
+  const now = anchor ?? new Date();
   const dow = now.getDay();
   const monday = new Date(now);
   monday.setDate(now.getDate() - ((dow + 6) % 7));
@@ -37,8 +37,17 @@ export function CalendarPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [detail, setDetail] = useState<EventLike | null>(null);
 
+  const [weekAnchor, setWeekAnchor] = useState<Date | null>(null);
   const [weekWindow, setWeekWindow] = useState<ReturnType<typeof computeWeekWindow> | null>(null);
-  useEffect(() => { setWeekWindow(computeWeekWindow()); }, []);
+  useEffect(() => { const now = new Date(); setWeekAnchor(now); setWeekWindow(computeWeekWindow(now)); }, []);
+
+  function shiftWeek(delta: number) {
+    const base = weekAnchor ?? new Date();
+    const next = new Date(base);
+    next.setDate(base.getDate() + delta * 7);
+    setWeekAnchor(next);
+    setWeekWindow(computeWeekWindow(next));
+  }
   const window = weekWindow;
   const { data: events = [], isLoading, error } = useEvents({ from: window?.from ?? '', to: window?.to ?? '' });
   const userMap = useUserMap();
@@ -67,10 +76,10 @@ export function CalendarPage() {
     <div className="p-6 space-y-4 max-w-[1440px] mx-auto">
       {/* Toolbar */}
       <div className="flex items-center gap-2">
-        <Button variant="secondary" size="sm">오늘</Button>
+        <Button variant="secondary" size="sm" onClick={() => { const now = new Date(); setWeekAnchor(now); setWeekWindow(computeWeekWindow(now)); }}>오늘</Button>
         <div className="flex">
-          <Button variant="ghost" size="sm"><ChevronLeft size={14} /></Button>
-          <Button variant="ghost" size="sm"><ChevronRight size={14} /></Button>
+          <Button variant="ghost" size="sm" onClick={() => shiftWeek(-1)}><ChevronLeft size={14} /></Button>
+          <Button variant="ghost" size="sm" onClick={() => shiftWeek(1)}><ChevronRight size={14} /></Button>
         </div>
         <h2 className="text-[16px] font-bold text-fg ml-1">{window ? `${window.from} — ${window.to}` : '...'}</h2>
         <div className="flex-1" />

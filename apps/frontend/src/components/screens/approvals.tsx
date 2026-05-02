@@ -205,12 +205,12 @@ export function ApprovalsPage() {
         </div>
       </div>
 
-      {selected && <ApprovalDetail approval={selected} />}
+      {selected && <ApprovalDetail approval={selected} onHold={() => setSelected(null)} />}
     </div>
   );
 }
 
-function ApprovalDetail({ approval }: { approval: Approval }) {
+function ApprovalDetail({ approval, onHold }: { approval: Approval; onHold: () => void }) {
   const userMap = useUserMap();
   const requester = userMap.get(approval.requester);
   const approver = userMap.get(approval.approver);
@@ -339,7 +339,7 @@ function ApprovalDetail({ approval }: { approval: Approval }) {
             <Button variant="secondary" size="md" onClick={() => onDecide('rejected')} disabled={decide.isPending}>
               <XCircle size={13} /> 반려
             </Button>
-            <Button variant="secondary" size="md">보류</Button>
+            <Button variant="secondary" size="md" onClick={onHold}>보류</Button>
             <Button variant="primary" size="md" onClick={() => onDecide('approved')} disabled={decide.isPending}>
               <Stamp size={13} /> 승인
             </Button>
