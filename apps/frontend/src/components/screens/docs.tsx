@@ -13,6 +13,7 @@ export function DocsPage() {
   const userMap = useUserMap();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const active = selectedId ?? docs[0]?.id ?? null;
+  const [docSearch, setDocSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [starredIds, setStarredIds] = useState<Set<string>>(new Set());
   const [summaries, setSummaries] = useState<Record<string, string>>({});
@@ -52,7 +53,12 @@ export function DocsPage() {
         <div className="p-3 border-b border-border space-y-2">
           <div className="relative">
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
-            <input placeholder="문서 검색..." className="w-full h-8 pl-8 pr-3 rounded-md bg-bg-2 border border-border text-[12px] focus:outline-none focus:border-accent" />
+            <input
+              value={docSearch}
+              onChange={e => setDocSearch(e.target.value)}
+              placeholder="문서 검색..."
+              className="w-full h-8 pl-8 pr-3 rounded-md bg-bg-2 border border-border text-[12px] focus:outline-none focus:border-accent"
+            />
           </div>
           <Button variant="primary" size="sm" className="w-full" onClick={() => setCreateOpen(true)}><Plus size={12} /> 새 문서</Button>
           <DocCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
@@ -66,7 +72,7 @@ export function DocsPage() {
           {docs.length > 0 && (
             <div className="mb-1">
               <div className="px-2 py-1.5 text-[11px] uppercase tracking-wider text-fg-3 font-semibold">전체 문서</div>
-              {docs.map(d => {
+              {docs.filter(d => !docSearch.trim() || d.title.toLowerCase().includes(docSearch.toLowerCase())).map(d => {
                 const u = userMap.get(d.ownerId);
                 return (
                   <div key={d.id} className={`group flex items-center gap-1 px-2 h-8 rounded transition-colors ${active === d.id ? 'bg-accent-soft text-accent-strong' : 'text-fg-1 hover:bg-hover'}`}>

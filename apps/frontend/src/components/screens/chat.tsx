@@ -31,8 +31,9 @@ export function ChatPage() {
 
   const { data: messages = [] } = useChatMessages(active || null);
 
-  const publicChannels = channels.filter(c => c.kind === 'public' || c.kind === 'private');
-  const dmChannels = channels.filter(c => c.kind === 'dm');
+  const [channelSearch, setChannelSearch] = useState('');
+  const publicChannels = channels.filter(c => (c.kind === 'public' || c.kind === 'private') && (!channelSearch.trim() || c.name.toLowerCase().includes(channelSearch.toLowerCase())));
+  const dmChannels = channels.filter(c => c.kind === 'dm' && (!channelSearch.trim() || c.name.toLowerCase().includes(channelSearch.toLowerCase())));
   const activeChannel = channels.find(c => c.id === active) ?? null;
 
   const threadParent = useMemo<ThreadMessage | null>(() => {
@@ -84,7 +85,12 @@ export function ChatPage() {
         <div className="p-3 border-b border-border">
           <div className="relative">
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
-            <input placeholder="채널/사람 검색..." className="w-full h-8 pl-8 pr-3 rounded-md bg-bg-2 border border-border text-[12px] focus:outline-none focus:border-accent" />
+            <input
+              value={channelSearch}
+              onChange={e => setChannelSearch(e.target.value)}
+              placeholder="채널/사람 검색..."
+              className="w-full h-8 pl-8 pr-3 rounded-md bg-bg-2 border border-border text-[12px] focus:outline-none focus:border-accent"
+            />
           </div>
         </div>
         <div className="flex-1 overflow-y-auto scroll p-2">
