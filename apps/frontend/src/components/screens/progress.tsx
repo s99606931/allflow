@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import * as Tabs from '@radix-ui/react-tabs';
 import { ProjectCreateDialog } from '@/components/dialogs/project-create-dialog';
 import { Card, CardBody, CardHeader, CardTitle, Badge, Button, Progress } from '@/components/ui/primitives';
@@ -144,7 +145,7 @@ export function ProgressPage() {
                   <div className="grid grid-cols-[1fr_120px_120px_120px_120px_140px] gap-3 px-4 py-3 items-center text-[12.5px]">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-                      <span className="font-medium text-fg truncate">{p.name}</span>
+                      <Link href={`/projects/${p.id}`} className="font-medium text-fg truncate hover:underline hover:text-accent">{p.name}</Link>
                       <Badge tone="neutral" className="mono">{p.code}</Badge>
                     </div>
                     <div><Progress value={taskRate} /><div className="text-[10.5px] mono text-fg-3 mt-0.5">{taskRate}%</div></div>
