@@ -15,7 +15,9 @@ export const User = z.object({
   "dept": z.string(),
   "initials": z.string(),
   "color": z.string(),
-  "email": z.string().email().optional()
+  "email": z.string().email().optional(),
+  "bio": z.string().optional(),
+  "userStatus": z.string().optional()
 });
 export type User = z.infer<typeof User>;
 

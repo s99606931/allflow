@@ -37,6 +37,8 @@ const ProfilePatch = z
       .regex(/^#[0-9A-Fa-f]{6}$/)
       .optional(),
     email: z.string().email().optional(),
+    bio: z.string().max(200).optional(),
+    userStatus: z.string().max(40).optional(),
   })
   .strict();
 
@@ -54,6 +56,8 @@ const USER_SELECT = {
   initials: true,
   color: true,
   email: true,
+  bio: true,
+  userStatus: true,
 } as const;
 
 interface UserRow {
@@ -64,6 +68,8 @@ interface UserRow {
   initials: string;
   color: string;
   email: string | null;
+  bio: string | null;
+  userStatus: string | null;
 }
 
 function serializeUser(user: UserRow): unknown {
@@ -75,6 +81,8 @@ function serializeUser(user: UserRow): unknown {
     initials: user.initials,
     color: user.color,
     ...(user.email ? { email: user.email } : {}),
+    ...(user.bio ? { bio: user.bio } : {}),
+    ...(user.userStatus ? { userStatus: user.userStatus } : {}),
   });
 }
 

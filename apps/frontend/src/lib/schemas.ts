@@ -18,6 +18,8 @@ export const UserSchema = z.object({
   initials: z.string(),
   color: z.string(),
   email: z.string().email().optional(),
+  bio: z.string().optional(),
+  userStatus: z.string().optional(),
 });
 
 export const ProjectSchema = z.object({
@@ -264,6 +266,8 @@ export const ProfilePatchSchema = z.object({
   initials: z.string().optional(),
   color: z.string().optional(),
   email: z.string().email().optional(),
+  bio: z.string().max(200).optional(),
+  userStatus: z.string().max(40).optional(),
 });
 
 /* Comments (tasks · issues) ----------------------------------------------- */

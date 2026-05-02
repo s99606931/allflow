@@ -100,13 +100,15 @@ enum DependencyType {
 // =====================================================================
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  role      String
-  dept      String
-  initials  String
-  color     String
-  email     String?  @unique
+  id         String   @id @default(cuid())
+  name       String
+  role       String
+  dept       String
+  initials   String
+  color      String
+  email      String?  @unique
+  bio        String?
+  userStatus String?  @map("user_status")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

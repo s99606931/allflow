@@ -19,6 +19,8 @@ export function ProfileSection() {
 	const [name, setName] = useState("");
 	const [role, setRole] = useState("");
 	const [dept, setDept] = useState("");
+	const [bio, setBio] = useState("");
+	const [userStatus, setUserStatus] = useState("업무 중");
 
 	/* eslint-disable react-hooks/set-state-in-effect */
 	useEffect(() => {
@@ -26,12 +28,14 @@ export function ProfileSection() {
 			setName(me.name);
 			setRole(me.role);
 			setDept(me.dept);
+			setBio((me as { bio?: string }).bio ?? "");
+			setUserStatus((me as { userStatus?: string }).userStatus ?? "업무 중");
 		}
 	}, [me]);
 	/* eslint-enable react-hooks/set-state-in-effect */
 
 	const onSave = () => {
-		update.mutate({ name, role, dept });
+		update.mutate({ name, role, dept, bio: bio || undefined, userStatus });
 	};
 
 	const onReset = () => {
@@ -39,6 +43,8 @@ export function ProfileSection() {
 			setName(me.name);
 			setRole(me.role);
 			setDept(me.dept);
+			setBio((me as { bio?: string }).bio ?? "");
+			setUserStatus((me as { userStatus?: string }).userStatus ?? "업무 중");
 		}
 	};
 
@@ -99,14 +105,21 @@ export function ProfileSection() {
 						<input
 							className="h-8 px-2.5 rounded-md bg-bg-1 border border-border text-[12.5px] w-72"
 							placeholder="간결한 한 줄 소개"
+							value={bio}
+							onChange={(e) => setBio(e.target.value)}
+							maxLength={200}
 						/>
 					</Row>
 					<Row label="현재 상태">
-						<select className="h-8 px-2.5 rounded-md bg-bg-1 border border-border text-[12.5px]">
-							<option>업무 중 🟢</option>
-							<option>집중 모드 🔵</option>
-							<option>회의 중 🔴</option>
-							<option>자리비움 🟡</option>
+						<select
+							className="h-8 px-2.5 rounded-md bg-bg-1 border border-border text-[12.5px]"
+							value={userStatus}
+							onChange={(e) => setUserStatus(e.target.value)}
+						>
+							<option value="업무 중">업무 중 🟢</option>
+							<option value="집중 모드">집중 모드 🔵</option>
+							<option value="회의 중">회의 중 🔴</option>
+							<option value="자리비움">자리비움 🟡</option>
 						</select>
 					</Row>
 				</CardBody>

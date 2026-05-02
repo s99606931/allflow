@@ -2002,6 +2002,8 @@ export interface components {
             color: string;
             /** Format: email */
             email?: string;
+            bio?: string;
+            userStatus?: string;
         };
         Project: {
             id: string;
@@ -2011,7 +2013,8 @@ export interface components {
             progress: number;
             status: components["schemas"]["StatusKey"];
             /** Format: date */
-            due: string;
+            due: string | null;
+            budget?: number | null;
             members: string[];
             tasks: {
                 total: number;
@@ -2024,6 +2027,7 @@ export interface components {
             color?: string;
             /** Format: date */
             due?: string;
+            budget?: number;
         };
         ProjectPatch: {
             name?: string;
@@ -2031,6 +2035,7 @@ export interface components {
             status?: components["schemas"]["StatusKey"];
             /** Format: date */
             due?: string;
+            budget?: number;
         };
         Task: {
             id: string;
