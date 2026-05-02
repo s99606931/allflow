@@ -72,8 +72,12 @@ export function ReportWeeklyPage() {
     <div className="p-6 grid grid-cols-12 gap-5 max-w-[1440px] mx-auto">
       <div className="col-span-12">
         <AiGuideWidget
-          systemContext={`${reportType} 보고 — ${period.start} ~ ${period.end} 태스크 완료·이슈·팀 진행률 리포트`}
-          hints={[`이번 ${reportType === '격주' ? '2주' : '주'} 하이라이트 알려줘`, '지연 항목 분석해줘', '보고서 작성 가이드해줘']}
+          systemContext={`${reportType} 보고 — ${period.start} ~ ${period.end} 프로젝트 ${projects.length}개 대상 ${report ? '(생성됨)' : '(미생성)'}`}
+          hints={[
+            report ? `${reportType} 보고서 핵심 인사이트 요약해줘` : `${period.start} ~ ${period.end} ${reportType} 보고서 생성 도와줘`,
+            report ? '지연 항목 분석해줘' : scope.size > 0 ? `선택한 ${scope.size}개 프로젝트 위주로 보고서 작성해줘` : '프로젝트 범위 설정 가이드해줘',
+            '팀 성과 요약해줘',
+          ]}
         />
       </div>
       <div className="col-span-4 space-y-4">

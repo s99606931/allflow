@@ -56,8 +56,8 @@ export function ClientsPage() {
         systemContext={`고객사 관리 — 전체 ${clients.length}개, 이번달 신규 ${newThisMonth}개, 업종 ${industrySet.size}개`}
         hints={[
           newThisMonth > 0 ? `이번달 신규 ${newThisMonth}개 온보딩 체크리스트` : '팔로업 필요한 고객사 찾아줘',
-          '계약 갱신 임박 알려줘',
-          '고객사 현황 요약해줘',
+          (() => { const noContact = clients.filter(c => !c.email && !c.phone).length; return noContact > 0 ? `연락처 미등록 ${noContact}개 고객사 정보 보완 방법` : '고객사 업종별 분류 현황 알려줘'; })(),
+          `전체 ${clients.length}개 고객사 현황 요약해줘`,
         ]}
       />
       <div className="grid grid-cols-4 gap-3">
