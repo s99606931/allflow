@@ -60,6 +60,13 @@ export function NotificationsPage() {
           '읽지 않은 항목 요약해줘',
           '알림 설정 최적화 도와줘',
         ]}
+        quickActions={[
+          ...(unread.length > 0 ? [
+            { label: `미확인 ${unread.length}건`, onClick: () => setFilter('unread' as FilterKey) },
+            { label: '모두 읽음', onClick: () => markAll.mutate({ ids: unread.map(n => n.id) }) },
+          ] : []),
+          { label: filter !== 'all' ? '전체 보기' : '필터 열기', onClick: () => filter !== 'all' ? setFilter('all' as FilterKey) : setFilterOpen(v => !v) },
+        ]}
       />
       <div className="flex items-center gap-2">
         <h2 className="text-[18px] font-bold text-fg">알림 센터</h2>

@@ -156,6 +156,11 @@ export function DocsPage() {
               recentDocsCount === 0 ? '7일 이상 미수정 문서 정리 제안해줘' : `최근 수정 ${recentDocsCount}건 내용 요약해줘`,
               starredIds.size > 0 ? `즐겨찾기 ${starredIds.size}건 구조 개선 제안해줘` : '문서 구조 개선 제안해줘',
             ]}
+            quickActions={[
+              { label: '새 문서', onClick: () => setCreateOpen(true) },
+              ...(starredIds.size > 0 ? [{ label: `즐겨찾기 ${starredIds.size}건`, onClick: () => setDocSearch('⭐') }] : []),
+              ...(activeDoc ? [{ label: '편집 모드', onClick: () => { setEditing(true); setEditTitle(activeDoc.title); setEditContent(activeDoc.preview ?? ''); } }] : []),
+            ]}
             className="mb-6"
           />
           {!activeDoc && (

@@ -58,6 +58,11 @@ export function UsersPage() {
           users.filter(u => !u.mfaEnabled).length > 0 ? `MFA 미설정 ${users.filter(u => !u.mfaEnabled).length}명 보안 강화 방법` : '권한 설정 가이드해줘',
           '팀원 온보딩 체크리스트 알려줘',
         ]}
+        quickActions={[
+          { label: showSearch ? '검색 닫기' : '사용자 검색', onClick: () => { setShowSearch(v => !v); setSearch(''); } },
+          { label: '멤버 초대', onClick: () => setShowInvite(true) },
+          ...(users.filter(u => !u.mfaEnabled).length > 0 ? [{ label: `MFA 미설정 ${users.filter(u => !u.mfaEnabled).length}명`, onClick: () => { setShowSearch(true); setSearch('MFA'); } }] : []),
+        ]}
       />
       <div className="grid grid-cols-4 gap-3">
         {[

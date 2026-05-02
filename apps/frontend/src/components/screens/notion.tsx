@@ -63,6 +63,9 @@ export function NotionPage() {
           (connections?.length ?? 0) > 0 ? '동기화 오류 해결 도와줘' : '어떤 DB를 연결하면 좋을지 추천해줘',
           '프로젝트 Notion DB 연결 시 이점 설명해줘',
         ]}
+        quickActions={[
+          { label: (connections?.length ?? 0) === 0 ? 'Notion 연결' : '연결 추가', onClick: () => setShowForm(true) },
+        ]}
       />
       {/* Dev mode notice */}
       <Card className="!bg-bg-1 border-border">

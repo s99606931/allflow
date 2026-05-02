@@ -70,6 +70,10 @@ export function ProjectDetail({ projectId }: Props) {
           project.progress < 30 ? `진행률 ${project.progress}% — 속도 높이는 방법 알려줘` : '블로킹 태스크 찾아줘',
           '다음 마일스톤 준비 도와줘',
         ]}
+        quickActions={[
+          { label: '프로젝트 수정', onClick: () => setEditOpen(true) },
+          { label: '태스크 보기', onClick: () => setOpenTaskId(tasks[0]?.id ?? null) },
+        ]}
       />
       <div className="flex items-center gap-3">
         <Link href="/projects" className="inline-flex items-center gap-1.5 text-[12.5px] text-fg-2 hover:text-fg-1">

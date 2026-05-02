@@ -154,6 +154,10 @@ export function CalendarPage() {
           freeWorkHours < 10 ? `집중 가능 ${Math.round(freeWorkHours)}시간 — 일정 최적화 방법` : '일정 충돌 확인해줘',
           '바쁜 시간대 분석해줘',
         ]}
+        quickActions={[
+          { label: view === 'week' ? '월간 보기' : '주간 보기', onClick: () => setView(view === 'week' ? 'month' : 'week') },
+          { label: '새 일정', onClick: () => setCreateOpen(true) },
+        ]}
       />
       {/* Toolbar */}
       <div className="flex items-center gap-2">

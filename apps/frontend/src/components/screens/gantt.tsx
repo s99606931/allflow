@@ -230,6 +230,11 @@ export function GanttPage() {
             '의존성 충돌 확인해줘',
           ];
         })()}
+        quickActions={[
+          { label: viewMode === 'project' ? '담당자별 보기' : '프로젝트별 보기', onClick: () => setViewMode(m => m === 'project' ? 'assignee' : 'project') },
+          { label: '오늘로 이동', onClick: () => setOffsetDays(0) },
+          { label: projectFilter !== 'all' ? '전체 프로젝트' : '줌 인', onClick: () => projectFilter !== 'all' ? setProjectFilter('all') : setCellW(w => Math.min(CELL_W_MAX, w + 8)) },
+        ]}
       />
       {riskAnalysis && (
         <Card className="border-accent/30 bg-accent-soft/20">

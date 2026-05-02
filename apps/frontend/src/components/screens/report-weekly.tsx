@@ -79,6 +79,11 @@ export function ReportWeeklyPage() {
             report ? '지연 항목 분석해줘' : scope.size > 0 ? `선택한 ${scope.size}개 프로젝트 위주로 보고서 작성해줘` : '프로젝트 범위 설정 가이드해줘',
             '팀 성과 요약해줘',
           ]}
+          quickActions={[
+            ...(!report ? [{ label: `${reportType} 보고서 생성`, onClick: onGenerate }] : []),
+            ...(report ? [{ label: '이메일 발송', onClick: () => setSendOpen(true) }] : []),
+            { label: reportType === '주간' ? '격주 보기' : '주간 보기', onClick: () => setReportType(t => t === '주간' ? '격주' : '주간') },
+          ]}
         />
       </div>
       <div className="col-span-4 space-y-4">

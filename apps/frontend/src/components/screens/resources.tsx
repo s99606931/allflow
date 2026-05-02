@@ -77,6 +77,11 @@ export function ResourcesPage() {
           myBookingsToday > 0 ? `내 예약 ${myBookingsToday}건 일정 최적화` : '빈 자원 찾아줘',
           '이번 주 예약 현황 요약해줘',
         ]}
+        quickActions={[
+          { label: '새 예약', onClick: () => setBookOpen(true) },
+          { label: kind !== 'all' ? '전체 보기' : '검색', onClick: () => kind !== 'all' ? setKind('all') : setSearchOpen(true) },
+          { label: '이번 주', onClick: () => setWeekOffset(0) },
+        ]}
       />
       <div className="flex items-center gap-2">
         <h2 className="text-[18px] font-bold text-fg">회의실 / 리소스 예약</h2>

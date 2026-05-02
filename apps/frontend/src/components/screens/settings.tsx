@@ -80,6 +80,11 @@ export function SettingsPage() {
 							active === "profile" ? "프로필 완성도 높이는 방법" : "계정 보안 점검해줘",
 							"자주 사용하는 설정 추천해줘",
 						]}
+						quickActions={[
+							...(active !== "security" ? [{ label: '보안 설정', onClick: () => setActive("security") }] : []),
+							...(active !== "notifications" ? [{ label: '알림 설정', onClick: () => setActive("notifications") }] : []),
+							...(active !== "appearance" ? [{ label: '외관 설정', onClick: () => setActive("appearance") }] : []),
+						]}
 					/>
 					{active === "profile" && <ProfileSection />}
 					{active === "notifications" && <NotifSection />}

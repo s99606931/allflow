@@ -69,6 +69,10 @@ export function IssuesPageFull() {
           stats.slaRate < 80 ? `SLA 준수율 ${stats.slaRate}% 개선 방법 알려줘` : '이슈 트렌드 분석해줘',
           stats.unassigned > 0 ? `미할당 ${stats.unassigned}건 담당자 배정 도와줘` : 'Critical 이슈 예방 전략 알려줘',
         ]}
+        quickActions={[
+          { label: '새 이슈', onClick: () => setCreateOpen(true) },
+          ...(stats.p0 > 0 ? [{ label: `P0 ${stats.p0}건`, onClick: () => { setTab('list'); setListFilter(0); } }] : []),
+        ]}
       />
       {/* KPI strip */}
       <div className="grid grid-cols-6 gap-3">

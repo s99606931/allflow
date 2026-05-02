@@ -36,6 +36,10 @@ export function ProjectsPage() {
           activeCount > 5 ? `활성 프로젝트 ${activeCount}개 우선순위 정리해줘` : '팀 배치 최적화 제안해줘',
           '새 프로젝트 생성 도와줘',
         ]}
+        quickActions={[
+          { label: '새 프로젝트', onClick: () => setCreateOpen(true) },
+          ...(overdueCount > 0 ? [{ label: `기한 초과 ${overdueCount}개`, onClick: () => setCreateOpen(false) }] : []),
+        ]}
       />
       <div className="flex items-center justify-between">
         <div>

@@ -52,6 +52,10 @@ export function OrgPage() {
           units.some(u => u.members.length < 2) ? '인원 1명 이하 부서 확인해줘' : '인원 부족 부서 찾아줘',
           '온보딩 진행 현황 알려줘',
         ]}
+        quickActions={[
+          { label: '부서 추가', onClick: () => setAddUnitOpen(true) },
+          ...(units.length > 0 && !search ? [{ label: '사람 검색', onClick: () => document.querySelector<HTMLInputElement>('input[placeholder*="사람"]')?.focus() }] : []),
+        ]}
       />
       <div className="flex items-center gap-2">
         <div className="relative flex-1 max-w-sm">

@@ -67,6 +67,10 @@ export function ReportMonthlyPage() {
           <AiGuideWidget
             systemContext={systemContext}
             hints={hints}
+            quickActions={[
+              ...(!report ? [{ label: 'AI 보고서 생성', onClick: onGenerate }] : []),
+              ...(report ? [{ label: '이메일 발송', onClick: () => setSendOpen(true) }] : []),
+            ]}
           />
         );
       })()}

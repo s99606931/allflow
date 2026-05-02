@@ -110,6 +110,11 @@ export function AIAutoPage() {
           source === 'voice' ? '음성 녹음으로 태스크 자동 생성하는 방법' : '회의록에서 담당자·마감일 자동 추론 정확도 높이는 팁',
           projects.length === 0 ? '프로젝트 먼저 만들어야 하나요?' : `${projects.length}개 프로젝트 중 어디에 태스크 배분할지 추천해줘`,
         ]}
+        quickActions={[
+          { label: source !== 'meeting' ? '회의록' : '음성 입력', onClick: () => setSource(source !== 'meeting' ? 'meeting' : 'voice') },
+          ...(items.length > 0 ? [{ label: `${items.length}건 전체 선택`, onClick: () => setSelected(items.map((_, i) => i)) }] : []),
+          ...(recentOpen ? [] : [{ label: '최근 항목', onClick: () => setRecentOpen(true) }]),
+        ]}
       />
       <div className="grid grid-cols-12 gap-5">
         {/* LEFT — input */}

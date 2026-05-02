@@ -48,6 +48,11 @@ export function AdminPage() {
           (auditLogQuery.data?.total ?? 0) > 100 ? `감사로그 ${auditLogQuery.data!.total}건 이상징후 찾아줘` : 'LLM 연결 설정 가이드해줘',
           'MCP 서버 추가 방법 알려줘',
         ]}
+        quickActions={[
+          { label: '상태 새로고침', onClick: () => healthQuery.refetch() },
+          { label: '감사 로그 갱신', onClick: () => auditLogQuery.refetch() },
+          ...(health?.status !== 'ok' ? [{ label: '시스템 점검', onClick: () => healthQuery.refetch() }] : []),
+        ]}
       />
       {/* Real health (BE GET /health) */}
       <div className="grid grid-cols-3 gap-3">
