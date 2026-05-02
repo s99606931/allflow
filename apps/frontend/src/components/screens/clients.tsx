@@ -35,6 +35,13 @@ export function ClientsPage() {
   const { data: clients = [], isLoading, error } = useClients();
   const { remove } = useClientMutations();
 
+  const thisMonth = new Date();
+  const newThisMonth = clients.filter(c => {
+    const d = new Date(c.createdAt);
+    return d.getFullYear() === thisMonth.getFullYear() && d.getMonth() === thisMonth.getMonth();
+  }).length;
+  const industrySet = new Set(clients.map(c => c.industry).filter(Boolean));
+
   const STATUS_FILTERS = ['전체', '진행', '제안', '리드'] as const;
   const filtered = clients.filter(c => {
     if (search && !c.name.toLowerCase().includes(search.toLowerCase()) && !c.contact?.toLowerCase().includes(search.toLowerCase())) return false;
@@ -47,16 +54,16 @@ export function ClientsPage() {
       <div className="grid grid-cols-4 gap-3">
         {[
           { l: '활성 고객사', v: String(clients.length), d: '+0' },
-          { l: 'MRR', v: '—', d: '' },
-          { l: 'ARR', v: '—', d: '' },
-          { l: '평균 헬스', v: '—', d: '' },
+          { l: '이번 달 신규', v: String(newThisMonth), d: '' },
+          { l: '산업 분류', v: String(industrySet.size), d: '종류' },
+          { l: '연락처 등록', v: String(clients.filter(c => c.email || c.phone).length), d: `/ ${clients.length}` },
         ].map(m => (
           <Card key={m.l}>
             <CardBody className="!p-4">
               <div className="text-[11px] text-fg-2">{m.l}</div>
               <div className="flex items-baseline gap-2 mt-1">
                 <div className="text-[24px] font-bold text-fg mono leading-none">{m.v}</div>
-                <div className="text-[11px] mono text-success">{m.d}</div>
+                <div className="text-[11px] mono text-fg-3">{m.d}</div>
               </div>
             </CardBody>
           </Card>
