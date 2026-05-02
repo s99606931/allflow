@@ -20,6 +20,7 @@ export const UserSchema = z.object({
   email: z.string().email().optional(),
   bio: z.string().optional(),
   userStatus: z.string().optional(),
+  avatarUrl: z.string().optional(),
 });
 
 export const ProjectSchema = z.object({

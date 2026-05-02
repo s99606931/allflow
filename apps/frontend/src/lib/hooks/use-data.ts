@@ -413,6 +413,35 @@ export function useProfileMutations() {
   return { update };
 }
 
+// 프로필 사진 업로드 — multipart/form-data 로 BE에 직접 전송 (api 래퍼는 ky.json 강제라 우회).
+// BE는 base64 data URL 로 변환해 User.avatarUrl 에 저장 후 반환.
+export function useUploadAvatar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File): Promise<{ avatarUrl: string }> => {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/v1/users/me/avatar', {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const errBody = (await res.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
+        throw new Error(errBody.error?.message ?? '프로필 사진 업로드에 실패했습니다');
+      }
+      return (await res.json()) as { avatarUrl: string };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.me() });
+      toast.success('프로필 사진이 변경되었습니다');
+    },
+    onError,
+  });
+}
+
 export function useDeleteAccount() {
   return useMutation({
     mutationFn: () => api.deleteAccount(),

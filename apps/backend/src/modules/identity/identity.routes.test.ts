@@ -244,6 +244,102 @@ describe('modules/identity — POST /users/invite', () => {
   });
 });
 
+describe('modules/identity — POST /users/me/avatar', () => {
+  beforeAll(() => {
+    process.env.AUTH_SECRET = TEST_AUTH;
+  });
+  afterAll(() => {
+    process.env.AUTH_SECRET = undefined;
+    resetEnvForTests();
+  });
+
+  // Fastify inject + @fastify/multipart 호환 multipart payload 생성.
+  function multipartBody(boundary: string, filename: string, mimetype: string, content: Buffer): Buffer {
+    const head = Buffer.from(
+      `--${boundary}\r\n` +
+        `Content-Disposition: form-data; name="file"; filename="${filename}"\r\n` +
+        `Content-Type: ${mimetype}\r\n\r\n`,
+    );
+    const tail = Buffer.from(`\r\n--${boundary}--\r\n`);
+    return Buffer.concat([head, content, tail]);
+  }
+
+  it('인증 없으면 401', async () => {
+    const app = await buildTestApp({ user: {} });
+    const r = await app.inject({ method: 'POST', url: '/users/me/avatar' });
+    expect(r.statusCode).toBe(401);
+    await app.close();
+  });
+
+  it('정상: image/png 업로드 → avatarUrl(data URL) 반환 + DB update', async () => {
+    let captured: AnyArgs;
+    const app = await buildTestApp({
+      user: {
+        update: async (args: AnyArgs) => {
+          captured = args;
+          return { id: 'u1' } as never;
+        },
+      },
+    });
+    const token = await makeJws('u1');
+    const boundary = '----testboundary';
+    const png = Buffer.from('89504E470D0A1A0A', 'hex'); // PNG magic bytes (8 bytes mock)
+    const body = multipartBody(boundary, 'avatar.png', 'image/png', png);
+    const r = await app.inject({
+      method: 'POST',
+      url: '/users/me/avatar',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': `multipart/form-data; boundary=${boundary}`,
+      },
+      payload: body,
+    });
+    expect(r.statusCode).toBe(200);
+    const json = r.json() as { avatarUrl: string };
+    expect(json.avatarUrl.startsWith('data:image/png;base64,')).toBe(true);
+    expect(json.avatarUrl).toBe(`data:image/png;base64,${png.toString('base64')}`);
+    expect(captured!.where).toEqual({ id: 'u1' });
+    expect(captured!.data.avatarUrl).toBe(json.avatarUrl);
+    await app.close();
+  });
+
+  it('지원하지 않는 mime → 400', async () => {
+    const app = await buildTestApp({ user: { update: async () => ({ id: 'u1' }) as never } });
+    const token = await makeJws('u1');
+    const boundary = '----testboundary';
+    const body = multipartBody(boundary, 'doc.pdf', 'application/pdf', Buffer.from('PDF'));
+    const r = await app.inject({
+      method: 'POST',
+      url: '/users/me/avatar',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': `multipart/form-data; boundary=${boundary}`,
+      },
+      payload: body,
+    });
+    expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('파일 누락 → 400', async () => {
+    const app = await buildTestApp({ user: {} });
+    const token = await makeJws('u1');
+    const boundary = '----testboundary';
+    const body = Buffer.from(`--${boundary}--\r\n`);
+    const r = await app.inject({
+      method: 'POST',
+      url: '/users/me/avatar',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': `multipart/form-data; boundary=${boundary}`,
+      },
+      payload: body,
+    });
+    expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+});
+
 describe('modules/identity — DELETE /users/me', () => {
   beforeAll(() => { process.env.AUTH_SECRET = TEST_AUTH; });
   afterAll(() => { process.env.AUTH_SECRET = undefined; resetEnvForTests(); });

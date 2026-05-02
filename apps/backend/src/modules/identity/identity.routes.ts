@@ -58,6 +58,7 @@ const USER_SELECT = {
   email: true,
   bio: true,
   userStatus: true,
+  avatarUrl: true,
 } as const;
 
 interface UserRow {
@@ -70,6 +71,7 @@ interface UserRow {
   email: string | null;
   bio: string | null;
   userStatus: string | null;
+  avatarUrl: string | null;
 }
 
 function serializeUser(user: UserRow): unknown {
@@ -83,8 +85,13 @@ function serializeUser(user: UserRow): unknown {
     ...(user.email ? { email: user.email } : {}),
     ...(user.bio ? { bio: user.bio } : {}),
     ...(user.userStatus ? { userStatus: user.userStatus } : {}),
+    ...(user.avatarUrl ? { avatarUrl: user.avatarUrl } : {}),
   });
 }
+
+// 2 MB binary cap (base64 expansion ~33%, stored as data URL).
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+const AVATAR_ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
 export async function identityRoutes(app: FastifyInstance): Promise<void> {
   app.get('/users', { preHandler: [app.authenticate] }, async () => {
@@ -156,6 +163,31 @@ export async function identityRoutes(app: FastifyInstance): Promise<void> {
     })) as UserRow;
 
     return serializeUser(updated);
+  });
+
+  // 프로필 사진 업로드 — multipart, image/* 만, 2MB 이내. base64 data URL로 인라인 저장.
+  // S3 등 외부 스토리지를 도입하기 전 단순화: 트래픽 작은 프로필 이미지에 충분.
+  app.post('/users/me/avatar', { preHandler: [app.authenticate] }, async (req) => {
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const data = await req.file({ limits: { fileSize: AVATAR_MAX_BYTES } });
+    if (!data) throw new ValidationError('파일이 없습니다', []);
+    if (!AVATAR_ALLOWED_MIME.has(data.mimetype)) {
+      throw new ValidationError('지원하지 않는 이미지 형식입니다 (jpeg/png/gif/webp)', []);
+    }
+    const buf = await data.toBuffer();
+    if (buf.byteLength > AVATAR_MAX_BYTES) {
+      throw new ValidationError('파일 크기가 2MB를 초과합니다', []);
+    }
+    const avatarUrl = `data:${data.mimetype};base64,${buf.toString('base64')}`;
+
+    await app.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+    });
+
+    return { avatarUrl };
   });
 
   app.delete('/users/me', { preHandler: [app.authenticate] }, async (req, reply) => {

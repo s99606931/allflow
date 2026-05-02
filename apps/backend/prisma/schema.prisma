@@ -109,6 +109,7 @@ model User {
   email      String?  @unique
   bio        String?
   userStatus String?  @map("user_status")
+  avatarUrl  String?  @map("avatar_url")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

@@ -940,6 +940,7 @@ components:
         email: { type: string, format: email }
         bio: { type: string }
         userStatus: { type: string }
+        avatarUrl: { type: string }
 
     Project:
       type: object

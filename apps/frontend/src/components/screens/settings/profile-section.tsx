@@ -6,15 +6,30 @@ import {
 	Card,
 	CardBody,
 } from "@/components/ui/primitives";
-import { useMe, useProfileMutations } from "@/lib/hooks/use-data";
+import { useMe, useProfileMutations, useUploadAvatar } from "@/lib/hooks/use-data";
 import { Camera } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Row, Section } from "./shared";
 
 export function ProfileSection() {
 	const { data: me, isLoading } = useMe();
 	const { update } = useProfileMutations();
+	const uploadAvatar = useUploadAvatar();
+	const fileInputRef = useRef<HTMLInputElement>(null);
+
+	const onPickFile = () => fileInputRef.current?.click();
+	const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		if (file.size > 2 * 1024 * 1024) {
+			toast.error("파일 크기는 2MB 이하만 가능합니다");
+			e.target.value = "";
+			return;
+		}
+		uploadAvatar.mutate(file);
+		e.target.value = ""; // 같은 파일 재선택 가능하도록
+	};
 
 	const [name, setName] = useState("");
 	const [role, setRole] = useState("");
@@ -54,10 +69,32 @@ export function ProfileSection() {
 				<CardBody className="space-y-1">
 					<div className="flex items-center gap-4 pb-4">
 						<div className="relative">
-							{me && <Avatar user={me} size={72} />}
-							<button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-accent text-accent-fg grid place-items-center ring-2 ring-bg-elev">
+							{me?.avatarUrl ? (
+								// biome-ignore lint/performance/noImgElement: data URL 인라인 이미지는 next/image 미지원
+								<img
+									src={me.avatarUrl}
+									alt={me.name}
+									className="w-[72px] h-[72px] rounded-full object-cover ring-2 ring-border"
+								/>
+							) : me ? (
+								<Avatar user={me} size={72} />
+							) : null}
+							<button
+								type="button"
+								aria-label="프로필 사진 변경"
+								onClick={onPickFile}
+								disabled={uploadAvatar.isPending}
+								className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-accent text-accent-fg grid place-items-center ring-2 ring-bg-elev disabled:opacity-50"
+							>
 								<Camera size={12} />
 							</button>
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept="image/*"
+								className="hidden"
+								onChange={onFileChange}
+							/>
 						</div>
 						<div>
 							<div className="text-[18px] font-bold text-fg">
@@ -69,8 +106,14 @@ export function ProfileSection() {
 							{isLoading && (
 								<div className="text-[11px] text-fg-3 mt-1">불러오는 중...</div>
 							)}
-							<Button size="sm" variant="secondary" className="mt-2" onClick={() => toast.info("프로필 사진 변경 기능은 준비 중입니다.")}>
-								사진 변경
+							<Button
+								size="sm"
+								variant="secondary"
+								className="mt-2"
+								onClick={onPickFile}
+								disabled={uploadAvatar.isPending}
+							>
+								{uploadAvatar.isPending ? "업로드 중..." : "사진 변경"}
 							</Button>
 						</div>
 					</div>
