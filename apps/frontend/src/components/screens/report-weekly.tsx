@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { Card, CardBody, CardHeader, CardTitle, Button } from '@/components/ui/primitives';
 import { Calendar, Download, RefreshCw, Send, Sparkles } from 'lucide-react';
 import { ReportRecipientsEditor } from '@/components/dialogs/report-recipients-editor';
@@ -28,16 +29,36 @@ function computeLastWeek(): { start: string; end: string } {
   };
 }
 
+/** Compute Mon-Sun window covering the previous two completed weeks (yyyy-mm-dd). */
+function computeLastTwoWeeks(): { start: string; end: string } {
+  const week = computeLastWeek();
+  const start = new Date(`${week.start}T00:00:00Z`);
+  start.setUTCDate(start.getUTCDate() - 7);
+  return {
+    start: start.toISOString().slice(0, 10),
+    end: week.end,
+  };
+}
+
+type ReportType = '주간' | '격주' | '월간';
+
 export function ReportWeeklyPage() {
+  const router = useRouter();
   const [sendOpen, setSendOpen] = useState(false);
   const [report, setReport] = useState<Report | null>(null);
-  const [reportType, setReportType] = useState<'주간' | '격주' | '월간'>('주간');
-  const period = useMemo(() => computeLastWeek(), []);
+  const [reportType, setReportType] = useState<ReportType>('주간');
+  const lastWeek = useMemo(() => computeLastWeek(), []);
+  const lastTwoWeeks = useMemo(() => computeLastTwoWeeks(), []);
+  const period = reportType === '격주' ? lastTwoWeeks : lastWeek;
   const { weeklyReport } = useAiMutations();
   const { data: projects = [] } = useProjects();
   const [scope, setScope] = useState<Set<string>>(new Set());
 
   const onGenerate = async () => {
+    if (reportType === '월간') {
+      router.push('/reports/monthly');
+      return;
+    }
     const r = await weeklyReport.mutateAsync({
       periodStart: period.start,
       periodEnd: period.end,
@@ -51,8 +72,8 @@ export function ReportWeeklyPage() {
     <div className="p-6 grid grid-cols-12 gap-5 max-w-[1440px] mx-auto">
       <div className="col-span-12">
         <AiGuideWidget
-          systemContext={`주간 보고 — ${period.start} ~ ${period.end} 태스크 완료·이슈·팀 진행률 리포트`}
-          hints={['이번 주 하이라이트 알려줘', '지연 항목 분석해줘', '보고서 작성 가이드해줘']}
+          systemContext={`${reportType} 보고 — ${period.start} ~ ${period.end} 태스크 완료·이슈·팀 진행률 리포트`}
+          hints={[`이번 ${reportType === '격주' ? '2주' : '주'} 하이라이트 알려줘`, '지연 항목 분석해줘', '보고서 작성 가이드해줘']}
         />
       </div>
       <div className="col-span-4 space-y-4">
@@ -98,7 +119,7 @@ export function ReportWeeklyPage() {
               onClick={onGenerate}
               disabled={weeklyReport.isPending}
             >
-              <Sparkles size={13} /> {weeklyReport.isPending ? 'AI 생성 중...' : '보고서 생성'}
+              <Sparkles size={13} /> {weeklyReport.isPending ? 'AI 생성 중...' : reportType === '월간' ? '월간 보고로 이동' : '보고서 생성'}
             </Button>
           </CardBody>
         </Card>
@@ -134,10 +155,10 @@ export function ReportWeeklyPage() {
           <Card>
             <CardBody className="text-center py-12 space-y-2">
               {weeklyReport.isPending ? (
-                <div className="text-[13px] text-fg-3">AI가 주간 보고서를 작성하고 있습니다...</div>
+                <div className="text-[13px] text-fg-3">AI가 {reportType} 보고서를 작성하고 있습니다...</div>
               ) : (
                 <>
-                  <div className="text-[13px] font-semibold text-fg">주간 보고서가 없습니다</div>
+                  <div className="text-[13px] font-semibold text-fg">{reportType} 보고서가 없습니다</div>
                   <div className="text-[12px] text-fg-3 max-w-sm mx-auto">
                     왼쪽에서 범위와 옵션을 선택하고 &lsquo;보고서 생성&rsquo;을 클릭하세요.
                     완료 태스크·지연 항목·팀 성과가 자동으로 요약됩니다.
@@ -152,7 +173,7 @@ export function ReportWeeklyPage() {
           <Card>
             <CardBody className="space-y-6 !p-8">
               <div>
-                <div className="text-[11px] text-fg-3 uppercase tracking-wider font-semibold">주간 보고</div>
+                <div className="text-[11px] text-fg-3 uppercase tracking-wider font-semibold">{reportType} 보고</div>
                 <h1 className="text-[24px] font-bold text-fg mt-1 tracking-tight">{report.periodStart} ~ {report.periodEnd}</h1>
               </div>
 
