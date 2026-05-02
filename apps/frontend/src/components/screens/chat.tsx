@@ -9,6 +9,7 @@ import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel'
 import { MentionPopover } from '@/components/chat/mention-popover';
 import { useChannels, useMe, useTaskMutations, useUsers, usePins, usePinMutations } from '@/lib/hooks/use-data';
 import { useChatMessages, useMessageMutations, useSendMessage } from '@/lib/hooks/use-chat-messages';
+import type { PinnedMessageItem } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';
 import { useTranslation } from '@/lib/i18n';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
@@ -44,9 +45,10 @@ export function ChatPage() {
   const publicChannels = channels.filter(c => (c.kind === 'public' || c.kind === 'private') && (!channelSearch.trim() || c.name.toLowerCase().includes(channelSearch.toLowerCase())));
   const dmChannels = channels.filter(c => c.kind === 'dm' && (!channelSearch.trim() || c.name.toLowerCase().includes(channelSearch.toLowerCase())));
   const activeChannel = channels.find(c => c.id === active) ?? null;
+  const topLevelMessages = useMemo(() => messages.filter(m => m.parentId === null), [messages]);
   const displayedMessages = useMemo(
-    () => msgSearch.trim() ? messages.filter(m => m.content.toLowerCase().includes(msgSearch.toLowerCase())) : messages,
-    [messages, msgSearch],
+    () => msgSearch.trim() ? topLevelMessages.filter(m => m.content.toLowerCase().includes(msgSearch.toLowerCase())) : topLevelMessages,
+    [topLevelMessages, msgSearch],
   );
 
   const threadParent = useMemo<ThreadMessage | null>(() => {
@@ -54,10 +56,22 @@ export function ChatPage() {
     if (!found) return null;
     return {
       id: found.id,
-      who: found.author?.initials ?? '?',
+      who: found.author?.id ?? '?',
       time: new Date(found.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
       text: found.content,
     };
+  }, [openThreadId, messages]);
+
+  const threadReplies = useMemo<ThreadMessage[]>(() => {
+    if (!openThreadId) return [];
+    return messages
+      .filter(m => m.parentId === openThreadId)
+      .map(m => ({
+        id: m.id,
+        who: m.author?.id ?? '?',
+        time: new Date(m.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        text: m.content,
+      }));
   }, [openThreadId, messages]);
 
   async function summarizeChat() {
@@ -355,32 +369,49 @@ export function ChatPage() {
           <ThreadPanel
             channelId={active}
             parent={threadParent}
-            replies={[]}
+            replies={threadReplies}
           />
         </div>
       )}
       {!threadParent && <div className="bg-bg-1 border-l border-border overflow-y-auto scroll p-4 space-y-4">
         <div>
-          <div className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold mb-2">고정된 메시지 (3)</div>
-          <div className="rounded-md border border-border bg-bg-elev p-2.5 text-[11.5px] text-fg-1 leading-relaxed">
-            <div className="font-semibold text-fg mb-0.5">📌 배포 가이드</div>
-            <span className="text-fg-2">main 브랜치 머지 후 30분 이내 자동 배포...</span>
+          <div className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold mb-2">고정된 메시지 ({pins.length})</div>
+          {pins.length === 0 && <div className="text-[11.5px] text-fg-3">고정된 메시지가 없습니다.</div>}
+          <div className="space-y-2">
+            {pins.map((p: PinnedMessageItem) => (
+              <div key={p.id} className="rounded-md border border-border bg-bg-elev p-2.5 text-[11.5px] text-fg-1 leading-relaxed">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Pin size={10} className="text-accent shrink-0" />
+                  <span className="font-semibold text-fg truncate">{p.message.author.name}</span>
+                  <span className="text-[10px] text-fg-3 ml-auto shrink-0">{new Date(p.message.createdAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</span>
+                </div>
+                <span className="text-fg-2 line-clamp-2">{p.message.content}</span>
+              </div>
+            ))}
           </div>
         </div>
         <div>
-          <div className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold mb-2">멤버 ({activeChannel?.members.length ?? 0})</div>
-          <div className="space-y-1.5">
-            {(activeChannel?.members ?? []).slice(0, 8).map(memberId => {
-              const u = userMap.get(memberId);
-              return (
-                <div key={memberId} className="flex items-center gap-2 text-[12px]">
-                  {u ? <Avatar user={u} size={20} /> : <span className="w-5 h-5 rounded-full bg-bg-2" />}
-                  <span className="text-fg-1 flex-1 truncate">{u?.name ?? memberId}</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-success" />
+          {(() => {
+            const participants = Array.from(new Map(messages.map(m => [m.author.id, m.author])).values()).slice(0, 8);
+            return (
+              <>
+                <div className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold mb-2">참여자 ({participants.length})</div>
+                <div className="space-y-1.5">
+                  {participants.map(author => {
+                    const u = userMap.get(author.id);
+                    return (
+                      <div key={author.id} className="flex items-center gap-2 text-[12px]">
+                        {u ? <Avatar user={u} size={20} /> : <span className="w-5 h-5 rounded-full bg-bg-2 grid place-items-center text-[9px] font-bold text-fg-2">{author.initials}</span>}
+                        <span className="text-fg-1 flex-1 truncate">{u?.name ?? author.name}</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                      </div>
+                    );
+                  })}
+                  {participants.length === 0 && <div className="text-[11.5px] text-fg-3">아직 메시지가 없습니다.</div>}
                 </div>
-              );
-            })}
-          </div>
+              </>
+            );
+          })()}
         </div>
       </div>}
     </div>

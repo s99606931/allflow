@@ -15,9 +15,11 @@ import {
   Loader2,
   Sparkles,
   Tag,
+  Trash2,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTaskMutations } from '@/lib/hooks/use-data';
 
 interface TaskDetailProps {
   taskId: string | null;
@@ -28,6 +30,7 @@ export function TaskDetailDialog({ taskId, onClose }: TaskDetailProps) {
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
   const { data: projects = [] } = useProjects();
   const userMap = useUserMap();
+  const { remove: removeTask } = useTaskMutations();
 
   const task = taskId ? tasks.find(t => t.id === taskId) : undefined;
   const proj = task ? projects.find(p => p.id === task.proj) : undefined;
@@ -51,6 +54,20 @@ export function TaskDetailDialog({ taskId, onClose }: TaskDetailProps) {
             <div className="flex-1" />
             <IconButton size="sm" aria-label="링크 복사" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/tasks?id=${taskId ?? ''}`); toast.success('링크가 복사되었습니다.'); }}><Link2 size={14} /></IconButton>
             <IconButton size="sm" aria-label="외부 열기" onClick={() => window.open(`/tasks?id=${taskId ?? ''}`, '_blank', 'noopener,noreferrer')}><ArrowUpRight size={14} /></IconButton>
+            {taskId && (
+              <IconButton
+                size="sm"
+                aria-label="태스크 삭제"
+                className="text-danger hover:bg-danger/10"
+                disabled={removeTask.isPending}
+                onClick={() => {
+                  if (!window.confirm('이 태스크를 삭제하시겠습니까?')) return;
+                  removeTask.mutate(taskId, { onSuccess: onClose });
+                }}
+              >
+                <Trash2 size={14} />
+              </IconButton>
+            )}
             <Dialog.Close asChild>
               <IconButton size="sm" aria-label="닫기"><X size={14} /></IconButton>
             </Dialog.Close>
