@@ -96,3 +96,109 @@ export function useRevokeAllOtherSessions() {
     onError: (err: unknown) => toast.error(toastMessage(err)),
   });
 }
+
+// ── MFA ──────────────────────────────────────────────────────────────
+
+export interface MfaStatus {
+  enabled: boolean;
+  recoveryCodesRemaining: number;
+}
+
+export interface MfaSetupResult {
+  otpUri: string;
+  secret: string;
+}
+
+const MFA_STATUS_KEY = ['mfa', 'status'] as const;
+
+export function useMfaStatus() {
+  return useQuery<MfaStatus>({
+    queryKey: MFA_STATUS_KEY,
+    queryFn: async () => {
+      const res = await fetch('/api/v1/auth/mfa/status', { credentials: 'include' });
+      if (!res.ok) throw new Error('MFA 상태를 불러오지 못했습니다');
+      return res.json() as Promise<MfaStatus>;
+    },
+  });
+}
+
+export function useMfaSetup() {
+  return useMutation<MfaSetupResult>({
+    mutationFn: async () => {
+      const res = await fetch('/api/v1/auth/mfa/setup', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('MFA 설정을 시작할 수 없습니다');
+      return res.json() as Promise<MfaSetupResult>;
+    },
+  });
+}
+
+export function useMfaVerify() {
+  const qc = useQueryClient();
+  return useMutation<{ enabled: boolean; recoveryCodes: string[] }, Error, { code: string }>({
+    mutationFn: async ({ code }) => {
+      const res = await fetch('/api/v1/auth/mfa/verify', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ code }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: { message?: string } };
+        throw new Error(err?.error?.message ?? '인증 코드가 올바르지 않습니다.');
+      }
+      return res.json() as Promise<{ enabled: boolean; recoveryCodes: string[] }>;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: MFA_STATUS_KEY });
+      toast.success('MFA가 활성화되었습니다');
+    },
+    onError: (err) => toast.error(err.message),
+  });
+}
+
+export function useMfaDisable() {
+  const qc = useQueryClient();
+  return useMutation<{ disabled: boolean }, Error, { code: string }>({
+    mutationFn: async ({ code }) => {
+      const res = await fetch('/api/v1/auth/mfa', {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ code }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: { message?: string } };
+        throw new Error(err?.error?.message ?? '인증 코드가 올바르지 않습니다.');
+      }
+      return res.json() as Promise<{ disabled: boolean }>;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: MFA_STATUS_KEY });
+      toast.success('MFA가 비활성화되었습니다');
+    },
+    onError: (err) => toast.error(err.message),
+  });
+}
+
+export function useMfaRecoveryCodes() {
+  const qc = useQueryClient();
+  return useMutation<{ recoveryCodes: string[] }, Error, { code: string }>({
+    mutationFn: async ({ code }) => {
+      const res = await fetch('/api/v1/auth/mfa/recovery', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ code }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: { message?: string } };
+        throw new Error(err?.error?.message ?? '인증 코드가 올바르지 않습니다.');
+      }
+      return res.json() as Promise<{ recoveryCodes: string[] }>;
+    },
+    onError: (err) => toast.error(err.message),
+  });
+}

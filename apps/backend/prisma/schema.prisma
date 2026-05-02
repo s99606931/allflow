@@ -109,7 +109,10 @@ model User {
   email      String?  @unique
   bio        String?
   userStatus String?  @map("user_status")
-  avatarUrl  String?  @map("avatar_url")
+  avatarUrl   String?  @map("avatar_url")
+  mfaSecret   String?  @map("mfa_secret")
+  mfaEnabled  Boolean  @default(false) @map("mfa_enabled")
+  mfaRecovery String[] @map("mfa_recovery")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
