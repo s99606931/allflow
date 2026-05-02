@@ -61,6 +61,19 @@ function makeStore() {
       return row;
     },
     findFirst: async (args: AnyArgs) => rows.get(args.where.id) ?? null,
+    update: async (args: AnyArgs) => {
+      const row = rows.get(args.where.id);
+      if (!row) throw new Error('not found');
+      seq += 1;
+      const next: DocRow = {
+        ...row,
+        ...(args.data.title !== undefined ? { title: args.data.title } : {}),
+        ...(args.data.content !== undefined ? { content: args.data.content } : {}),
+        updatedAt: new Date(Date.now() + seq),
+      };
+      rows.set(row.id, next);
+      return next;
+    },
     delete: async (args: AnyArgs) => {
       const row = rows.get(args.where.id);
       if (row) rows.delete(args.where.id);
@@ -175,6 +188,99 @@ describe('modules/docs — BE-N5', () => {
     });
     const list = get.json() as Array<{ id: string }>;
     expect(list.find((d) => d.id === id)).toBeUndefined();
+    await app.close();
+  });
+
+  it('PATCH /docs/:id → title/content 부분 갱신 (200)', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const created = await app.inject({
+      method: 'POST',
+      url: '/docs',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: '원본', content: '원본 내용' },
+    });
+    const { id } = created.json() as { id: string };
+
+    const r = await app.inject({
+      method: 'PATCH',
+      url: `/docs/${id}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: '수정됨', content: 'b'.repeat(250) },
+    });
+    expect(r.statusCode).toBe(200);
+    const updated = r.json();
+    expect(updated).toMatchObject({ id, title: '수정됨', ownerId: 'u1' });
+    expect(updated.preview?.length).toBe(200);
+    await app.close();
+  });
+
+  it('PATCH → title만 갱신 (content 유지)', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const created = await app.inject({
+      method: 'POST',
+      url: '/docs',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: '원본', content: '내용유지' },
+    });
+    const { id } = created.json() as { id: string };
+
+    const r = await app.inject({
+      method: 'PATCH',
+      url: `/docs/${id}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: '제목만수정' },
+    });
+    expect(r.statusCode).toBe(200);
+    const updated = r.json();
+    expect(updated.title).toBe('제목만수정');
+    expect(updated.preview).toBe('내용유지');
+    await app.close();
+  });
+
+  it('PATCH → 빈 body (모든 필드 누락) 400', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const created = await app.inject({
+      method: 'POST',
+      url: '/docs',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: '원본' },
+    });
+    const { id } = created.json() as { id: string };
+
+    const r = await app.inject({
+      method: 'PATCH',
+      url: `/docs/${id}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: {},
+    });
+    expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('PATCH → 없는 id 404', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/docs/does-not-exist',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: 'x' },
+    });
+    expect(r.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('PATCH 인증 없으면 401', async () => {
+    const app = await buildTestApp();
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/docs/doc-1',
+      payload: { title: 'x' },
+    });
+    expect(r.statusCode).toBe(401);
     await app.close();
   });
 

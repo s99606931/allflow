@@ -5,6 +5,7 @@ import { NotFoundError, ValidationError } from '@all-flow/shared/errors';
  * 라우트:
  *   GET    /docs      — 문서 목록 (updatedAt desc). 비어 있으면 3건 자동 시드.
  *   POST   /docs      — 문서 생성 (201)
+ *   PATCH  /docs/:id  — title/content 부분 갱신 (200)
  *   DELETE /docs/:id  — 문서 삭제 (soft-delete, 204)
  *
  * preview 는 content 첫 200자 추출.
@@ -18,6 +19,16 @@ const DocCreate = z
     content: z.string().max(50000).optional(),
   })
   .strict();
+
+const DocPatch = z
+  .object({
+    title: z.string().min(1).max(200).optional(),
+    content: z.string().max(50000).optional(),
+  })
+  .strict()
+  .refine((v) => v.title !== undefined || v.content !== undefined, {
+    message: 'title 또는 content 중 최소 한 개 필수',
+  });
 
 const PREVIEW_MAX = 200;
 
@@ -99,6 +110,32 @@ export async function docsRoutes(app: FastifyInstance): Promise<void> {
     );
 
     return reply.code(201).send(serialize(row));
+  });
+
+  app.patch('/docs/:id', { preHandler: [app.authenticate] }, async (req) => {
+    const { id } = req.params as { id: string };
+    const parsed = DocPatch.safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+    // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+    const userId = req.user!.id;
+
+    const existing = await app.prisma.doc.findFirst({
+      where: { id },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundError('Doc', id);
+
+    const row = await app.prisma.doc.update({
+      where: { id },
+      data: { ...parsed.data },
+    });
+
+    app.log.info(
+      { action: 'docs.update', actorId: userId, docId: id, fields: Object.keys(parsed.data) },
+      'doc updated',
+    );
+
+    return serialize(row);
   });
 
   app.delete('/docs/:id', { preHandler: [app.authenticate] }, async (req, reply) => {

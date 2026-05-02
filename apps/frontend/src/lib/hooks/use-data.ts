@@ -269,12 +269,18 @@ export function useDocMutations() {
     onSuccess: () => { invalidate(); toast.success('문서가 생성되었습니다'); },
     onError,
   });
+  const update = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: { title?: string; content?: string } }) =>
+      api.updateDoc(id, patch),
+    onSuccess: () => { invalidate(); toast.success('문서가 저장되었습니다'); },
+    onError,
+  });
   const remove = useMutation({
     mutationFn: (id: string) => api.deleteDoc(id),
     onSuccess: () => { invalidate(); toast.success('문서가 삭제되었습니다'); },
     onError,
   });
-  return { create, remove };
+  return { create, update, remove };
 }
 
 export function useMessageMutations() {

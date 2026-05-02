@@ -139,6 +139,9 @@ export const extendedApi = {
   createDoc: async (input: DocCreate): Promise<Doc> =>
     parsed(http.post('docs', { json: input }).json(), DocSchema),
 
+  updateDoc: async (id: string, patch: { title?: string; content?: string }): Promise<Doc> =>
+    parsed(http.patch(`docs/${id}`, { json: patch }).json(), DocSchema),
+
   deleteDoc: async (id: string): Promise<void> => {
     await http.delete(`docs/${id}`);
   },

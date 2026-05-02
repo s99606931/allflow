@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Avatar, Button, IconButton } from '@/components/ui/primitives';
-import { FileText, Loader2, Plus, Search, Sparkles, Star, Trash2, ChevronRight, Hash, Clock } from 'lucide-react';
+import { FileText, Loader2, Pencil, Plus, Save, Search, Sparkles, Star, Trash2, X, ChevronRight, Hash, Clock } from 'lucide-react';
 import { DocCreateDialog } from '@/components/dialogs/doc-create-dialog';
 import { useDocs, useDocMutations } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';
@@ -19,8 +19,19 @@ export function DocsPage() {
   const [summaryDocId, setSummaryDocId] = useState<string | null>(null);
   const { streaming, streamComplete } = useAiStream();
   const docMutations = useDocMutations();
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
 
   const activeDoc = docs.find(d => d.id === active) ?? null;
+
+  useEffect(() => {
+    if (activeDoc) {
+      setEditTitle(activeDoc.title);
+      setEditContent(activeDoc.preview ?? '');
+      setEditing(false);
+    }
+  }, [activeDoc?.id]);
 
   async function requestSummary() {
     if (!activeDoc || streaming) return;
@@ -96,7 +107,17 @@ export function DocsPage() {
                   <span className="ml-2"><Clock size={10} className="inline" /> {new Date(activeDoc.updatedAt).toLocaleString()}</span>
                 </div>
                 <div className="flex items-start gap-2 mt-4">
-                  <h1 className="text-[32px] font-bold tracking-tight text-fg flex-1">{activeDoc.title}</h1>
+                  {editing ? (
+                    <input
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="flex-1 text-[32px] font-bold tracking-tight text-fg bg-bg-2 border border-border rounded-md px-3 py-1.5 focus:outline-none focus:border-accent"
+                      placeholder="문서 제목"
+                      maxLength={200}
+                    />
+                  ) : (
+                    <h1 className="text-[32px] font-bold tracking-tight text-fg flex-1">{activeDoc.title}</h1>
+                  )}
                   <IconButton
                     size="sm"
                     aria-label="즐겨찾기"
@@ -108,25 +129,69 @@ export function DocsPage() {
                   >
                     <Star size={14} className={starredIds.has(activeDoc.id) ? 'fill-warning text-warning' : ''} />
                   </IconButton>
-                  <Button variant="secondary" size="sm" onClick={requestSummary} disabled={streaming}>
-                    {streaming && summaryDocId === activeDoc.id ? <><Loader2 size={12} className="animate-spin" /> 요약 중...</> : <><Sparkles size={12} /> AI 요약</>}
-                  </Button>
+                  {!editing && (
+                    <>
+                      <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                        <Pencil size={12} /> 편집
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={requestSummary} disabled={streaming}>
+                        {streaming && summaryDocId === activeDoc.id ? <><Loader2 size={12} className="animate-spin" /> 요약 중...</> : <><Sparkles size={12} /> AI 요약</>}
+                      </Button>
+                    </>
+                  )}
+                  {editing && (
+                    <>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => docMutations.update.mutate(
+                          { id: activeDoc.id, patch: { title: editTitle, content: editContent } },
+                          { onSuccess: () => setEditing(false) },
+                        )}
+                        disabled={docMutations.update.isPending || editTitle.trim().length === 0}
+                      >
+                        {docMutations.update.isPending ? <><Loader2 size={12} className="animate-spin" /> 저장 중...</> : <><Save size={12} /> 저장</>}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          setEditTitle(activeDoc.title);
+                          setEditContent(activeDoc.preview ?? '');
+                          setEditing(false);
+                        }}
+                        disabled={docMutations.update.isPending}
+                      >
+                        <X size={12} /> 취소
+                      </Button>
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 mt-3 text-[12px] text-fg-2">
                   {owner && <Avatar user={owner} size={20} />}
                   <span>{owner?.name ?? activeDoc.ownerId}</span>
                 </div>
-                {summaries[activeDoc.id] && (
+                {summaries[activeDoc.id] && !editing && (
                   <div className="mt-4 p-3 rounded-lg border border-accent/20 bg-accent-soft text-[12.5px] text-fg-1 leading-relaxed">
                     <div className="flex items-center gap-1.5 mb-1.5 text-[11px] font-semibold text-accent-strong"><Sparkles size={11} /> AI 요약</div>
                     {summaries[activeDoc.id]}
                     {streaming && summaryDocId === activeDoc.id && <span className="inline-block w-1.5 h-3.5 bg-accent-strong ml-0.5 animate-pulse" />}
                   </div>
                 )}
-                {activeDoc.preview && (
-                  <div className="prose mt-8 text-[14px] text-fg-1 leading-[1.75] whitespace-pre-wrap">
-                    {activeDoc.preview}
-                  </div>
+                {editing ? (
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="w-full min-h-[400px] mt-8 text-[14px] text-fg-1 leading-[1.75] bg-bg-2 border border-border rounded-md p-3 focus:outline-none focus:border-accent resize-y"
+                    placeholder="문서 내용을 입력하세요"
+                    maxLength={50000}
+                  />
+                ) : (
+                  activeDoc.preview && (
+                    <div className="prose mt-8 text-[14px] text-fg-1 leading-[1.75] whitespace-pre-wrap">
+                      {activeDoc.preview}
+                    </div>
+                  )
                 )}
               </>
             );
