@@ -6,9 +6,10 @@ import { NAV } from '@/lib/nav';
 import { useUsers, useProjects, useTasks, useIssues } from '@/lib/hooks/use-data';
 import { Avatar } from '@/components/ui/primitives';
 import type { User, Project, Task, Issue } from '@/lib/schemas';
+import { extendedApi, type SemanticHit } from '@/lib/api/extended';
 import {
   Search, ArrowRight, Sparkles, X, Hash, FolderKanban, CheckSquare,
-  AlertCircle, User as UserIcon, FileText,
+  AlertCircle, User as UserIcon, FileText, Loader2,
 } from 'lucide-react';
 
 interface Hit {
@@ -49,7 +50,10 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
+  const [aiHits, setAiHits] = useState<SemanticHit[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
 
   const { data: users = [] } = useUsers();
@@ -83,18 +87,54 @@ export function CommandPalette() {
     if (open) {
       setQ('');
       setActiveIdx(0);
+      setAiHits([]);
       requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [open]);
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Debounced semantic search — fires 600ms after the user stops typing (query >= 2 chars)
+  useEffect(() => {
+    if (aiTimerRef.current) clearTimeout(aiTimerRef.current);
+    if (q.trim().length < 2) { setAiHits([]); setAiLoading(false); return; }
+
+    setAiLoading(true);
+    aiTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await extendedApi.semanticSearch({ query: q.trim(), limit: 6 });
+        setAiHits(res.data);
+      } catch {
+        setAiHits([]);
+      } finally {
+        setAiLoading(false);
+      }
+    }, 600);
+
+    return () => { if (aiTimerRef.current) clearTimeout(aiTimerRef.current); };
+  }, [q]);
 
   const hits = useMemo(
     () => buildHits(q, { users, projects, tasks, issues }),
     [q, users, projects, tasks, issues],
   );
 
+  // Merge semantic hits (deduplicate by id+kind vs local hits)
+  const mergedHits = useMemo(() => {
+    const localIds = new Set(hits.map(h => h.id));
+    const aiExtra: Hit[] = aiHits
+      .filter(h => !localIds.has(h.id))
+      .map(h => ({
+        kind: h.kind as Hit['kind'],
+        id: h.id,
+        title: h.title,
+        sub: `AI · ${Math.round(h.score * 100)}% 일치`,
+        href: h.kind === 'task' ? '/tasks' : '/issues',
+      }));
+    return [...hits, ...aiExtra];
+  }, [hits, aiHits]);
+
   // Group ordering
-  const groups = useMemo(() => groupHits(hits), [hits]);
+  const groups = useMemo(() => groupHits(mergedHits), [mergedHits]);
   const flat = useMemo(() => groups.flatMap(g => g.items), [groups]);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -181,7 +221,10 @@ export function CommandPalette() {
           <span className="flex items-center gap-1"><kbd className="mono px-1 py-0.5 rounded bg-bg-2 border border-border">Enter</kbd>선택</span>
           <span className="flex items-center gap-1"><kbd className="mono px-1 py-0.5 rounded bg-bg-2 border border-border">Esc</kbd>닫기</span>
           <div className="flex-1" />
-          <span className="flex items-center gap-1"><Sparkles size={10} className="text-accent" /> AI 자연어 검색 가능</span>
+          {aiLoading
+            ? <span className="flex items-center gap-1"><Loader2 size={10} className="animate-spin text-accent" /> AI 검색 중...</span>
+            : <span className="flex items-center gap-1"><Sparkles size={10} className="text-accent" /> AI 시맨틱 검색 활성</span>
+          }
         </div>
       </div>
     </div>

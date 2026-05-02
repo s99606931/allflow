@@ -248,7 +248,32 @@ export const extendedApi = {
     http
       .post(`llm-connections/${id}/test`)
       .json<{ ok: boolean; latencyMs: number; detail?: string }>(),
+
+  /* Semantic search ------------------------------------------------------- */
+  semanticSearch: async (input: SemanticSearchInput): Promise<SemanticSearchResponse> =>
+    http.post('search/semantic', { json: input }).json<SemanticSearchResponse>(),
 };
+
+/* Semantic search types --------------------------------------------------- */
+export interface SemanticHit {
+  id: string;
+  title: string;
+  kind: 'task' | 'issue';
+  score: number;
+  projectId: string;
+}
+
+export interface SemanticSearchInput {
+  query: string;
+  limit?: number;
+  targets?: Array<'tasks' | 'issues'>;
+  projectId?: string;
+}
+
+export interface SemanticSearchResponse {
+  data: SemanticHit[];
+  query: string;
+}
 
 /* LLM Connection types — kept inline to avoid expanding the schemas barrel. */
 export type LlmKind =
