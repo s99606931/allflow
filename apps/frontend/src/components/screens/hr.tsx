@@ -237,19 +237,25 @@ function LeaveTab() {
         )}
 
         {!isLoading && leaves && leaves.length > 0 && (
-          <LeaveList leaves={leaves} />
+          <LeaveList
+            leaves={leaves}
+            onReapply={(leave) => {
+              setForm({ type: leave.type, startDate: leave.startDate.slice(0, 10), endDate: leave.endDate.slice(0, 10), reason: leave.reason ?? '' });
+              setShowForm(true);
+            }}
+          />
         )}
       </CardBody>
     </Card>
   );
 }
 
-function LeaveList({ leaves }: { leaves: LeaveRequest[] }) {
+function LeaveList({ leaves, onReapply }: { leaves: LeaveRequest[]; onReapply: (leave: LeaveRequest) => void }) {
   const cancelLeave = useCancelLeave();
   return (
     <div className="space-y-2">
       {leaves.map((leave) => (
-        <LeaveRow key={leave.id} leave={leave} cancelLeave={cancelLeave} />
+        <LeaveRow key={leave.id} leave={leave} cancelLeave={cancelLeave} onReapply={onReapply} />
       ))}
     </div>
   );
@@ -258,9 +264,10 @@ function LeaveList({ leaves }: { leaves: LeaveRequest[] }) {
 interface LeaveRowProps {
   leave: LeaveRequest;
   cancelLeave: ReturnType<typeof useCancelLeave>;
+  onReapply: (leave: LeaveRequest) => void;
 }
 
-function LeaveRow({ leave, cancelLeave }: LeaveRowProps) {
+function LeaveRow({ leave, cancelLeave, onReapply }: LeaveRowProps) {
   const start = leave.startDate.slice(0, 10);
   const end = leave.endDate.slice(0, 10);
   return (
@@ -285,6 +292,14 @@ function LeaveRow({ leave, cancelLeave }: LeaveRowProps) {
           className="text-[11px] text-danger hover:underline"
         >
           취소
+        </button>
+      )}
+      {leave.status === 'REJECTED' && (
+        <button
+          onClick={() => onReapply(leave)}
+          className="text-[11px] text-accent hover:underline"
+        >
+          재신청
         </button>
       )}
     </div>
