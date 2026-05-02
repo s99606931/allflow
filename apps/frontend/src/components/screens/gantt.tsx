@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useGantt } from '@/lib/hooks/use-data';
+import { useGantt, useProjects } from '@/lib/hooks/use-data';
 import type { GanttTask } from '@/lib/api/extended';
 import { ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 
@@ -124,6 +124,12 @@ export function GanttPage() {
 
   const viewEnd = useMemo(() => addDays(viewStart, viewDays - 1), [viewStart, viewDays]);
 
+  const { data: projects = [] } = useProjects();
+  const projectNameMap = useMemo(
+    () => new Map(projects.map(p => [p.id, p.name])),
+    [projects],
+  );
+
   const { data, isLoading } = useGantt({
     from: isoDate(viewStart),
     to: isoDate(viewEnd),
@@ -217,7 +223,7 @@ export function GanttPage() {
           >
             <option value="all">전체 프로젝트</option>
             {projectIds.map(id => (
-              <option key={id} value={id}>{id}</option>
+              <option key={id} value={id}>{projectNameMap.get(id) ?? id}</option>
             ))}
           </select>
         </div>
