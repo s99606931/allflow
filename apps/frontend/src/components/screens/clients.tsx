@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Card, CardBody, Button } from '@/components/ui/primitives';
-import { ChevronRight, Loader2, Pencil, Plus, Search, Sparkles, Trash2, TrendingUp } from 'lucide-react';
+import { ArrowUpDown, ChevronRight, Loader2, Pencil, Plus, Search, Sparkles, Trash2, TrendingUp } from 'lucide-react';
 import { ClientForm } from '@/components/dialogs/client-form';
 import { ClientDetail } from '@/components/dialogs/client-detail';
 import { useClients, useClientMutations } from '@/lib/hooks/use-data';
@@ -36,6 +36,7 @@ export function ClientsPage() {
   const [editTarget, setEditTarget] = useState<Client | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('전체');
+  const [sortBy, setSortBy] = useState<'name' | 'created'>('name');
   const { data: clients = [], isLoading, error } = useClients();
   const { remove } = useClientMutations();
   const [aiFollowup, setAiFollowup] = useState('');
@@ -50,11 +51,13 @@ export function ClientsPage() {
   const industrySet = new Set(clients.map(c => c.industry).filter(Boolean));
 
   const STATUS_FILTERS = ['전체', '진행', '제안', '리드'] as const;
-  const filtered = clients.filter(c => {
-    if (search && !c.name.toLowerCase().includes(search.toLowerCase()) && !c.contact?.toLowerCase().includes(search.toLowerCase())) return false;
-    if (statusFilter !== '전체' && c.industry !== statusFilter) return false;
-    return true;
-  });
+  const filtered = clients
+    .filter(c => {
+      if (search && !c.name.toLowerCase().includes(search.toLowerCase()) && !c.contact?.toLowerCase().includes(search.toLowerCase())) return false;
+      if (statusFilter !== '전체' && c.industry !== statusFilter) return false;
+      return true;
+    })
+    .sort((a, b) => sortBy === 'name' ? a.name.localeCompare(b.name) : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
@@ -125,6 +128,9 @@ export function ClientsPage() {
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="고객사 검색..." className="h-8 w-56 pl-8 pr-3 rounded-md bg-bg-elev border border-border text-[12.5px] focus:outline-none focus:border-accent" />
         </div>
+        <Button variant="secondary" size="sm" onClick={() => setSortBy(s => s === 'name' ? 'created' : 'name')}>
+          <ArrowUpDown size={12} /> {sortBy === 'name' ? '이름순' : '최신순'}
+        </Button>
         <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}><Plus size={13} /> 새 고객사</Button>
         <ClientForm open={createOpen} onOpenChange={setCreateOpen} />
         {editTarget && (

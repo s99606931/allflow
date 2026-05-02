@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardBody, Avatar, Badge, Button } from '@/components/ui/primitives';
-import { MoreHorizontal, Search, Shield, UserPlus, Filter, Download, X, Mail, Copy, ListTodo } from 'lucide-react';
+import { ArrowUpDown, MoreHorizontal, Search, Shield, UserPlus, Filter, Download, X, Mail, Copy, ListTodo } from 'lucide-react';
 import { useUsers, useInviteUser, useUserMetrics, useMe } from '@/lib/hooks/use-data';
 import { toast } from 'sonner';
 import type { User } from '@/lib/schemas';
@@ -32,12 +32,17 @@ export function UsersPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<'name' | 'role'>('name');
 
   const displayed = useMemo(() => {
-    if (!search) return users;
-    const q = search.toLowerCase();
-    return users.filter(u => u.name.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q) || u.role.toLowerCase().includes(q));
-  }, [users, search]);
+    const filtered = !search
+      ? users
+      : (() => {
+          const q = search.toLowerCase();
+          return users.filter(u => u.name.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q) || u.role.toLowerCase().includes(q));
+        })();
+    return [...filtered].sort((a, b) => sortBy === 'name' ? a.name.localeCompare(b.name) : a.role.localeCompare(b.role));
+  }, [users, search, sortBy]);
 
   function handleInvite() {
     if (!inviteEmail.trim()) return;
@@ -103,6 +108,9 @@ export function UsersPage() {
           </div>
         )}
         <div className="flex-1" />
+        <Button variant="secondary" size="sm" onClick={() => setSortBy(s => s === 'name' ? 'role' : 'name')}>
+          <ArrowUpDown size={12} /> {sortBy === 'name' ? '이름순' : '역할순'}
+        </Button>
         <Button
           variant="secondary"
           size="sm"

@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardTitle, CardBody, Avatar, Badge, Button, IconButton } from '@/components/ui/primitives';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import {
-  FileSignature, Plus, Search, Inbox, Send, CheckCircle2, XCircle, Clock,
+  ArrowUpDown, FileSignature, Plus, Search, Inbox, Send, CheckCircle2, XCircle, Clock,
   FileText, Stamp, Sparkles, MoreHorizontal, Undo2, Edit2, X,
   Link2, Printer, Trash2,
 } from 'lucide-react';
@@ -51,6 +51,7 @@ export function ApprovalsPage() {
   const [editAmount, setEditAmount] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQ, setSearchQ] = useState('');
+  const [sortBy, setSortBy] = useState<'date' | 'amount'>('date');
   const { data: approvals = [], isLoading, error } = useApprovals();
   const { data: me } = useMe();
   const userMap = useUserMap();
@@ -66,8 +67,12 @@ export function ApprovalsPage() {
       const q = searchQ.toLowerCase();
       base = base.filter(a => a.title.toLowerCase().includes(q));
     }
-    return base;
-  }, [approvals, tab, searchQ, me]);
+    return [...base].sort((a, b) =>
+      sortBy === 'date'
+        ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        : (b.amount ?? 0) - (a.amount ?? 0),
+    );
+  }, [approvals, tab, searchQ, me, sortBy]);
 
   const counts = useMemo(() => ({
     inbox:   approvals.filter(a => a.status === 'pending' && a.approver === me?.id).length,
@@ -147,6 +152,16 @@ export function ApprovalsPage() {
           })}
         </div>
 
+        <div className="flex items-center gap-1.5 px-4 py-2 border-b border-border bg-bg-1">
+          <span className="text-[10.5px] text-fg-3 font-medium">{list.length}건</span>
+          <div className="flex-1" />
+          <button
+            onClick={() => setSortBy(s => s === 'date' ? 'amount' : 'date')}
+            className="flex items-center gap-1 text-[11px] text-fg-2 hover:text-fg-1 transition-colors"
+          >
+            <ArrowUpDown size={11} /> {sortBy === 'date' ? '최신순' : '금액순'}
+          </button>
+        </div>
         <div className="flex-1 overflow-y-auto scroll">
           {isLoading && <div className="px-5 py-12 text-center text-[12px] text-fg-3">불러오는 중...</div>}
           {error && <div className="px-5 py-12 text-center text-[12px] text-danger">결재 목록을 불러오지 못했습니다.</div>}

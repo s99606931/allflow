@@ -73,7 +73,10 @@ export function DocsPage() {
           {isLoading && <div className="px-3 py-6 text-[12px] text-fg-3">불러오는 중...</div>}
           {error && <div className="px-3 py-6 text-[12px] text-danger">문서를 불러오지 못했습니다.</div>}
           {!isLoading && !error && docs.length === 0 && (
-            <div className="px-3 py-6 text-[12px] text-fg-3">등록된 문서가 없습니다.</div>
+            <div className="px-3 py-6 text-center space-y-2">
+              <div className="text-[12px] text-fg-3">등록된 문서가 없습니다.</div>
+              <button onClick={() => setCreateOpen(true)} className="text-[11.5px] text-accent hover:underline font-medium">+ 첫 문서 만들기</button>
+            </div>
           )}
           {docs.length > 0 && (
             <div className="mb-1">

@@ -212,8 +212,9 @@ export function ProgressPage() {
               );
             })}
             {PROJECTS.length === 0 && (
-              <div className="px-4 py-8 text-center text-fg-3 text-[12.5px]">
-                프로젝트가 없습니다. "새 프로젝트" 로 시작하세요.
+              <div className="px-4 py-8 text-center space-y-2">
+                <div className="text-[12.5px] text-fg-3">프로젝트가 없습니다.</div>
+                <button onClick={() => setCreateOpen(true)} className="text-[12px] text-accent hover:underline font-medium">+ 새 프로젝트 만들기</button>
               </div>
             )}
           </Card>
