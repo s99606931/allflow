@@ -9,7 +9,7 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/primitives';
 import { Dialog, DialogField, DialogFooter, Select, TextInput } from '@/components/ui/dialog';
-import { useTaskMutations, useProjects, useUsers } from '@/lib/hooks/use-data';
+import { useTaskMutations, useProjects, useUsers, useMe } from '@/lib/hooks/use-data';
 import type { Priority } from '@/lib/schemas';
 
 interface Props {
@@ -27,17 +27,18 @@ export function TaskCreateDialog({ open, onOpenChange }: Props) {
   const { create } = useTaskMutations();
   const { data: projects = [] } = useProjects();
   const { data: users = [] } = useUsers();
-  const firstUser = users[0]?.id ?? '';
+  const { data: me } = useMe();
+  const defaultAssignee = me?.id ?? users[0]?.id ?? '';
   const [title, setTitle] = useState('');
   const [projectId, setProjectId] = useState('');
-  const [assigneeId, setAssigneeId] = useState(firstUser);
+  const [assigneeId, setAssigneeId] = useState(defaultAssignee);
   const [priority, setPriority] = useState<Priority>('med');
   const [due, setDue] = useState('');
 
   const reset = () => {
     setTitle('');
     setProjectId('');
-    setAssigneeId(firstUser);
+    setAssigneeId(defaultAssignee);
     setPriority('med');
     setDue('');
   };
