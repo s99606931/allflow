@@ -60,6 +60,12 @@ function makeStore() {
       rows.set(row.id, row);
       return row;
     },
+    findFirst: async (args: AnyArgs) => rows.get(args.where.id) ?? null,
+    delete: async (args: AnyArgs) => {
+      const row = rows.get(args.where.id);
+      if (row) rows.delete(args.where.id);
+      return row ?? null;
+    },
   };
 }
 
@@ -91,7 +97,7 @@ describe('modules/events — T1 Prisma', () => {
     resetEnvForTests();
   });
 
-  it('인증 없으면 401 (GET, POST)', async () => {
+  it('인증 없으면 401 (GET, POST, DELETE)', async () => {
     const app = await buildTestApp();
     expect((await app.inject({ method: 'GET', url: '/events' })).statusCode).toBe(401);
     expect(
@@ -103,6 +109,7 @@ describe('modules/events — T1 Prisma', () => {
         })
       ).statusCode,
     ).toBe(401);
+    expect((await app.inject({ method: 'DELETE', url: '/events/evt-1' })).statusCode).toBe(401);
     await app.close();
   });
 
@@ -165,6 +172,35 @@ describe('modules/events — T1 Prisma', () => {
       payload: { title: 'x', start: 'not-a-date', end: 'not-a-date' },
     });
     expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('DELETE /events/:id → 204 + GET 에 미포함', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/events',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: '삭제 일정', start: '2026-05-04T01:00:00Z', end: '2026-05-04T02:00:00Z' },
+    });
+    const { id } = post.json() as { id: string };
+    const del = await app.inject({
+      method: 'DELETE',
+      url: `/events/${id}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(del.statusCode).toBe(204);
+    const get = await app.inject({ method: 'GET', url: '/events', headers: { authorization: `Bearer ${token}` } });
+    expect((get.json() as Array<{ id: string }>).find((e) => e.id === id)).toBeUndefined();
+    await app.close();
+  });
+
+  it('DELETE → 없는 id 404', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({ method: 'DELETE', url: '/events/no-such-evt', headers: { authorization: `Bearer ${token}` } });
+    expect(r.statusCode).toBe(404);
     await app.close();
   });
 

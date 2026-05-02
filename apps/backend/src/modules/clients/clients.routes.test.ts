@@ -50,6 +50,17 @@ function makeStore() {
       rows.set(row.id, row);
       return row;
     },
+    findFirst: async (args: AnyArgs) => {
+      const row = rows.get(args.where.id);
+      if (!row || row.deletedAt !== null) return null;
+      return row;
+    },
+    update: async (args: AnyArgs) => {
+      const row = rows.get(args.where.id);
+      if (!row) return null;
+      if (args.data.deletedAt) row.deletedAt = args.data.deletedAt;
+      return row;
+    },
   };
 }
 
@@ -154,6 +165,44 @@ describe('modules/clients — T1 Prisma', () => {
       payload: { name: 'X', email: 'not-an-email' },
     });
     expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('DELETE /clients/:id → 204 + soft-delete (GET 에 미포함)', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const post = await app.inject({
+      method: 'POST',
+      url: '/clients',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Delete Me' },
+    });
+    const { id } = post.json() as { id: string };
+    const del = await app.inject({
+      method: 'DELETE',
+      url: `/clients/${id}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(del.statusCode).toBe(204);
+    const get = await app.inject({
+      method: 'GET',
+      url: '/clients',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const list = get.json() as Array<{ id: string }>;
+    expect(list.find((c) => c.id === id)).toBeUndefined();
+    await app.close();
+  });
+
+  it('DELETE → 없는 id 404', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'DELETE',
+      url: '/clients/not-exist',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(r.statusCode).toBe(404);
     await app.close();
   });
 

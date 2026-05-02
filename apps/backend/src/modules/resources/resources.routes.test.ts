@@ -76,6 +76,14 @@ function makeStores() {
         }
         return null;
       },
+      findMany: async (args: AnyArgs) => {
+        const where = args.where as { start: { gte: Date }; end: { lte: Date } };
+        return Array.from(bookings.values()).filter(
+          (b) =>
+            b.start.getTime() >= where.start.gte.getTime() &&
+            b.end.getTime() <= where.end.lte.getTime(),
+        );
+      },
       create: async (args: AnyArgs) => {
         bSeq += 1;
         const row: BookingRow = {
@@ -120,9 +128,10 @@ describe('modules/resources — T1 Prisma', () => {
     resetEnvForTests();
   });
 
-  it('인증 없으면 401 (GET, POST /book)', async () => {
+  it('인증 없으면 401 (GET, GET /bookings, POST /book)', async () => {
     const app = await buildTestApp();
     expect((await app.inject({ method: 'GET', url: '/resources' })).statusCode).toBe(401);
+    expect((await app.inject({ method: 'GET', url: '/resources/bookings' })).statusCode).toBe(401);
     expect(
       (
         await app.inject({
@@ -136,6 +145,31 @@ describe('modules/resources — T1 Prisma', () => {
         })
       ).statusCode,
     ).toBe(401);
+    await app.close();
+  });
+
+  it('GET /resources/bookings → date 지정 시 해당 날짜 예약 반환', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    await app.inject({
+      method: 'POST',
+      url: '/resources/book',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        resourceId: 'room-101',
+        start: '2026-05-04T01:00:00Z',
+        end: '2026-05-04T02:00:00Z',
+      },
+    });
+    const r = await app.inject({
+      method: 'GET',
+      url: '/resources/bookings?date=2026-05-04',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(r.statusCode).toBe(200);
+    const list = r.json() as Array<{ resourceId: string; start: string; end: string }>;
+    expect(list.length).toBe(1);
+    expect(list[0]).toMatchObject({ resourceId: 'room-101' });
     await app.close();
   });
 

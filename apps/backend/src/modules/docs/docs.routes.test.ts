@@ -60,6 +60,12 @@ function makeStore() {
       rows.set(row.id, row);
       return row;
     },
+    findFirst: async (args: AnyArgs) => rows.get(args.where.id) ?? null,
+    delete: async (args: AnyArgs) => {
+      const row = rows.get(args.where.id);
+      if (row) rows.delete(args.where.id);
+      return row ?? null;
+    },
   };
 }
 
@@ -91,12 +97,13 @@ describe('modules/docs — BE-N5', () => {
     resetEnvForTests();
   });
 
-  it('인증 없으면 401 (GET, POST)', async () => {
+  it('인증 없으면 401 (GET, POST, DELETE)', async () => {
     const app = await buildTestApp();
     expect((await app.inject({ method: 'GET', url: '/docs' })).statusCode).toBe(401);
     expect(
       (await app.inject({ method: 'POST', url: '/docs', payload: { title: 'x' } })).statusCode,
     ).toBe(401);
+    expect((await app.inject({ method: 'DELETE', url: '/docs/doc-1' })).statusCode).toBe(401);
     await app.close();
   });
 
@@ -142,6 +149,44 @@ describe('modules/docs — BE-N5', () => {
       payload: { title: '' },
     });
     expect(r.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('DELETE /docs/:id → 204 + 목록에서 제거', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const created = await app.inject({
+      method: 'POST',
+      url: '/docs',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { title: '삭제 테스트' },
+    });
+    const { id } = created.json() as { id: string };
+    const del = await app.inject({
+      method: 'DELETE',
+      url: `/docs/${id}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(del.statusCode).toBe(204);
+    const get = await app.inject({
+      method: 'GET',
+      url: '/docs',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const list = get.json() as Array<{ id: string }>;
+    expect(list.find((d) => d.id === id)).toBeUndefined();
+    await app.close();
+  });
+
+  it('DELETE → 없는 id 404', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'DELETE',
+      url: '/docs/does-not-exist',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(r.statusCode).toBe(404);
     await app.close();
   });
 
