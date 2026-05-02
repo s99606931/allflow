@@ -21,6 +21,13 @@ const CHANNEL_SEED = [
   { name: '김민수 ↔ 이서연', kind: 'dm' as const },
 ];
 
+const ChannelCreate = z
+  .object({
+    name: z.string().min(1).max(80),
+    kind: z.enum(['public', 'private']).default('public'),
+  })
+  .strict();
+
 const MessageSend = z
   .object({
     text: z.string().min(1).max(4000),
@@ -48,6 +55,19 @@ export async function channelsRoutes(app: FastifyInstance): Promise<void> {
       orderBy: { createdAt: 'asc' },
     });
     return rows.map((c) => ({ id: c.id, name: c.name, kind: c.kind, members: [] }));
+  });
+
+  app.post('/channels', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const parsed = ChannelCreate.safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+
+    const { name, kind } = parsed.data;
+    const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9가-힣-]/g, '');
+    const existing = await app.prisma.channel.findFirst({ where: { name } });
+    if (existing) throw new ValidationError(`이미 존재하는 채널 이름입니다: ${name}`);
+
+    const channel = await app.prisma.channel.create({ data: { name, kind } });
+    return reply.code(201).send({ id: channel.id, name: channel.name, kind: channel.kind, members: [] });
   });
 
   app.get('/channels/:channelId/messages', { preHandler: [app.authenticate] }, async (req) => {

@@ -30,6 +30,14 @@ const CreateOrgUnit = z
   })
   .strict();
 
+const UpdateOrgUnit = z
+  .object({
+    name: z.string().min(1).max(80).optional(),
+    parentId: z.string().min(1).max(80).nullable().optional(),
+  })
+  .strict()
+  .refine((d) => Object.keys(d).length > 0, { message: '변경할 필드를 1개 이상 전달하세요' });
+
 export async function orgRoutes(app: FastifyInstance): Promise<void> {
   app.get('/org/units', { preHandler: [app.authenticate] }, async () => {
     return app.prisma.orgUnit.findMany({ orderBy: { name: 'asc' } });
@@ -56,6 +64,40 @@ export async function orgRoutes(app: FastifyInstance): Promise<void> {
       data: { id, name, parentId: parentId ?? null, members: [] },
     });
     return reply.code(201).send(unit);
+  });
+
+  app.patch('/org/units/:id', { preHandler: [app.authenticate] }, async (req) => {
+    const { id } = req.params as { id: string };
+    const parsed = UpdateOrgUnit.safeParse(req.body);
+    if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
+
+    const existing = await app.prisma.orgUnit.findUnique({ where: { id } });
+    if (!existing) throw new ValidationError(`존재하지 않는 조직 단위: ${id}`);
+
+    const { parentId, ...rest } = parsed.data;
+    if (parentId !== undefined && parentId !== null) {
+      const parent = await app.prisma.orgUnit.findUnique({ where: { id: parentId } });
+      if (!parent) throw new ValidationError(`존재하지 않는 상위 조직 단위: ${parentId}`);
+    }
+
+    const updated = await app.prisma.orgUnit.update({
+      where: { id },
+      data: { ...rest, ...(parentId !== undefined ? { parentId } : {}) },
+    });
+    return updated;
+  });
+
+  app.delete('/org/units/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+
+    const existing = await app.prisma.orgUnit.findUnique({ where: { id } });
+    if (!existing) throw new ValidationError(`존재하지 않는 조직 단위: ${id}`);
+
+    const children = await app.prisma.orgUnit.count({ where: { parentId: id } });
+    if (children > 0) throw new ValidationError('하위 부서가 있는 부서는 삭제할 수 없습니다. 먼저 하위 부서를 삭제하거나 이동하세요.');
+
+    await app.prisma.orgUnit.delete({ where: { id } });
+    return reply.code(204).send();
   });
 
   app.post('/org/invitations', { preHandler: [app.authenticate] }, async (req, reply) => {

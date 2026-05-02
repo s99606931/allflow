@@ -5,12 +5,13 @@ import { Card, CardBody, CardHeader, CardTitle, Avatar, Badge, Button } from '@/
 import { useOrgMutations, useOrgUnits } from '@/lib/hooks/use-data';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 
-import { Plus, Search, UserPlus, X } from 'lucide-react';
+import { Check, Pencil, Plus, Search, Trash2, UserPlus, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 
 export function OrgPage() {
   const { data: units = [], isLoading, error } = useOrgUnits();
-  const { invite, createUnit } = useOrgMutations();
+  const { invite, createUnit, updateUnit, deleteUnit } = useOrgMutations();
   const userMap = useUserMap();
   const [email, setEmail] = useState('');
   const [activeUnitId, setActiveUnitId] = useState<string>('');
@@ -18,6 +19,8 @@ export function OrgPage() {
   const [addUnitOpen, setAddUnitOpen] = useState(false);
   const [newUnitName, setNewUnitName] = useState('');
   const [newUnitParentId, setNewUnitParentId] = useState('');
+  const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
 
   const filteredUnits = search.trim()
     ? units.filter(u => u.name.toLowerCase().includes(search.toLowerCase()))
@@ -140,7 +143,7 @@ export function OrgPage() {
               hoverable
               role="button"
               tabIndex={0}
-              onClick={() => setActiveUnitId(d.id)}
+              onClick={() => { if (editingUnitId !== d.id) setActiveUnitId(d.id); }}
               onKeyDown={e => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
@@ -151,8 +154,43 @@ export function OrgPage() {
               className={activeUnitId === d.id ? 'ring-2 ring-accent' : ''}
             >
               <CardHeader>
-                <CardTitle>{d.name}</CardTitle>
+                {editingUnitId === d.id ? (
+                  <input
+                    autoFocus
+                    value={editingName}
+                    onChange={e => setEditingName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.stopPropagation();
+                        updateUnit.mutate({ id: d.id, patch: { name: editingName } }, { onSuccess: () => setEditingUnitId(null) });
+                      }
+                      if (e.key === 'Escape') setEditingUnitId(null);
+                    }}
+                    onClick={e => e.stopPropagation()}
+                    className="flex-1 h-6 px-1.5 text-[13px] font-semibold rounded border border-accent focus:outline-none"
+                  />
+                ) : (
+                  <CardTitle>{d.name}</CardTitle>
+                )}
                 <Badge tone="neutral" className="mono">{d.members.length}명</Badge>
+                <div className="flex gap-0.5 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                  {editingUnitId === d.id ? (
+                    <>
+                      <button type="button" onClick={() => updateUnit.mutate({ id: d.id, patch: { name: editingName } }, { onSuccess: () => setEditingUnitId(null) })} className="p-1 text-accent hover:text-accent-strong"><Check size={11} /></button>
+                      <button type="button" onClick={() => setEditingUnitId(null)} className="p-1 text-fg-3 hover:text-fg"><X size={11} /></button>
+                    </>
+                  ) : (
+                    <>
+                      <button type="button" onClick={() => { setEditingUnitId(d.id); setEditingName(d.name); }} className="p-1 text-fg-3 hover:text-accent"><Pencil size={11} /></button>
+                      <button type="button" onClick={() => {
+                        toast('부서를 삭제하시겠습니까?', {
+                          action: { label: '삭제', onClick: () => deleteUnit.mutate(d.id) },
+                          cancel: { label: '취소', onClick: () => {} },
+                        });
+                      }} className="p-1 text-fg-3 hover:text-danger"><Trash2 size={11} /></button>
+                    </>
+                  )}
+                </div>
               </CardHeader>
               <CardBody className="space-y-3">
                 <div className="space-y-1.5">

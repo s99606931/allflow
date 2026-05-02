@@ -213,6 +213,9 @@ export const extendedApi = {
   listChannels: async (): Promise<Channel[]> =>
     parsed(http.get('channels').json(), z.array(ChannelSchema)),
 
+  createChannel: async (input: { name: string; kind: 'public' | 'private' }): Promise<Channel> =>
+    parsed(http.post('channels', { json: input }).json(), ChannelSchema),
+
   sendMessage: async (input: MessageSend): Promise<{ id: string }> =>
     http.post(`channels/${input.channelId}/messages`, { json: { text: input.text } })
       .json<{ id: string }>(),
@@ -236,6 +239,13 @@ export const extendedApi = {
 
   createOrgUnit: async (input: { name: string; parentId?: string | null }): Promise<OrgUnit> =>
     parsed(http.post('org/units', { json: input }).json(), OrgUnitSchema),
+
+  updateOrgUnit: async (id: string, patch: { name?: string; parentId?: string | null }): Promise<OrgUnit> =>
+    parsed(http.patch(`org/units/${id}`, { json: patch }).json(), OrgUnitSchema),
+
+  deleteOrgUnit: async (id: string): Promise<void> => {
+    await http.delete(`org/units/${id}`);
+  },
 
   revokeToken: async (input: RevokeToken): Promise<{ id: string; revoked: true }> =>
     http.post('auth/tokens/revoke', { json: input }).json<{ id: string; revoked: true }>(),

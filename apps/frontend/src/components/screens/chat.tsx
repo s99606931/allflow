@@ -7,7 +7,7 @@ import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { Composer } from '@/components/chat/composer';
 import { ThreadPanel, type ThreadMessage } from '@/components/chat/thread-panel';
 import { MentionPopover } from '@/components/chat/mention-popover';
-import { useChannels, useMe, useTaskMutations, useUsers, useProjects, usePins, usePinMutations } from '@/lib/hooks/use-data';
+import { useChannelMutations, useChannels, useMe, useTaskMutations, useUsers, useProjects, usePins, usePinMutations } from '@/lib/hooks/use-data';
 import { toast } from 'sonner';
 import { useChatMessages, useMessageMutations, useSendMessage } from '@/lib/hooks/use-chat-messages';
 import type { PinnedMessageItem } from '@/lib/hooks/use-data';
@@ -39,6 +39,10 @@ export function ChatPage() {
   const [editingText, setEditingText] = useState('');
 
   const [channelSearch, setChannelSearch] = useState('');
+  const [newChannelOpen, setNewChannelOpen] = useState(false);
+  const [newChannelName, setNewChannelName] = useState('');
+  const [newChannelKind, setNewChannelKind] = useState<'public' | 'private'>('public');
+  const { createChannel } = useChannelMutations();
   const [msgSearch, setMsgSearch] = useState('');
   const [msgSearchOpen, setMsgSearchOpen] = useState(false);
   const [pinsOpen, setPinsOpen] = useState(false);
@@ -125,8 +129,46 @@ export function ChatPage() {
         <div className="flex-1 overflow-y-auto scroll p-2">
           <div className="px-2 pt-2 pb-1 flex items-center justify-between">
             <span className="text-[10.5px] uppercase tracking-wider text-fg-3 font-semibold">채널</span>
-            <button type="button" aria-label="채널 추가" onClick={() => toast.info('채널 생성은 관리자 설정에서 가능합니다.')} className="text-fg-3 hover:text-fg-1"><Plus size={12} /></button>
+            <button type="button" aria-label="채널 추가" onClick={() => setNewChannelOpen(v => !v)} className="text-fg-3 hover:text-accent"><Plus size={12} /></button>
           </div>
+          {newChannelOpen && (
+            <div className="mx-2 mb-2 p-2 rounded-md border border-accent/30 bg-accent-soft/20 space-y-1.5">
+              <input
+                autoFocus
+                value={newChannelName}
+                onChange={e => setNewChannelName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && newChannelName.trim()) {
+                    createChannel.mutate({ name: newChannelName.trim(), kind: newChannelKind }, {
+                      onSuccess: () => { setNewChannelOpen(false); setNewChannelName(''); },
+                    });
+                  }
+                  if (e.key === 'Escape') setNewChannelOpen(false);
+                }}
+                placeholder="채널 이름..."
+                className="w-full h-6 px-2 rounded border border-border bg-bg text-[11.5px] focus:outline-none focus:border-accent"
+              />
+              <div className="flex items-center gap-1.5">
+                <select
+                  value={newChannelKind}
+                  onChange={e => setNewChannelKind(e.target.value as 'public' | 'private')}
+                  className="flex-1 h-6 px-1.5 rounded border border-border bg-bg text-[11px]"
+                >
+                  <option value="public">공개</option>
+                  <option value="private">비공개</option>
+                </select>
+                <button
+                  type="button"
+                  disabled={!newChannelName.trim() || createChannel.isPending}
+                  onClick={() => createChannel.mutate({ name: newChannelName.trim(), kind: newChannelKind }, {
+                    onSuccess: () => { setNewChannelOpen(false); setNewChannelName(''); },
+                  })}
+                  className="h-6 px-2 rounded text-[11px] bg-accent text-white disabled:opacity-50"
+                >생성</button>
+                <button type="button" onClick={() => setNewChannelOpen(false)} className="h-6 px-1.5 rounded border border-border text-fg-3 text-[11px]"><X size={10} /></button>
+              </div>
+            </div>
+          )}
           {channelsLoading && <div className="px-3 py-4 text-[12px] text-fg-3">불러오는 중...</div>}
           {channelsError && <div className="px-3 py-4 text-[12px] text-danger">채널 로딩 실패</div>}
           {!channelsLoading && !channelsError && channels.length === 0 && (

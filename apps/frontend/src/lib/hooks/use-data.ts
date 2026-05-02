@@ -147,6 +147,19 @@ export function useChannels() {
   return useQuery({ queryKey: keys.channels.list(), queryFn: () => api.listChannels() });
 }
 
+export function useChannelMutations() {
+  const qc = useQueryClient();
+  const createChannel = useMutation({
+    mutationFn: (input: { name: string; kind: 'public' | 'private' }) => api.createChannel(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.channels.list() });
+      toast.success('채널이 생성되었습니다');
+    },
+    onError,
+  });
+  return { createChannel };
+}
+
 export function usePins(channelId: string | null) {
   return useQuery({
     queryKey: ['pins', channelId],
@@ -413,7 +426,24 @@ export function useOrgMutations() {
     },
     onError,
   });
-  return { invite, revokeToken, createUnit };
+  const updateUnit = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: { name?: string; parentId?: string | null } }) =>
+      api.updateOrgUnit(id, patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.orgUnits.all() });
+      toast.success('부서가 수정되었습니다');
+    },
+    onError,
+  });
+  const deleteUnit = useMutation({
+    mutationFn: (id: string) => api.deleteOrgUnit(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.orgUnits.all() });
+      toast.success('부서가 삭제되었습니다');
+    },
+    onError,
+  });
+  return { invite, revokeToken, createUnit, updateUnit, deleteUnit };
 }
 
 export function useNotificationMutations() {
