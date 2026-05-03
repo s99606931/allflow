@@ -9,6 +9,9 @@ import { useProjects, useProjectMutations } from '@/lib/hooks/use-data';
 import type { Project, StatusKey } from '@/lib/schemas';
 import { LayoutGrid, GanttChart, HeartPulse, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { BusinessFlowStepper } from '@/components/ai/business-flow-stepper';
+import { BUSINESS_FLOWS } from '@/lib/business-flows';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 
 
@@ -64,6 +67,16 @@ export function ProgressPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const { data: projects = [] } = useProjects();
   const { update: updateProject } = useProjectMutations();
+  const router = useRouter();
+  const doneCount = projects.filter(p => p.status === 'done').length;
+  const blockedCount = projects.filter(p => p.status === 'blocked').length;
+  const doingCount = projects.filter(p => p.status === 'doing').length;
+  const progressFlowStep =
+    projects.length === 0 ? 'plan' :
+    doneCount === projects.length ? 'closeout' :
+    blockedCount > 0 ? 'review' :
+    doingCount > 0 ? 'execute' :
+    'kickoff';
   const PROJECTS = projects;
   const todayPct = todayLinePercent();
   const [aiAnalysis, setAiAnalysis] = useState<Record<string, string>>({});
@@ -89,6 +102,13 @@ export function ProgressPage() {
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
+      <BusinessFlowStepper
+        flow={BUSINESS_FLOWS.project}
+        currentStepId={progressFlowStep}
+        systemContext={`프로젝트 현황 — ${projects.length}개 중 완료 ${doneCount}개, 진행 ${doingCount}개, 차단 ${blockedCount}개`}
+        onStepSelect={(step) => router.push(step.screen)}
+        enableServerSync
+      />
       {(() => {
         const blockedProjects = projects.filter(p => p.status === 'blocked').length;
         const lowProgress = projects.filter(p => p.status === 'doing' && p.progress < 30).length;

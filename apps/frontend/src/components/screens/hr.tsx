@@ -6,8 +6,11 @@ import { useCancelLeave, useCreateLeave, useLeaveRequests, useUpdateLeave, type 
 import { useMe, useOrgUnits } from '@/lib/hooks/use-data';
 import { Award, Briefcase, CalendarClock, Plane, Plus, Users, X, Pencil, Check, Loader2, Sparkles } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { BusinessFlowStepper } from '@/components/ai/business-flow-stepper';
+import { BUSINESS_FLOWS } from '@/lib/business-flows';
 import { useState } from 'react';
 import { useAiStream } from '@/lib/hooks/use-ai';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 const TABS = ['휴가 / 연차', '근태', '평가 / OKR', '1:1 미팅'] as const;
@@ -22,8 +25,21 @@ export function HRPage() {
   const { data: leaves = [] } = useLeaveRequests();
   const pendingLeaves = leaves.filter(l => l.status === 'PENDING').length;
   const approvedLeaves = leaves.filter(l => l.status === 'APPROVED').length;
+  const router = useRouter();
+  const hrFlowStep =
+    leaves.length === 0 ? 'draft' :
+    pendingLeaves > 0 ? 'review' :
+    approvedLeaves > 0 ? 'archive' :
+    'draft';
   return (
     <div className="p-6 max-w-[1280px] mx-auto space-y-5">
+      <BusinessFlowStepper
+        flow={BUSINESS_FLOWS.approval}
+        currentStepId={hrFlowStep}
+        systemContext={`HR — 휴가 신청 대기 ${pendingLeaves}건, 승인 ${approvedLeaves}건, 총 ${leaves.length}건`}
+        onStepSelect={(step) => router.push(step.screen)}
+        enableServerSync
+      />
       <AiGuideWidget
         systemContext={`HR — 휴가 신청 대기 ${pendingLeaves}건, 승인 ${approvedLeaves}건, 총 ${leaves.length}건`}
         hints={[
