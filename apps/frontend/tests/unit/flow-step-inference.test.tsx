@@ -131,10 +131,11 @@ function inferIssueStep(opts: {
 }): string {
   const { issuesLength, newCount, inProgressCount, inReviewCount, resolvedCount } = opts;
   return (
-    newCount > 0 ? 'open' :
+    issuesLength === 0 ? 'open' :
+    newCount > 0 ? 'triage' :
     inProgressCount > 0 ? 'in-progress' :
     inReviewCount > 0 ? 'verify' :
-    resolvedCount === issuesLength && issuesLength > 0 ? 'closed' :
+    resolvedCount === issuesLength ? 'closed' :
     'triage'
   );
 }
@@ -144,6 +145,7 @@ function inferTaskStep(opts: { reviewCount: number; doingCount: number; doneCoun
   return (
     reviewCount > 0 ? 'review' :
     doingCount > 0 ? 'doing' :
+    allCount === 0 ? 'create' :
     doneCount === allCount ? 'done' :
     'create'
   );
@@ -169,12 +171,12 @@ function inferApprovalStep(opts: { inboxCount: number; sentCount: number }): str
 }
 
 describe('Issue flow step inference', () => {
-  it('shows triage when no issues exist (empty state)', () => {
-    expect(inferIssueStep({ issuesLength: 0, newCount: 0, inProgressCount: 0, inReviewCount: 0, resolvedCount: 0 })).toBe('triage');
+  it('shows open when no issues exist (prompts to register first issue)', () => {
+    expect(inferIssueStep({ issuesLength: 0, newCount: 0, inProgressCount: 0, inReviewCount: 0, resolvedCount: 0 })).toBe('open');
   });
 
-  it('shows open when there are newly registered open issues', () => {
-    expect(inferIssueStep({ issuesLength: 3, newCount: 2, inProgressCount: 1, inReviewCount: 0, resolvedCount: 0 })).toBe('open');
+  it('shows triage when open/untriaged issues need assignment', () => {
+    expect(inferIssueStep({ issuesLength: 3, newCount: 2, inProgressCount: 1, inReviewCount: 0, resolvedCount: 0 })).toBe('triage');
   });
 
   it('shows in-progress when issues are being worked on', () => {
@@ -195,8 +197,8 @@ describe('Issue flow step inference', () => {
 });
 
 describe('Task flow step inference', () => {
-  it('shows done when all tasks are complete (empty board)', () => {
-    expect(inferTaskStep({ reviewCount: 0, doingCount: 0, doneCount: 0, allCount: 0 })).toBe('done');
+  it('shows create when board is empty (prompts to create first task)', () => {
+    expect(inferTaskStep({ reviewCount: 0, doingCount: 0, doneCount: 0, allCount: 0 })).toBe('create');
   });
 
   it('shows create when tasks exist but none started', () => {

@@ -96,6 +96,7 @@ export function TasksPage() {
   const flowStepId =
     statusCounts.review && statusCounts.review > 0 ? 'review' :
     statusCounts.doing && statusCounts.doing > 0 ? 'doing' :
+    filterCounts.all === 0 ? 'create' :
     statusCounts.done === filterCounts.all ? 'done' : 'create';
 
   return (

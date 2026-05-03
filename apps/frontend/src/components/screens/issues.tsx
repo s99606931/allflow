@@ -61,10 +61,11 @@ export function IssuesPage() {
 
   const router = useRouter();
   const issueFlowStep =
-    newCount > 0 ? 'open' :
+    issues.length === 0 ? 'open' :
+    newCount > 0 ? 'triage' :
     issues.some(i => i.status === 'in-progress') ? 'in-progress' :
     issues.some(i => i.status === 'in-review') ? 'verify' :
-    resolvedCount === issues.length && issues.length > 0 ? 'closed' : 'triage';
+    resolvedCount === issues.length ? 'closed' : 'triage';
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
