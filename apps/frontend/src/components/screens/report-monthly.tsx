@@ -33,7 +33,10 @@ export function ReportMonthlyPage() {
   const { data: history = [] } = useReports();
   const period = lastMonth();
   const router = useRouter();
-  const monthlyFlowStep = report ? 'review' : 'collect';
+  const monthlyFlowStep =
+    report && history.some(r => r.id === report.id) ? 'share' :
+    report ? 'review' :
+    'collect';
 
   const onGenerate = async () => {
     const r = await monthlyReport.mutateAsync({ year: period.year, month: period.month });

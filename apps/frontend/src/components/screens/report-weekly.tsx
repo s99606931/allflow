@@ -81,7 +81,11 @@ export function ReportWeeklyPage() {
     setReport(r);
   };
 
-  const reportFlowStep = report ? 'review' : scope.size > 0 ? 'draft' : 'collect';
+  const reportFlowStep =
+    report && history.some(r => r.id === report.id) ? 'share' :
+    report ? 'review' :
+    scope.size > 0 ? 'draft' :
+    'collect';
 
   return (
     <div className="p-6 grid grid-cols-12 gap-5 max-w-[1440px] mx-auto">

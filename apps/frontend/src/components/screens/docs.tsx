@@ -158,7 +158,12 @@ export function DocsPage() {
         <div className="max-w-[760px] mx-auto px-10 py-8">
           <BusinessFlowStepper
             flow={BUSINESS_FLOWS.approval}
-            currentStepId="archive"
+            currentStepId={
+              docs.length === 0 ? 'draft' :
+              editing ? 'review' :
+              recentDocsCount > 0 ? 'archive' :
+              'archive'
+            }
             systemContext={`문서 관리 — 총 ${docs.length}건, 최근 7일 ${recentDocsCount}건`}
             onStepSelect={(step) => router.push(step.screen)}
             enableServerSync

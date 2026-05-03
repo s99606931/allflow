@@ -74,3 +74,50 @@ describe('Projects flow step inference', () => {
     expect(inferProjectsStep({ projectsLength: 3, doneCount: 1, activeCount: 2, blockedCount: 0, overdueCount: 0 })).toBe('execute');
   });
 });
+
+function inferDocsStep(opts: { docsLength: number; editing: boolean }): string {
+  const { docsLength, editing } = opts;
+  return docsLength === 0 ? 'draft' : editing ? 'review' : 'archive';
+}
+
+function inferReportStep(opts: { report: { id: string } | null; historyIds: string[]; scopeSize: number }): string {
+  const { report, historyIds, scopeSize } = opts;
+  return (
+    report && historyIds.includes(report.id) ? 'share' :
+    report ? 'review' :
+    scopeSize > 0 ? 'draft' :
+    'collect'
+  );
+}
+
+describe('Docs flow step inference', () => {
+  it('shows draft when no docs exist', () => {
+    expect(inferDocsStep({ docsLength: 0, editing: false })).toBe('draft');
+  });
+
+  it('shows review when editing is active', () => {
+    expect(inferDocsStep({ docsLength: 3, editing: true })).toBe('review');
+  });
+
+  it('shows archive when docs exist and not editing', () => {
+    expect(inferDocsStep({ docsLength: 5, editing: false })).toBe('archive');
+  });
+});
+
+describe('Report flow step inference', () => {
+  it('shows collect when no scope selected', () => {
+    expect(inferReportStep({ report: null, historyIds: [], scopeSize: 0 })).toBe('collect');
+  });
+
+  it('shows draft when scope selected but no report', () => {
+    expect(inferReportStep({ report: null, historyIds: [], scopeSize: 2 })).toBe('draft');
+  });
+
+  it('shows review when report generated but not yet in history', () => {
+    expect(inferReportStep({ report: { id: 'r1' }, historyIds: ['r0'], scopeSize: 2 })).toBe('review');
+  });
+
+  it('shows share when report is saved in history', () => {
+    expect(inferReportStep({ report: { id: 'r1' }, historyIds: ['r0', 'r1'], scopeSize: 2 })).toBe('share');
+  });
+});
