@@ -165,9 +165,14 @@ function inferGanttStep(opts: {
   return 'kickoff';
 }
 
-function inferApprovalStep(opts: { inboxCount: number; sentCount: number }): string {
-  const { inboxCount, sentCount } = opts;
-  return inboxCount > 0 ? 'review' : sentCount > 0 ? 'submit' : 'draft';
+function inferApprovalStep(opts: { inboxCount: number; pendingSentCount: number; historyCount: number }): string {
+  const { inboxCount, pendingSentCount, historyCount } = opts;
+  return (
+    inboxCount > 0 ? 'review' :
+    pendingSentCount > 0 ? 'submit' :
+    historyCount > 0 ? 'archive' :
+    'draft'
+  );
 }
 
 describe('Issue flow step inference', () => {
@@ -241,19 +246,23 @@ describe('Gantt flow step inference', () => {
 });
 
 describe('Approval flow step inference', () => {
-  it('shows draft when no approvals exist', () => {
-    expect(inferApprovalStep({ inboxCount: 0, sentCount: 0 })).toBe('draft');
+  it('shows draft when no approvals exist (new user)', () => {
+    expect(inferApprovalStep({ inboxCount: 0, pendingSentCount: 0, historyCount: 0 })).toBe('draft');
   });
 
-  it('shows submit when the user has sent approvals', () => {
-    expect(inferApprovalStep({ inboxCount: 0, sentCount: 2 })).toBe('submit');
+  it('shows submit when the user has pending sent approvals awaiting decision', () => {
+    expect(inferApprovalStep({ inboxCount: 0, pendingSentCount: 2, historyCount: 0 })).toBe('submit');
   });
 
-  it('shows review when the user has approvals to process', () => {
-    expect(inferApprovalStep({ inboxCount: 3, sentCount: 1 })).toBe('review');
+  it('shows archive when all sent approvals are resolved (no pending)', () => {
+    expect(inferApprovalStep({ inboxCount: 0, pendingSentCount: 0, historyCount: 3 })).toBe('archive');
   });
 
-  it('inbox takes priority over sent', () => {
-    expect(inferApprovalStep({ inboxCount: 1, sentCount: 5 })).toBe('review');
+  it('shows review when the user has inbox approvals to process', () => {
+    expect(inferApprovalStep({ inboxCount: 3, pendingSentCount: 0, historyCount: 1 })).toBe('review');
+  });
+
+  it('inbox takes priority over pending sent', () => {
+    expect(inferApprovalStep({ inboxCount: 1, pendingSentCount: 5, historyCount: 0 })).toBe('review');
   });
 });

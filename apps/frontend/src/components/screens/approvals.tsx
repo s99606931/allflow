@@ -79,10 +79,11 @@ export function ApprovalsPage() {
   }, [approvals, tab, searchQ, me, sortBy]);
 
   const counts = useMemo(() => ({
-    inbox:   approvals.filter(a => a.status === 'pending' && a.approver === me?.id).length,
-    sent:    approvals.filter(a => a.requester === me?.id).length,
-    cc:      approvals.filter(a => a.status === 'pending' && a.requester !== me?.id && a.approver !== me?.id).length,
-    history: approvals.filter(a => (a.status === 'approved' || a.status === 'rejected') && (a.approver === me?.id || a.requester === me?.id)).length,
+    inbox:       approvals.filter(a => a.status === 'pending' && a.approver === me?.id).length,
+    sent:        approvals.filter(a => a.requester === me?.id).length,
+    pendingSent: approvals.filter(a => a.requester === me?.id && a.status === 'pending').length,
+    cc:          approvals.filter(a => a.status === 'pending' && a.requester !== me?.id && a.approver !== me?.id).length,
+    history:     approvals.filter(a => (a.status === 'approved' || a.status === 'rejected') && (a.approver === me?.id || a.requester === me?.id)).length,
   }), [approvals, me]);
 
   return (
@@ -98,7 +99,12 @@ export function ApprovalsPage() {
           </div>
           <BusinessFlowStepper
             flow={BUSINESS_FLOWS.approval}
-            currentStepId={counts.inbox > 0 ? 'review' : counts.sent > 0 ? 'submit' : 'draft'}
+            currentStepId={
+              counts.inbox > 0 ? 'review' :
+              counts.pendingSent > 0 ? 'submit' :
+              counts.history > 0 ? 'archive' :
+              'draft'
+            }
             systemContext={`결재 대기 ${counts.inbox}건, 상신 ${counts.sent}건`}
             onStepSelect={(step) => router.push(step.screen)}
             enableServerSync
