@@ -29,6 +29,13 @@ import {
   type FlowInsight,
   type ProgressRowForInsight,
 } from './insights.js';
+import {
+  buildOverdueNotificationData,
+  buildSuggestNotificationData,
+  computeOverdue,
+  shouldCreateOverdueNotification,
+  todayWindowStart,
+} from './flow-alerts.js';
 
 export interface BusinessFlowsRoutesOptions {
   registry: AIAdapterRegistry;
@@ -37,6 +44,11 @@ export interface BusinessFlowsRoutesOptions {
 const SuggestBody = z.object({
   currentStepId: z.string().min(1).max(80),
   context: z.string().max(500).optional(),
+  /**
+   * 10차 PDCA: AI 제안 결과를 사용자 알림 센터에 저장할지 여부.
+   * 기본값 false (기존 동작 유지). 주의: 호출자가 의도적으로 켜야만 알림 생성.
+   */
+  saveToNotifications: z.boolean().optional(),
 });
 
 const ProgressPatchBody = z.object({
@@ -113,7 +125,7 @@ export async function businessFlowsRoutes(
       const parsed = SuggestBody.safeParse(req.body);
       if (!parsed.success) throw new ValidationError('잘못된 입력', parsed.error.issues);
 
-      const { currentStepId, context } = parsed.data;
+      const { currentStepId, context, saveToNotifications } = parsed.data;
       const current = flow.steps.find((s) => s.id === currentStepId);
       if (!current) throw new ValidationError('currentStepId 가 플로우에 없습니다');
 
@@ -146,12 +158,28 @@ export async function businessFlowsRoutes(
         { maxTokens: 300, temperature: 0.4 },
       );
 
+      let savedNotificationId: string | null = null;
+      if (saveToNotifications && result.text.trim().length > 0) {
+        // biome-ignore lint/style/noNonNullAssertion: app.authenticate guarantees req.user.
+        const userId = req.user!.id;
+        const data = buildSuggestNotificationData({
+          userId,
+          flow,
+          currentStep: current,
+          nextStep: next ?? null,
+          suggestion: result.text,
+        });
+        const created = (await app.prisma.notification.create({ data })) as { id: string };
+        savedNotificationId = created.id;
+      }
+
       reply.send({
         flowId: flow.id,
         currentStep: current,
         nextStep: next ?? null,
         suggestion: result.text,
         adapter: adapter.name,
+        ...(savedNotificationId ? { notificationId: savedNotificationId } : {}),
       });
     },
   );
@@ -237,6 +265,37 @@ export async function businessFlowsRoutes(
         },
         update,
       })) as ProgressRow;
+
+      // 10차 PDCA: stepStartedAt 경과일 > expectedDays 이면 flow_overdue 알림 생성.
+      // 같은 (userId, flowId, step, today) 조합에 대해 하루 1회 dedup.
+      const currentStep = flow.steps.find((s) => s.id === currentStepId);
+      if (currentStep?.expectedDays) {
+        const overdue = computeOverdue(row.stepStartedAt, currentStep.expectedDays);
+        if (overdue.overdue) {
+          const windowStart = todayWindowStart();
+          const allowed = await shouldCreateOverdueNotification(async () =>
+            (await app.prisma.notification.findFirst({
+              where: {
+                userId,
+                kind: 'flow_overdue',
+                href: currentStep.screen,
+                createdAt: { gte: windowStart },
+                title: { contains: `"${currentStep.label}"` },
+              },
+              select: { id: true },
+            })) as { id: string } | null,
+          );
+          if (allowed) {
+            const data = buildOverdueNotificationData({
+              userId,
+              flow,
+              step: currentStep,
+              daysOver: overdue.daysOver,
+            });
+            await app.prisma.notification.create({ data });
+          }
+        }
+      }
 
       return toProgressWire(row);
     },

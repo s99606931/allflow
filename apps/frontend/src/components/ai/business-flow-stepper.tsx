@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
+  Bell,
   ChevronDown,
   ChevronUp,
   Loader2,
@@ -18,6 +19,7 @@ import type {
 } from '@/lib/api/extended';
 import { toast } from 'sonner';
 import { useBusinessFlowProgress } from '@/lib/hooks/use-business-flow-progress';
+import { useFlowAlerts } from '@/lib/hooks/use-flow-alerts';
 import {
   isFlowComplete,
   useFlowCelebration,
@@ -169,6 +171,10 @@ export function BusinessFlowStepper({
   // 6차 PDCA: overdue 경고 (서버 동기화 모드 + expectedDays 정의된 경우만).
   const overdueInfo = computeOverdue(stepStartedAt, currentStep?.expectedDays);
 
+  // 10차 PDCA: 알림 센터에 누적된 미확인 flow_overdue 알림 수.
+  // 이 플로우의 단계 화면에 매칭된 항목만 포함.
+  const flowAlerts = useFlowAlerts(flow);
+
   // 7차 PDCA: 키보드 화살표 단계 이동 — ←/→ 로 이전/다음 단계 호출.
   const stepListRef = useRef<HTMLOListElement | null>(null);
   const { handleStepKeyDown } = useStepperKeyboard({
@@ -304,11 +310,27 @@ export function BusinessFlowStepper({
             · {progressPct}%
           </span>
         )}
+        {flowAlerts.unreadCount > 0 && (
+          <a
+            href="/notifications"
+            className="ml-auto text-[11px] px-2 py-0.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition-colors cursor-pointer flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+            data-testid="business-flow-alerts-badge"
+            data-alert-count={flowAlerts.unreadCount}
+            aria-label={`이 플로우에 미확인 지연 알림 ${flowAlerts.unreadCount}건`}
+            title={flowAlerts.latest?.title ?? '미확인 지연 알림'}
+          >
+            <Bell size={10} className="shrink-0" />
+            <span className="tabular-nums">{flowAlerts.unreadCount}</span>
+          </a>
+        )}
         <button
           type="button"
           onClick={askAi}
           disabled={loading}
-          className="ml-auto text-[11px] px-2.5 py-0.5 rounded-full border border-accent/30 text-accent-strong hover:bg-accent/10 transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className={cn(
+            'text-[11px] px-2.5 py-0.5 rounded-full border border-accent/30 text-accent-strong hover:bg-accent/10 transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+            flowAlerts.unreadCount === 0 && 'ml-auto',
+          )}
           data-testid="business-flow-ai-suggest"
         >
           {loading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}

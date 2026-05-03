@@ -2214,7 +2214,7 @@ export interface components {
         Notification: {
             id: string;
             /** @enum {string} */
-            kind: "mention" | "sla" | "ai" | "system" | "comment";
+            kind: "mention" | "sla" | "ai" | "system" | "comment" | "flow_overdue";
             title: string;
             body?: string;
             actor?: string;

@@ -239,7 +239,7 @@ export type LlmConnectionInput = z.infer<typeof LlmConnectionInput>;
 
 export const Notification = z.object({
   "id": z.string(),
-  "kind": z.enum(["mention", "sla", "ai", "system", "comment"]),
+  "kind": z.enum(["mention", "sla", "ai", "system", "comment", "flow_overdue"]),
   "title": z.string(),
   "body": z.string().optional(),
   "actor": z.string().optional(),

@@ -101,16 +101,86 @@ function makeUserStore(seed: UserBriefRow[] = []) {
   };
 }
 
-async function buildTestApp(userSeed: UserBriefRow[] = []) {
+interface NotificationRow {
+  id: string;
+  userId: string;
+  kind: string;
+  title: string;
+  body: string | null;
+  href: string | null;
+  createdAt: Date;
+}
+
+function makeNotificationStore() {
+  const rows: NotificationRow[] = [];
+  let seq = 0;
+  return {
+    rows,
+    create: async (args: {
+      data: { userId: string; kind: string; title: string; body?: string; href?: string };
+    }) => {
+      seq += 1;
+      const row: NotificationRow = {
+        id: `n-${seq}`,
+        userId: args.data.userId,
+        kind: args.data.kind,
+        title: args.data.title,
+        body: args.data.body ?? null,
+        href: args.data.href ?? null,
+        createdAt: new Date(),
+      };
+      rows.push(row);
+      return row;
+    },
+    findFirst: async (args: {
+      where: {
+        userId?: string;
+        kind?: string;
+        href?: string;
+        createdAt?: { gte?: Date };
+        title?: { contains?: string };
+      };
+      select?: Record<string, true>;
+    }) => {
+      const w = args.where;
+      const found = rows.find((r) => {
+        if (w.userId && r.userId !== w.userId) return false;
+        if (w.kind && r.kind !== w.kind) return false;
+        if (w.href && r.href !== w.href) return false;
+        if (w.createdAt?.gte && r.createdAt < w.createdAt.gte) return false;
+        if (w.title?.contains && !r.title.includes(w.title.contains)) return false;
+        return true;
+      });
+      return found ? { id: found.id } : null;
+    },
+  };
+}
+
+interface TestAppHandles {
+  app: Awaited<ReturnType<typeof buildApp>>;
+  progressStore: ReturnType<typeof makeProgressStore>;
+  notificationStore: ReturnType<typeof makeNotificationStore>;
+}
+
+async function buildTestApp(userSeed: UserBriefRow[] = []): Promise<TestAppHandles['app']> {
+  const handles = await buildTestAppWithHandles(userSeed);
+  return handles.app;
+}
+
+async function buildTestAppWithHandles(
+  userSeed: UserBriefRow[] = [],
+): Promise<TestAppHandles> {
   resetEnvForTests();
   process.env.AUTH_SECRET = TEST_AUTH;
   const app = await buildApp({ logger: false });
   const progressStore = makeProgressStore();
   const userStore = makeUserStore(userSeed);
+  const notificationStore = makeNotificationStore();
   app.decorate('prisma', {
     revokedToken: { findUnique: async () => null },
     userFlowProgress: progressStore,
     user: userStore,
+    notification: notificationStore,
   } as never);
   await app.register(authPlugin);
 
@@ -120,7 +190,7 @@ async function buildTestApp(userSeed: UserBriefRow[] = []) {
   const registry = new StaticAIAdapterRegistry();
   registry.register(adapter, true);
   await app.register(businessFlowsRoutes, { registry });
-  return app;
+  return { app, progressStore, notificationStore };
 }
 
 async function makeJws(sub: string): Promise<string> {
@@ -782,6 +852,121 @@ describe('modules/business-flows', () => {
       url: '/business-flows/project-lifecycle/insights',
     });
     expect(r.statusCode).toBe(401);
+    await app.close();
+  });
+
+  // ---------------------------------------------------------------------
+  // 10차 PDCA: 알림 센터 연동 — overdue 자동 알림 + suggest 저장
+  // ---------------------------------------------------------------------
+
+  it('PATCH /progress: stepStartedAt 가 expectedDays 초과면 flow_overdue 알림 자동 생성', async () => {
+    const { app, progressStore, notificationStore } = await buildTestAppWithHandles();
+    const token = await makeJws('u1');
+    // 1차 호출 → plan 단계 (expectedDays=5).
+    await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { currentStepId: 'plan' },
+    });
+    // stepStartedAt 를 7일 전으로 강제 (expectedDays 5일 초과).
+    const row = progressStore.rows.get('u1::project-lifecycle');
+    if (!row) throw new Error('row not seeded');
+    row.stepStartedAt = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    // 2차 호출 → 같은 단계 멱등 PATCH. overdue 검사가 트리거되어 알림 생성.
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { currentStepId: 'plan' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(notificationStore.rows.length).toBe(1);
+    const n = notificationStore.rows[0]!;
+    expect(n.kind).toBe('flow_overdue');
+    expect(n.userId).toBe('u1');
+    expect(n.title).toContain('"기획"');
+    expect(n.href).toBe('/projects');
+    await app.close();
+  });
+
+  it('PATCH /progress: 같은 날 두 번 overdue 면 알림 1건만 (dedup)', async () => {
+    const { app, progressStore, notificationStore } = await buildTestAppWithHandles();
+    const token = await makeJws('u1');
+    await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { currentStepId: 'plan' },
+    });
+    const row = progressStore.rows.get('u1::project-lifecycle');
+    if (!row) throw new Error('row not seeded');
+    row.stepStartedAt = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    // 두 번 PATCH → 알림은 1건만 생성되어야 함.
+    await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { currentStepId: 'plan' },
+    });
+    await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { currentStepId: 'plan' },
+    });
+    expect(notificationStore.rows.length).toBe(1);
+    await app.close();
+  });
+
+  it('PATCH /progress: stepStartedAt 가 expectedDays 미만이면 알림 없음', async () => {
+    const { app, notificationStore } = await buildTestAppWithHandles();
+    const token = await makeJws('u1');
+    await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { currentStepId: 'plan' },
+    });
+    expect(notificationStore.rows.length).toBe(0);
+    await app.close();
+  });
+
+  it('POST /suggest with saveToNotifications=true → 알림 저장 + notificationId 반환', async () => {
+    const { app, notificationStore } = await buildTestAppWithHandles();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'POST',
+      url: '/business-flows/approval-lifecycle/suggest',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { currentStepId: 'draft', saveToNotifications: true },
+    });
+    expect(r.statusCode).toBe(200);
+    const body = r.json() as { notificationId?: string; suggestion: string };
+    expect(typeof body.notificationId).toBe('string');
+    expect(notificationStore.rows.length).toBe(1);
+    const n = notificationStore.rows[0]!;
+    expect(n.kind).toBe('ai');
+    expect(n.title).toContain('결재 라이프사이클');
+    expect(n.body).toBe(body.suggestion);
+    await app.close();
+  });
+
+  it('POST /suggest 기본값(saveToNotifications 미지정) → 알림 저장 안 함', async () => {
+    const { app, notificationStore } = await buildTestAppWithHandles();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'POST',
+      url: '/business-flows/approval-lifecycle/suggest',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { currentStepId: 'draft' },
+    });
+    expect(r.statusCode).toBe(200);
+    const body = r.json() as { notificationId?: string };
+    expect(body.notificationId).toBeUndefined();
+    expect(notificationStore.rows.length).toBe(0);
     await app.close();
   });
 });

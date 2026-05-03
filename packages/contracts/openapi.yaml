@@ -1220,7 +1220,7 @@ components:
         id: { type: string }
         kind:
           type: string
-          enum: [mention, sla, ai, system, comment]
+          enum: [mention, sla, ai, system, comment, flow_overdue]
         title: { type: string }
         body: { type: string }
         actor: { type: string }

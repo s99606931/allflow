@@ -69,6 +69,7 @@ enum NotificationKind {
   ai
   system
   comment
+  flow_overdue
 }
 
 enum MemberRole {
@@ -878,6 +879,9 @@ model UserFlowProgress {
   flowId         String   @map("flow_id") @db.VarChar(80)
   currentStepId  String   @map("current_step_id") @db.VarChar(80)
   completedSteps String[] @default([]) @map("completed_steps")
+  /// 6차 PDCA: 현재 단계가 시작된 시각.
+  /// currentStepId 가 변경될 때만 갱신되어 overdue 경고 계산의 기준이 된다.
+  stepStartedAt  DateTime @default(now()) @map("step_started_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
   createdAt      DateTime @default(now()) @map("created_at")
 
