@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardBody, CardHeader, CardTitle, Badge, Button } from '@/components/ui/primitives';
-import { useHealth, useOrgMutations } from '@/lib/hooks/use-data';
+import { useHealth } from '@/lib/hooks/use-data';
 import { useAuditLog } from '@/lib/hooks/use-admin';
 import { Activity, AlertCircle, Cpu, ShieldAlert } from 'lucide-react';
 import { LlmConnectionsPanel } from '@/components/admin/llm-connections-panel';
@@ -35,7 +35,6 @@ function formatRelativeTime(isoString: string): string {
 
 export function AdminPage() {
   const healthQuery = useHealth();
-  const { revokeToken } = useOrgMutations();
   const health = healthQuery.data;
   const auditLogQuery = useAuditLog();
 
@@ -115,13 +114,14 @@ export function AdminPage() {
               variant="secondary"
               size="sm"
               className="w-full !text-danger"
-              disabled={revokeToken.isPending}
-              onClick={() => revokeToken.mutate({ tokenId: 'webhook-prod', reason: 'admin bulk revoke' })}
+              disabled
+              title="API 토큰 목록 조회 + 일괄 회수 흐름은 별도 사이클에서 구현됩니다"
+              aria-disabled="true"
             >
-              {revokeToken.isPending ? '회수 중...' : 'API 토큰 일괄 회수'}
+              API 토큰 일괄 회수 (준비 중)
             </Button>
             <div className="text-[11px] text-fg-3 px-1">
-              세션 종료 / 워크스페이스 잠금은 백엔드 모듈 추가 후 노출됩니다.
+              API 토큰 목록 / 세션 종료 / 워크스페이스 잠금은 백엔드 모듈 추가 후 노출됩니다.
             </div>
           </CardBody>
         </Card>

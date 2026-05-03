@@ -267,6 +267,7 @@ function ConnectionDialog({
       title={initial ? 'LLM 연결 편집' : 'LLM 연결 추가'}
       description="로컬LLM(LMStudio/Ollama) 또는 상용LLM(OpenAI/Anthropic) 엔드포인트를 등록합니다."
       size="md"
+      modal={false}
     >
       <form onSubmit={submit} className="space-y-3">
         <DialogField label="이름" required>

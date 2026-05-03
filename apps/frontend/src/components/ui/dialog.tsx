@@ -24,6 +24,14 @@ interface DialogProps {
   children?: React.ReactNode;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  /**
+   * Whether the dialog should trap focus and block outside interactions.
+   * Default `true` (Radix default).
+   * Set `false` when the dialog co-exists with another always-open surface
+   * (e.g. the AI side panel) — otherwise the side panel cannot be focused
+   * while the dialog is open.
+   */
+  modal?: boolean;
 }
 
 const SIZE_MAP: Record<NonNullable<DialogProps['size']>, string> = {
@@ -32,9 +40,9 @@ const SIZE_MAP: Record<NonNullable<DialogProps['size']>, string> = {
   lg: 'max-w-[860px]',
 };
 
-export function Dialog({ open, onOpenChange, title, description, children, className, size = 'md' }: DialogProps) {
+export function Dialog({ open, onOpenChange, title, description, children, className, size = 'md', modal = true }: DialogProps) {
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange} modal={modal}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content

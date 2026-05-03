@@ -51,11 +51,13 @@ async function forward(req: NextRequest, ctx: { params: Promise<{ path: string[]
     headers.set('authorization', `Bearer ${token}`);
   }
 
-  const init: RequestInit & { duplex?: 'half' } = {
+  const bodyBuffer =
+    ['GET', 'HEAD'].includes(req.method) ? undefined : await req.arrayBuffer();
+
+  const init: RequestInit = {
     method: req.method,
     headers,
-    body: ['GET', 'HEAD'].includes(req.method) ? undefined : req.body,
-    duplex: 'half',
+    body: bodyBuffer,
   };
 
   const upstream = await fetch(url, init);
