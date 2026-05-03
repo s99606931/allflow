@@ -47,7 +47,7 @@ export async function mfaRoutes(app: FastifyInstance): Promise<void> {
       algorithm: 'SHA1',
       digits: 6,
       period: 30,
-      secret: OTPAuth.Secret.generate(160),
+      secret: new OTPAuth.Secret({ size: 20 }),
     });
 
     await app.prisma.user.update({

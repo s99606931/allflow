@@ -310,7 +310,7 @@ function AnnualLeaveCalendar({ leaves }: { leaves: LeaveRequest[] }) {
                   const tone = types
                     ? types.includes('SICK')
                       ? 'bg-danger/30 text-danger-1'
-                      : types.includes('VACATION') || types.includes('ANNUAL')
+                      : types.includes('ANNUAL')
                         ? 'bg-accent/30 text-accent-1'
                         : 'bg-warning/30 text-warning-1'
                     : 'text-fg-2';

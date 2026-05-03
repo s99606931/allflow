@@ -403,7 +403,7 @@ describe('modules/identity — DELETE /users/me', () => {
         findFirst: async () => ({ id: 'u1' }),
         update: async (args: AnyArgs) => {
           captured = args;
-          return SAMPLE_USERS[0];
+          return SAMPLE_USERS[0]!;
         },
       },
     });
