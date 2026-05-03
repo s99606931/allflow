@@ -33,6 +33,7 @@ const ALICE_ACTIVE: TeamFlowProgressEntry = {
   currentStepId: 'execute',
   completedSteps: ['plan', 'kickoff'],
   progressRatio: 2 / 5,
+  stepStartedAt: '2026-05-03T00:00:00Z',
   updatedAt: '2026-05-03T00:00:00Z',
 };
 
@@ -42,6 +43,7 @@ const BOB_DONE: TeamFlowProgressEntry = {
   currentStepId: 'done',
   completedSteps: ['create', 'doing', 'review', 'done'],
   progressRatio: 1,
+  stepStartedAt: '2026-05-03T01:00:00Z',
   updatedAt: '2026-05-03T01:00:00Z',
 };
 
@@ -115,6 +117,7 @@ describe('FlowProgressSummary', () => {
       currentStepId: 'plan',
       completedSteps: [],
       progressRatio: 0.1 * (i + 1),
+      stepStartedAt: '2026-05-03T00:00:00Z',
       updatedAt: '2026-05-03T00:00:00Z',
     }));
     vi.mocked(api.getTeamFlowProgress).mockResolvedValueOnce({ team: many });

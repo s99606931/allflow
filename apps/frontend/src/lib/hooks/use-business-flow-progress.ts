@@ -18,6 +18,8 @@ export interface UseBusinessFlowProgressResult {
   currentStepId: string;
   /** 완료된 step.id 집합 (정렬됨). */
   completedSteps: string[];
+  /** 6차 PDCA: 현재 단계가 시작된 시각 (ISO). 서버 행이 없으면 undefined. */
+  stepStartedAt: string | undefined;
   /** 서버 fetch 진행 중 여부. */
   isLoading: boolean;
   /** 진행 상태 갱신 트리거 (멱등). */
@@ -88,6 +90,7 @@ export function useBusinessFlowProgress(
   return {
     currentStepId,
     completedSteps,
+    stepStartedAt: data?.stepStartedAt,
     isLoading: query.isLoading,
     setProgress,
   };

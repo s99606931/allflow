@@ -1,16 +1,46 @@
 /**
- * 클라이언트측 비즈니스 플로우 카탈로그 — BE flow-registry 와 동일 정의의 미러.
+ * business-flows 정적 플로우 레지스트리 — 화면별 비즈니스 프로세스 정의.
  *
- * 정적 구조라 매번 GET 하지 않고 화면이 직접 import 한다. AI 제안은
- * `api.suggestBusinessFlowNext` 로 BE 호출.
+ * 사용자 (특히 초급자)에게 "현재 화면이 전체 비즈니스 흐름의 어디쯤인가" 를
+ * 도식화 가능한 형태로 제공한다. 각 플로우는 ordered steps + 각 step 의
+ * `screen` (FE 라우트 hint) + `action` (사용자 행동) + `aiHint` (AI 제안 트리거) 를 가진다.
  *
- * 동기 정책: BE flow-registry.ts 변경 시 같은 PR 에서 본 파일도 갱신할 것.
- * (드리프트 방지: e2e/contract 테스트가 향후 양쪽 일치를 검증.)
+ * 정적 정의 → DB 변경 없음. 향후 워크스페이스별 커스텀 플로우는 별도 모델로 확장.
  */
 
-import type { BusinessFlow } from './api/extended';
+export interface FlowStep {
+  /** 식별자 — 같은 플로우 내 unique. */
+  id: string;
+  /** 사용자에게 보여줄 단계명. */
+  label: string;
+  /** 단계 설명 (1~2문장). */
+  description: string;
+  /** 이 단계와 매칭되는 FE 라우트 (예: `/projects`, `/approvals`). */
+  screen: string;
+  /** 이 단계에서 사용자가 취해야 할 권장 액션 (단일 동사구). */
+  action: string;
+  /** 단계 진입 시 AI 가이드가 자동으로 던질 hint. */
+  aiHint: string;
+  /**
+   * 6차 PDCA: 이 단계에서 머무를 표준 일수(권장).
+   * 단계 시작 후 이 값을 초과하면 FE 가 amber 경고를 표시.
+   * 정수, 1 이상. 정의되지 않으면 경고 비활성.
+   */
+  expectedDays?: number;
+}
 
-export const PROJECT_LIFECYCLE: BusinessFlow = {
+export interface BusinessFlow {
+  id: string;
+  /** 플로우 이름 (예: "프로젝트 라이프사이클"). */
+  name: string;
+  /** 플로우 1줄 설명. */
+  description: string;
+  /** 이 플로우가 속하는 카테고리 (project | task | approval | issue | report). */
+  category: 'project' | 'task' | 'approval' | 'issue' | 'report';
+  steps: readonly FlowStep[];
+}
+
+const PROJECT_LIFECYCLE: BusinessFlow = {
   id: 'project-lifecycle',
   name: '프로젝트 라이프사이클',
   description: '신규 프로젝트를 기획하고 완료까지 운영하는 표준 흐름',
@@ -64,7 +94,7 @@ export const PROJECT_LIFECYCLE: BusinessFlow = {
   ],
 };
 
-export const TASK_LIFECYCLE: BusinessFlow = {
+const TASK_LIFECYCLE: BusinessFlow = {
   id: 'task-lifecycle',
   name: '태스크 라이프사이클',
   description: '단일 태스크의 생성·진행·완료 흐름',
@@ -109,7 +139,7 @@ export const TASK_LIFECYCLE: BusinessFlow = {
   ],
 };
 
-export const APPROVAL_LIFECYCLE: BusinessFlow = {
+const APPROVAL_LIFECYCLE: BusinessFlow = {
   id: 'approval-lifecycle',
   name: '결재 라이프사이클',
   description: '문서/요청을 작성·결재·완료하는 흐름',
@@ -154,7 +184,7 @@ export const APPROVAL_LIFECYCLE: BusinessFlow = {
   ],
 };
 
-export const ISSUE_LIFECYCLE: BusinessFlow = {
+const ISSUE_LIFECYCLE: BusinessFlow = {
   id: 'issue-lifecycle',
   name: '이슈 트래킹 흐름',
   description: '이슈 등록부터 해결까지의 표준 흐름',
@@ -208,7 +238,7 @@ export const ISSUE_LIFECYCLE: BusinessFlow = {
   ],
 };
 
-export const REPORT_LIFECYCLE: BusinessFlow = {
+const REPORT_LIFECYCLE: BusinessFlow = {
   id: 'report-lifecycle',
   name: '보고서 작성 흐름',
   description: '주간/월간 보고서 작성·공유 흐름',
@@ -253,10 +283,27 @@ export const REPORT_LIFECYCLE: BusinessFlow = {
   ],
 };
 
-export const BUSINESS_FLOWS = {
-  project: PROJECT_LIFECYCLE,
-  task: TASK_LIFECYCLE,
-  approval: APPROVAL_LIFECYCLE,
-  issue: ISSUE_LIFECYCLE,
-  report: REPORT_LIFECYCLE,
-} as const;
+const REGISTRY: readonly BusinessFlow[] = [
+  PROJECT_LIFECYCLE,
+  TASK_LIFECYCLE,
+  APPROVAL_LIFECYCLE,
+  ISSUE_LIFECYCLE,
+  REPORT_LIFECYCLE,
+];
+
+export function listFlows(): readonly BusinessFlow[] {
+  return REGISTRY;
+}
+
+export function getFlow(id: string): BusinessFlow | undefined {
+  return REGISTRY.find((f) => f.id === id);
+}
+
+/**
+ * 현재 단계의 다음 단계를 반환. 없거나 마지막 단계면 undefined.
+ */
+export function getNextStep(flow: BusinessFlow, currentStepId: string): FlowStep | undefined {
+  const idx = flow.steps.findIndex((s) => s.id === currentStepId);
+  if (idx < 0 || idx >= flow.steps.length - 1) return undefined;
+  return flow.steps[idx + 1];
+}

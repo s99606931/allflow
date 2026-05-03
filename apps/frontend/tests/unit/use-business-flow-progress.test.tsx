@@ -60,6 +60,7 @@ describe('useBusinessFlowProgress', () => {
       flowId: 'project-lifecycle',
       currentStepId: 'plan',
       completedSteps: [],
+      stepStartedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
 
@@ -79,6 +80,7 @@ describe('useBusinessFlowProgress', () => {
       flowId: 'project-lifecycle',
       currentStepId: 'execute',
       completedSteps: ['plan', 'kickoff'],
+      stepStartedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
 
@@ -100,12 +102,14 @@ describe('useBusinessFlowProgress', () => {
       flowId: 'project-lifecycle',
       currentStepId: 'plan',
       completedSteps: [],
+      stepStartedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
     vi.mocked(api.patchBusinessFlowProgress).mockResolvedValue({
       flowId: 'project-lifecycle',
       currentStepId: 'execute',
       completedSteps: ['plan', 'kickoff'],
+      stepStartedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
 
