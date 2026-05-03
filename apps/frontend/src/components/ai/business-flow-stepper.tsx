@@ -3,11 +3,8 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
-  ArrowRight,
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
-  Circle,
   Loader2,
   Sparkles,
   X,
@@ -21,48 +18,15 @@ import type {
 } from '@/lib/api/extended';
 import { toast } from 'sonner';
 import { useBusinessFlowProgress } from '@/lib/hooks/use-business-flow-progress';
+import {
+  isFlowComplete,
+  useFlowCelebration,
+} from '@/lib/hooks/use-flow-celebration';
+import { useStepperKeyboard } from '@/lib/hooks/use-stepper-keyboard';
+import { BusinessFlowStepChip } from '@/components/ai/business-flow-step-chip';
 
 const COLLAPSE_STORAGE_PREFIX = 'av:bf-stepper:collapsed:';
-const COMPLETION_STORAGE_PREFIX = 'av:bf-stepper:completed:';
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const CONFETTI_COUNT = 14;
-const CONFETTI_DURATION_MS = 1400;
-const CELEBRATE_GLOW_DURATION_MS = 3200;
-const CONFETTI_COLORS = [
-  'oklch(0.7 0.18 25)',
-  'oklch(0.75 0.16 70)',
-  'oklch(0.7 0.16 155)',
-  'oklch(0.65 0.18 255)',
-  'oklch(0.65 0.18 305)',
-];
-
-interface ConfettiPiece {
-  id: number;
-  color: string;
-  x: number;
-  y: number;
-  rotate: number;
-  delay: number;
-}
-
-function generateConfetti(seed: number): ConfettiPiece[] {
-  // 결정적 의사난수 — SSR/CSR 일치 + 매 호출 다른 값.
-  const pieces: ConfettiPiece[] = [];
-  for (let i = 0; i < CONFETTI_COUNT; i++) {
-    const t = (seed + i * 37) % 1000;
-    const angle = (t / 1000) * Math.PI * 2;
-    const distance = 60 + ((t * 7) % 60);
-    pieces.push({
-      id: i,
-      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length] ?? 'oklch(0.65 0.18 255)',
-      x: Math.cos(angle) * distance,
-      y: -Math.abs(Math.sin(angle)) * distance - 20,
-      rotate: ((t * 11) % 720) - 360,
-      delay: (i % 5) * 40,
-    });
-  }
-  return pieces;
-}
 
 /**
  * 단계 시작 후 표준 일수를 초과했는지 계산.
@@ -125,41 +89,6 @@ function writeCollapsedState(key: string, collapsed: boolean): void {
   }
 }
 
-function readCelebratedState(key: string): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    return window.localStorage.getItem(key) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function writeCelebratedState(key: string): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(key, '1');
-  } catch {
-    // localStorage 비활성/쿼터 초과는 무시.
-  }
-}
-
-/**
- * 모든 단계를 완주했는지 판정.
- * - 서버 동기화 모드: completedSteps 가 모든 step.id 를 포함
- * - 그 외: currentStepId 가 마지막 단계의 id
- */
-function isFlowComplete(
-  steps: BusinessFlowStep[],
-  currentStepId: string,
-  completedSet: Set<string> | null,
-): boolean {
-  if (steps.length === 0) return false;
-  if (completedSet) {
-    return steps.every((s) => completedSet.has(s.id));
-  }
-  return steps[steps.length - 1]?.id === currentStepId;
-}
-
 export function BusinessFlowStepper({
   flow,
   currentStepId: propCurrentStepId,
@@ -171,7 +100,6 @@ export function BusinessFlowStepper({
   const [suggestion, setSuggestion] = useState<BusinessFlowSuggestion | null>(null);
   const [loading, setLoading] = useState(false);
   const storageKey = `${COLLAPSE_STORAGE_PREFIX}${flow.id}`;
-  const completedKey = `${COMPLETION_STORAGE_PREFIX}${flow.id}`;
   // useId 는 SSR/CSR 일관 — 툴팁/aria-describedby 연결에 사용.
   const tooltipBaseId = useId();
 
@@ -242,72 +170,19 @@ export function BusinessFlowStepper({
   const overdueInfo = computeOverdue(stepStartedAt, currentStep?.expectedDays);
 
   // 7차 PDCA: 키보드 화살표 단계 이동 — ←/→ 로 이전/다음 단계 호출.
-  // onStepSelect 미지정 시 키보드는 시각적 포커스만 이동 (DOM focus 위임).
   const stepListRef = useRef<HTMLOListElement | null>(null);
-  const focusStepByOffset = useCallback(
-    (fromIdx: number, offset: number) => {
-      const targetIdx = fromIdx + offset;
-      if (targetIdx < 0 || targetIdx >= flow.steps.length) return;
-      const target = flow.steps[targetIdx];
-      if (!target) return;
-      const list = stepListRef.current;
-      if (!list) return;
-      const btn = list.querySelector<HTMLButtonElement>(
-        `[data-testid="business-flow-step-${target.id}"]`,
-      );
-      btn?.focus();
-    },
-    [flow.steps],
-  );
-
-  const handleStepKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>, idx: number) => {
-      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-        event.preventDefault();
-        focusStepByOffset(idx, 1);
-      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-        event.preventDefault();
-        focusStepByOffset(idx, -1);
-      } else if (event.key === 'Home') {
-        event.preventDefault();
-        focusStepByOffset(idx, -idx);
-      } else if (event.key === 'End') {
-        event.preventDefault();
-        focusStepByOffset(idx, flow.steps.length - 1 - idx);
-      }
-    },
-    [focusStepByOffset, flow.steps.length],
-  );
+  const { handleStepKeyDown } = useStepperKeyboard({
+    steps: flow.steps,
+    listRef: stepListRef,
+  });
 
   // 7차 PDCA: 플로우 전체 완료 축하 — 미완 → 완료 전이 시 1회만 토스트 + 컨페티.
-  // 첫 마운트가 이미 완료 상태인 경우는 (이미 본 적 있음) 축하 생략.
   const flowComplete = isFlowComplete(flow.steps, currentStepId, completedSetFromServer);
-  const [celebrating, setCelebrating] = useState(false);
-  const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
-  const prevFlowCompleteRef = useRef<boolean | null>(null);
-
-  useEffect(() => {
-    const prev = prevFlowCompleteRef.current;
-    prevFlowCompleteRef.current = flowComplete;
-    // 첫 렌더(prev===null) 또는 이미 완료 상태 유지(prev===true) → skip
-    if (prev !== false || !flowComplete) return;
-    // 이미 축하한 적 있는 플로우면 다시 띄우지 않는다 (영구 1회).
-    if (readCelebratedState(completedKey)) return;
-    writeCelebratedState(completedKey);
-    // 결정적 seed: flow.id 의 charCode 합 — Date.now (impure) 회피.
-    const seed = flow.id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-    setConfetti(generateConfetti(seed));
-    setCelebrating(true);
-    toast.success(`🎉 ${flow.name} 완료!`, {
-      description: '모든 단계를 마쳤습니다. 회고와 보고서로 마무리해 보세요.',
-    });
-    const confettiTimer = window.setTimeout(() => setConfetti([]), CONFETTI_DURATION_MS + 200);
-    const glowTimer = window.setTimeout(() => setCelebrating(false), CELEBRATE_GLOW_DURATION_MS);
-    return () => {
-      window.clearTimeout(confettiTimer);
-      window.clearTimeout(glowTimer);
-    };
-  }, [flowComplete, completedKey, flow.id, flow.name]);
+  const { celebrating, confetti } = useFlowCelebration({
+    flowId: flow.id,
+    flowName: flow.name,
+    flowComplete,
+  });
 
   // 단계별 툴팁 노드 — 보이지 않게 렌더하되 aria-describedby 로 연결.
   const tooltipIdFor = useCallback(
@@ -356,6 +231,13 @@ export function BusinessFlowStepper({
   }, [flow.id, currentStepId, systemContext, currentStep]);
 
   const dismiss = useCallback(() => setSuggestion(null), []);
+
+  const handleStepSelect = useCallback(
+    (step: BusinessFlowStep) => {
+      onStepSelect?.(step);
+    },
+    [onStepSelect],
+  );
 
   return (
     <nav
@@ -476,41 +358,19 @@ export function BusinessFlowStepper({
                 ? completedSetFromServer.has(step.id) && !isCurrent
                 : currentIdx >= 0 && idx < currentIdx;
               const isFuture = currentIdx >= 0 && idx > currentIdx && !isPast;
-              const tooltipId = tooltipIdFor(step.id);
               return (
-                <li key={step.id} className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => onStepSelect?.(step)}
-                    onKeyDown={(e) => handleStepKeyDown(e, idx)}
-                    className={cn(
-                      'flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11.5px] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1',
-                      isCurrent &&
-                        'bg-accent text-accent-fg border-accent font-semibold shadow-sm ring-2 ring-accent/30',
-                      isPast &&
-                        'bg-accent/5 border-accent/40 text-accent-strong hover:bg-accent/10',
-                      isFuture &&
-                        'bg-bg border-dashed border-fg-3/30 text-fg-3 hover:text-fg-1 hover:border-fg-3/50',
-                    )}
-                    title={`${step.description}\n→ ${step.screen}`}
-                    aria-describedby={tooltipId}
-                    aria-current={isCurrent ? 'step' : undefined}
-                    aria-label={`${idx + 1}/${flow.steps.length} ${step.label}${isCurrent ? ' · 현재' : isPast ? ' · 완료' : ''}`}
-                    data-testid={`business-flow-step-${step.id}`}
-                    data-current={isCurrent ? 'true' : undefined}
-                    data-completed={isPast ? 'true' : undefined}
-                  >
-                    {isPast ? (
-                      <CheckCircle2 size={11} className="text-accent-strong" />
-                    ) : (
-                      <Circle size={11} className={isCurrent ? '' : 'opacity-50'} />
-                    )}
-                    {step.label}
-                  </button>
-                  {idx < flow.steps.length - 1 && (
-                    <ArrowRight size={11} className="text-fg-3 shrink-0" aria-hidden />
-                  )}
-                </li>
+                <BusinessFlowStepChip
+                  key={step.id}
+                  step={step}
+                  idx={idx}
+                  totalSteps={flow.steps.length}
+                  isCurrent={isCurrent}
+                  isPast={isPast}
+                  isFuture={isFuture}
+                  tooltipId={tooltipIdFor(step.id)}
+                  onSelect={handleStepSelect}
+                  onKeyDown={handleStepKeyDown}
+                />
               );
             })}
           </ol>
