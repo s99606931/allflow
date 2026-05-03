@@ -7,6 +7,7 @@ import type { Task, Project } from '@/lib/schemas';
 import { CheckCircle2, Circle, MoreHorizontal, Sparkles, Plus, Loader2, Calendar, X } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import { BusinessFlowStepper } from '@/components/ai/business-flow-stepper';
+import { BusinessFlowOnboarding } from '@/components/ai/business-flow-onboarding';
 import { FlowProgressSummary } from '@/components/ai/flow-progress-summary';
 import { BUSINESS_FLOWS } from '@/lib/business-flows';
 import Link from 'next/link';
@@ -15,6 +16,7 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 import { useState } from 'react';
 import { TaskCreateDialog } from '@/components/dialogs/task-create-dialog';
 import { TaskDetailDialog } from './task-detail';
+import { MarkdownRenderer } from '@/components/ai/markdown-renderer';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -61,6 +63,7 @@ export function DashboardPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-[1440px] mx-auto">
+      <BusinessFlowOnboarding anchorTestId="business-flow-stepper" />
       <BusinessFlowStepper
         flow={BUSINESS_FLOWS.project}
         currentStepId="execute"
@@ -117,7 +120,7 @@ export function DashboardPage() {
                 <X size={14} />
               </button>
             </div>
-            <p className="whitespace-pre-line text-[12.5px] text-fg-1 leading-relaxed">{briefing}</p>
+            <MarkdownRenderer content={briefing} className="text-[12.5px] text-fg-1 leading-relaxed" />
           </CardBody>
         </Card>
       )}
