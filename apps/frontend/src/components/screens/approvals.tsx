@@ -13,6 +13,9 @@ import { useApprovals, useApprovalMutations, useMe } from '@/lib/hooks/use-data'
 import { toast } from 'sonner';
 import type { Approval } from '@/lib/schemas';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { BusinessFlowStepper } from '@/components/ai/business-flow-stepper';
+import { BUSINESS_FLOWS } from '@/lib/business-flows';
+import { useRouter } from 'next/navigation';
 
 const STATUS_META: Record<Approval['status'], { tone: 'neutral' | 'warning' | 'success' | 'danger' | 'accent'; label: string }> = {
   pending:   { tone: 'warning', label: '결재 대기' },
@@ -43,6 +46,7 @@ function relativeTime(iso: string): string {
 }
 
 export function ApprovalsPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<TabId>('inbox');
   const [selected, setSelected] = useState<Approval | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -92,6 +96,13 @@ export function ApprovalsPage() {
             <Button size="sm" variant="primary" onClick={() => setCreateOpen(true)}><Plus size={13} /> 새 결재</Button>
             <ApprovalForm open={createOpen} onOpenChange={setCreateOpen} />
           </div>
+          <BusinessFlowStepper
+            flow={BUSINESS_FLOWS.approval}
+            currentStepId={counts.inbox > 0 ? 'review' : counts.sent > 0 ? 'submit' : 'draft'}
+            systemContext={`결재 대기 ${counts.inbox}건, 상신 ${counts.sent}건`}
+            onStepSelect={(step) => router.push(step.screen)}
+            enableServerSync
+          />
           <AiGuideWidget
             systemContext={`전자결재 — 대기중 ${counts.inbox}건, 상신 ${counts.sent}건, 처리완료 ${counts.history}건, 전체 ${approvals.length}건`}
             hints={[

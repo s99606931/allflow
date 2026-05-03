@@ -864,3 +864,24 @@ model OtelConfig {
 
   @@map("otel_config")
 }
+
+// =====================================================================
+// UserFlowProgress — per-user business-flow progress (server-side)
+// =====================================================================
+//
+// 4차 PDCA: 디바이스/세션 간 업무 플로우 진행 상태 동기화.
+// 하나의 (userId, flowId) 조합당 한 행. PATCH 멱등 (current step + completed step 집합).
+// `completedSteps` 는 step.id 의 정렬된 문자열 배열 (Postgres String[] = JSONB 대신 단순/조회 친화).
+
+model UserFlowProgress {
+  userId         String   @map("user_id")
+  flowId         String   @map("flow_id") @db.VarChar(80)
+  currentStepId  String   @map("current_step_id") @db.VarChar(80)
+  completedSteps String[] @default([]) @map("completed_steps")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@id([userId, flowId])
+  @@index([userId])
+  @@map("user_flow_progress")
+}

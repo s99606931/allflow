@@ -8,6 +8,9 @@ import { useDocs, useDocMutations } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { BusinessFlowStepper } from '@/components/ai/business-flow-stepper';
+import { BUSINESS_FLOWS } from '@/lib/business-flows';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -31,6 +34,7 @@ export function DocsPage() {
   const activeDoc = docs.find(d => d.id === active) ?? null;
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
   const recentDocsCount = docs.filter(d => d.updatedAt >= sevenDaysAgo).length;
+  const router = useRouter();
 
   useEffect(() => {
     if (activeDoc) {
@@ -152,6 +156,13 @@ export function DocsPage() {
       {/* Editor */}
       <div className="overflow-y-auto scroll">
         <div className="max-w-[760px] mx-auto px-10 py-8">
+          <BusinessFlowStepper
+            flow={BUSINESS_FLOWS.approval}
+            currentStepId="archive"
+            systemContext={`문서 관리 — 총 ${docs.length}건, 최근 7일 ${recentDocsCount}건`}
+            onStepSelect={(step) => router.push(step.screen)}
+            enableServerSync
+          />
           <AiGuideWidget
             systemContext={`문서 관리 — 총 ${docs.length}건, 최근 7일 수정 ${recentDocsCount}건`}
             hints={[

@@ -10,6 +10,9 @@ import { ProjectEditDialog } from '@/components/dialogs/project-edit-dialog';
 import { Loader2, Pencil, Plus, Trash2, UserPlus, X } from 'lucide-react';
 import Link from 'next/link';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { BusinessFlowStepper } from '@/components/ai/business-flow-stepper';
+import { BUSINESS_FLOWS } from '@/lib/business-flows';
+import { useRouter } from 'next/navigation';
 import type { Project } from '@/lib/schemas';
 
 export function ProjectsPage() {
@@ -26,9 +29,17 @@ export function ProjectsPage() {
 
   const blockedCount = projects.filter(p => p.status === 'blocked').length;
   const overdueCount = projects.filter(p => p.status !== 'done' && p.due && p.due < new Date().toISOString().slice(0, 10)).length;
+  const router = useRouter();
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
+      <BusinessFlowStepper
+        flow={BUSINESS_FLOWS.project}
+        currentStepId="plan"
+        systemContext={`프로젝트 ${activeCount}개 활성, ${blockedCount}개 차단`}
+        onStepSelect={(step) => router.push(step.screen)}
+        enableServerSync
+      />
       <AiGuideWidget
         systemContext={`프로젝트 목록 — 활성 ${activeCount}개, 완료 ${doneCount}개, 차단 ${blockedCount}개, 기한초과 ${overdueCount}개`}
         hints={[

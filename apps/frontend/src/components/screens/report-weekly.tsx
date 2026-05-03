@@ -10,6 +10,8 @@ import { ReportRecipientsEditor } from '@/components/dialogs/report-recipients-e
 import { useAiMutations, useProjects, useReports } from '@/lib/hooks/use-data';
 import type { Report } from '@/lib/schemas';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { BusinessFlowStepper } from '@/components/ai/business-flow-stepper';
+import { BUSINESS_FLOWS } from '@/lib/business-flows';
 
 const ReportDownloadButton = dynamic(
   () => import('@/lib/pdf-reports').then(m => m.ReportDownloadButton),
@@ -79,9 +81,18 @@ export function ReportWeeklyPage() {
     setReport(r);
   };
 
+  const reportFlowStep = report ? 'review' : scope.size > 0 ? 'draft' : 'collect';
+
   return (
     <div className="p-6 grid grid-cols-12 gap-5 max-w-[1440px] mx-auto">
-      <div className="col-span-12">
+      <div className="col-span-12 space-y-4">
+        <BusinessFlowStepper
+          flow={BUSINESS_FLOWS.report}
+          currentStepId={reportFlowStep}
+          systemContext={`${reportType} 보고 ${period.start}~${period.end} ${report ? '(생성됨)' : '(미생성)'}`}
+          onStepSelect={(step) => router.push(step.screen)}
+          enableServerSync
+        />
         <AiGuideWidget
           systemContext={`${reportType} 보고 — ${period.start} ~ ${period.end} 프로젝트 ${projects.length}개 대상 ${report ? '(생성됨)' : '(미생성)'}`}
           hints={[

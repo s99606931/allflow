@@ -501,6 +501,50 @@ export const extendedApi = {
   /* Semantic search ------------------------------------------------------- */
   semanticSearch: async (input: SemanticSearchInput): Promise<SemanticSearchResponse> =>
     http.post('search/semantic', { json: input }).json<SemanticSearchResponse>(),
+
+  /* Business flows -------------------------------------------------------- */
+  listBusinessFlows: async (): Promise<{ flows: BusinessFlow[] }> =>
+    http.get('business-flows').json<{ flows: BusinessFlow[] }>(),
+
+  getBusinessFlow: async (id: string): Promise<BusinessFlow> =>
+    http.get(`business-flows/${id}`).json<BusinessFlow>(),
+
+  suggestBusinessFlowNext: async (
+    id: string,
+    input: { currentStepId: string; context?: string },
+  ): Promise<BusinessFlowSuggestion> =>
+    http
+      .post(`business-flows/${id}/suggest`, { json: input })
+      .json<BusinessFlowSuggestion>(),
+
+  /* Business flow progress (4차 PDCA) -------------------------------------- */
+  listBusinessFlowProgress: async (): Promise<{ progress: BusinessFlowProgress[] }> =>
+    http.get('business-flows/progress').json<{ progress: BusinessFlowProgress[] }>(),
+
+  getBusinessFlowProgress: async (
+    id: string,
+  ): Promise<BusinessFlowProgress | { flowId: string; progress: null }> =>
+    http
+      .get(`business-flows/${id}/progress`)
+      .json<BusinessFlowProgress | { flowId: string; progress: null }>(),
+
+  patchBusinessFlowProgress: async (
+    id: string,
+    input: { currentStepId: string; completedSteps?: string[] },
+  ): Promise<BusinessFlowProgress> =>
+    http
+      .patch(`business-flows/${id}/progress`, { json: input })
+      .json<BusinessFlowProgress>(),
+
+  /* Team progress aggregate (5차 PDCA) ------------------------------------ */
+  getTeamFlowProgress: async (
+    flowId?: string,
+  ): Promise<{ team: TeamFlowProgressEntry[] }> =>
+    http
+      .get('business-flows/team-progress', {
+        ...(flowId ? { searchParams: { flowId } } : {}),
+      })
+      .json<{ team: TeamFlowProgressEntry[] }>(),
 };
 
 /* Semantic search types --------------------------------------------------- */
@@ -595,4 +639,54 @@ export interface McpConnectionInput {
   transport: 'stdio' | 'sse';
   config: Record<string, unknown>;
   isEnabled?: boolean;
+}
+
+/* Business flow types ----------------------------------------------------- */
+export interface BusinessFlowStep {
+  id: string;
+  label: string;
+  description: string;
+  screen: string;
+  action: string;
+  aiHint: string;
+}
+
+export interface BusinessFlow {
+  id: string;
+  name: string;
+  description: string;
+  category: 'project' | 'task' | 'approval' | 'issue' | 'report';
+  steps: BusinessFlowStep[];
+}
+
+export interface BusinessFlowSuggestion {
+  flowId: string;
+  currentStep: BusinessFlowStep;
+  nextStep: BusinessFlowStep | null;
+  suggestion: string;
+  adapter: string;
+}
+
+/* Business flow progress (4차 PDCA) --------------------------------------- */
+export interface BusinessFlowProgress {
+  flowId: string;
+  currentStepId: string;
+  completedSteps: string[];
+  updatedAt: string;
+}
+
+/* Team flow progress (5차 PDCA) ------------------------------------------- */
+export interface TeamFlowProgressEntry {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl: string | null;
+  };
+  flowId: string;
+  currentStepId: string;
+  completedSteps: string[];
+  /** 0..1 — 완료 단계 비율 (서버 계산). */
+  progressRatio: number;
+  updatedAt: string;
 }

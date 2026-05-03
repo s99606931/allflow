@@ -9,6 +9,9 @@ import { ReportRecipientsEditor } from '@/components/dialogs/report-recipients-e
 import { useAiMutations, useReports } from '@/lib/hooks/use-data';
 import type { Report } from '@/lib/schemas';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { BusinessFlowStepper } from '@/components/ai/business-flow-stepper';
+import { BUSINESS_FLOWS } from '@/lib/business-flows';
+import { useRouter } from 'next/navigation';
 
 const ReportDownloadButton = dynamic(
   () => import('@/lib/pdf-reports').then(m => m.ReportDownloadButton),
@@ -29,6 +32,8 @@ export function ReportMonthlyPage() {
   const { monthlyReport } = useAiMutations();
   const { data: history = [] } = useReports();
   const period = lastMonth();
+  const router = useRouter();
+  const monthlyFlowStep = report ? 'review' : 'collect';
 
   const onGenerate = async () => {
     const r = await monthlyReport.mutateAsync({ year: period.year, month: period.month });
@@ -37,6 +42,13 @@ export function ReportMonthlyPage() {
 
   return (
     <div className="p-6 max-w-[1100px] mx-auto space-y-5">
+      <BusinessFlowStepper
+        flow={BUSINESS_FLOWS.report}
+        currentStepId={monthlyFlowStep}
+        systemContext={`월간 보고 ${period.label} ${report ? '(생성됨)' : '(미생성)'}`}
+        onStepSelect={(step) => router.push(step.screen)}
+        enableServerSync
+      />
       {(() => {
         const firstKpi = report?.kpis?.[0];
         const secondKpi = report?.kpis?.[1];

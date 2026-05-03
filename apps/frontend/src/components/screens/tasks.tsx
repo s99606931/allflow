@@ -11,6 +11,9 @@ import { TaskDetailDialog } from './task-detail';
 import { TaskCreateDialog } from '@/components/dialogs/task-create-dialog';
 import { ArrowUpDown, CheckCircle2, Circle, Filter, KanbanSquare, LayoutList, Plus, Search, CalendarDays, X, Check } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { BusinessFlowStepper } from '@/components/ai/business-flow-stepper';
+import { BUSINESS_FLOWS } from '@/lib/business-flows';
+import { useRouter } from 'next/navigation';
 
 const COLS: { id: StatusKey; label: string; color: string }[] = [
   { id: 'todo', label: '대기', color: 'oklch(0.7 0.01 250)' },
@@ -87,9 +90,23 @@ export function TasksPage() {
   ) as Record<string, number>;
 
   const onCreate = () => setCreateOpen(true);
+  const router = useRouter();
+
+  // 진행 중 태스크가 가장 많은 컬럼으로 현재 단계 추론
+  const flowStepId =
+    statusCounts.review && statusCounts.review > 0 ? 'review' :
+    statusCounts.doing && statusCounts.doing > 0 ? 'doing' :
+    statusCounts.done === filterCounts.all ? 'done' : 'create';
 
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
+      <BusinessFlowStepper
+        flow={BUSINESS_FLOWS.task}
+        currentStepId={flowStepId}
+        systemContext={`태스크 ${filterCounts.all}건 중 진행 ${statusCounts.doing ?? 0}건, 리뷰 ${statusCounts.review ?? 0}건`}
+        onStepSelect={(step) => router.push(step.screen)}
+        enableServerSync
+      />
       <AiGuideWidget
         systemContext={`태스크 관리 — 전체 ${filterCounts.all}건, 오늘 마감 ${filterCounts.today}건, 기한 초과 ${filterCounts.overdue}건`}
         hints={[

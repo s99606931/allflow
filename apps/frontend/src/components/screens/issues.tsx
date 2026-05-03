@@ -6,6 +6,9 @@ import type { IssueSev, IssuePrio } from '@/lib/types';
 import { CheckCircle2, Filter, Loader2, Plus, Search, Sparkles, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { BusinessFlowStepper } from '@/components/ai/business-flow-stepper';
+import { BUSINESS_FLOWS } from '@/lib/business-flows';
+import { useRouter } from 'next/navigation';
 import { useIssues, useIssueMutations, useMe } from '@/lib/hooks/use-data';
 import { useAiStream } from '@/lib/hooks/use-ai';
 import { useUserMap } from '@/lib/hooks/use-user-lookup';
@@ -56,8 +59,22 @@ export function IssuesPage() {
     }).filter(i => !search || i.title.toLowerCase().includes(search.toLowerCase()) || i.id.toLowerCase().includes(search.toLowerCase()));
   }, [issues, activeFilter, search, me]);
 
+  const router = useRouter();
+  const issueFlowStep =
+    newCount > 0 ? 'open' :
+    issues.some(i => i.status === 'in-progress') ? 'in-progress' :
+    issues.some(i => i.status === 'in-review') ? 'verify' :
+    resolvedCount === issues.length && issues.length > 0 ? 'closed' : 'triage';
+
   return (
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
+      <BusinessFlowStepper
+        flow={BUSINESS_FLOWS.issue}
+        currentStepId={issueFlowStep}
+        systemContext={`이슈 ${issues.length}건 (오픈 ${newCount}, 해결 ${resolvedCount})`}
+        onStepSelect={(step) => router.push(step.screen)}
+        enableServerSync
+      />
       <AiGuideWidget
         systemContext={`이슈 트래커 — 전체 ${issues.length}건, P0 진행 중 ${p0Count}건, SLA 위험 ${slaAtRisk}건, 오픈 ${newCount}건`}
         hints={[

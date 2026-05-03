@@ -17,6 +17,7 @@ import { approvalsRoutes } from './modules/approvals/approvals.routes.js';
 import { auditLogRoutes } from './modules/audit-log/audit-log.routes.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { mfaRoutes } from './modules/auth/mfa.routes.js';
+import { businessFlowsRoutes } from './modules/business-flows/business-flows.routes.js';
 import { channelsRoutes } from './modules/channels/channels.routes.js';
 import { clientsRoutes } from './modules/clients/clients.routes.js';
 import { commentsRoutes } from './modules/comments/comments.routes.js';
@@ -156,6 +157,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
         await api.register(reportsRoutes, { registry: aiRegistry });
         await api.register(authRoutes);
         await api.register(mfaRoutes);
+        await api.register(businessFlowsRoutes, { registry: aiRegistry });
         await api.register(approvalsRoutes);
         await api.register(clientsRoutes);
         await api.register(eventsRoutes);

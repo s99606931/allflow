@@ -6,6 +6,9 @@ import { useUserMap } from '@/lib/hooks/use-user-lookup';
 import type { Task, Project } from '@/lib/schemas';
 import { CheckCircle2, Circle, MoreHorizontal, Sparkles, Plus, Loader2, Calendar, X } from 'lucide-react';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { BusinessFlowStepper } from '@/components/ai/business-flow-stepper';
+import { FlowProgressSummary } from '@/components/ai/flow-progress-summary';
+import { BUSINESS_FLOWS } from '@/lib/business-flows';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
@@ -58,6 +61,13 @@ export function DashboardPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-[1440px] mx-auto">
+      <BusinessFlowStepper
+        flow={BUSINESS_FLOWS.project}
+        currentStepId="execute"
+        systemContext={`처리할 태스크 ${todoCount}개, 진행 중 ${doingCount}건, 프로젝트 ${projects.length}개`}
+        onStepSelect={(step) => router.push(step.screen)}
+        enableServerSync
+      />
       <AiGuideWidget
         systemContext={`대시보드 — 처리할 태스크 ${todoCount}개, 진행 중 ${doingCount}건, 리뷰 대기 ${reviewCount}건, 프로젝트 ${projects.length}개`}
         hints={[
@@ -130,6 +140,9 @@ export function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      {/* 5차 PDCA: 팀 진행 현황 */}
+      <FlowProgressSummary />
 
       {/* Main grid */}
       <div className="grid grid-cols-3 gap-4">

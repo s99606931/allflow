@@ -9,6 +9,9 @@ import { Card, CardBody, Button } from '@/components/ui/primitives';
 import { api } from '@/lib/api';
 import { GanttDepPanel } from './gantt-dep-panel';
 import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
+import { BusinessFlowStepper } from '@/components/ai/business-flow-stepper';
+import { BUSINESS_FLOWS } from '@/lib/business-flows';
+import { useRouter } from 'next/navigation';
 
 const CELL_W_MIN = 16;
 const CELL_W_MAX = 64;
@@ -218,8 +221,25 @@ export function GanttPage() {
     );
   }
 
+  const router = useRouter();
+  const ganttFlowStep = (() => {
+    const doneCount = tasks.filter(t => t.status === 'done').length;
+    if (tasks.length === 0) return 'plan';
+    if (doneCount === tasks.length) return 'closeout';
+    if (tasks.some(t => t.status === 'review' || t.status === 'in-review')) return 'review';
+    if (tasks.some(t => t.status === 'doing' || t.status === 'in-progress')) return 'execute';
+    return 'kickoff';
+  })();
+
   return (
     <div className="p-6 space-y-4 max-w-[1600px] mx-auto">
+      <BusinessFlowStepper
+        flow={BUSINESS_FLOWS.project}
+        currentStepId={ganttFlowStep}
+        systemContext={`간트 — 태스크 ${tasks.length}개, 진행중 ${tasks.filter(t => t.status === 'doing' || t.status === 'in-progress').length}건`}
+        onStepSelect={(step) => router.push(step.screen)}
+        enableServerSync
+      />
       <AiGuideWidget
         systemContext={`간트 차트 — ${tasks.length}개 태스크, 진행중 ${tasks.filter(t => t.status === 'doing').length}건, 위험 ${tasks.filter(t => t.status === 'doing' && t.progress < 50).length}건`}
         hints={(() => {
