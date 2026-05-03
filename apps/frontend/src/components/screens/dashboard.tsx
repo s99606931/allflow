@@ -9,6 +9,7 @@ import { AiGuideWidget } from '@/components/ai/ai-guide-widget';
 import { BusinessFlowStepper } from '@/components/ai/business-flow-stepper';
 import { BusinessFlowOnboarding } from '@/components/ai/business-flow-onboarding';
 import { FlowProgressSummary } from '@/components/ai/flow-progress-summary';
+import { FlowInsightsPanel } from '@/components/ai/flow-insights-panel';
 import { BUSINESS_FLOWS } from '@/lib/business-flows';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -143,6 +144,9 @@ export function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      {/* 9차 PDCA: AI 플로우 인사이트 + 병목 감지 */}
+      <FlowInsightsPanel />
 
       {/* 5차 PDCA: 팀 진행 현황 */}
       <FlowProgressSummary />

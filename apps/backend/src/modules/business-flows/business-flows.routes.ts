@@ -22,6 +22,13 @@ import { z } from 'zod';
 import type { AIAdapterRegistry } from '../ai/ai-adapter.js';
 import { NotFoundError, ValidationError } from '@all-flow/shared/errors';
 import { getFlow, getNextStep, listFlows } from './flow-registry.js';
+import {
+  aggregateFlowInsight,
+  buildFallbackExplanation,
+  buildInsightPrompt,
+  type FlowInsight,
+  type ProgressRowForInsight,
+} from './insights.js';
 
 export interface BusinessFlowsRoutesOptions {
   registry: AIAdapterRegistry;
@@ -43,6 +50,8 @@ interface ProgressRow {
   flowId: string;
   currentStepId: string;
   completedSteps: string[];
+  /** 6차 PDCA: 현재 단계가 시작된 시각 (overdue 경고의 기준). */
+  stepStartedAt: Date;
   updatedAt: Date;
 }
 
@@ -60,6 +69,7 @@ interface TeamProgressEntry {
   completedSteps: string[];
   /** 0..1 비율. 완료 단계 / 전체 단계 (멱등하게 서버 측에서 계산). */
   progressRatio: number;
+  stepStartedAt: string;
   updatedAt: string;
 }
 
@@ -68,6 +78,7 @@ function toProgressWire(row: ProgressRow) {
     flowId: row.flowId,
     currentStepId: row.currentStepId,
     completedSteps: row.completedSteps,
+    stepStartedAt: row.stepStartedAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
 }
@@ -204,10 +215,27 @@ export async function businessFlowsRoutes(
         (completedSteps ?? []).filter((s) => validIds.has(s)),
       );
 
+      // 6차 PDCA: currentStepId 가 실제로 바뀐 경우에만 stepStartedAt 갱신.
+      // 같은 단계로 멱등 PATCH (예: completedSteps 만 변경) → stepStartedAt 보존.
+      const existing = (await app.prisma.userFlowProgress.findUnique({
+        where: { userId_flowId: { userId, flowId: id } },
+      })) as ProgressRow | null;
+
+      const stepChanged = !existing || existing.currentStepId !== currentStepId;
+      const now = new Date();
+      const update: Record<string, unknown> = { currentStepId, completedSteps: completed };
+      if (stepChanged) update.stepStartedAt = now;
+
       const row = (await app.prisma.userFlowProgress.upsert({
         where: { userId_flowId: { userId, flowId: id } },
-        create: { userId, flowId: id, currentStepId, completedSteps: completed },
-        update: { currentStepId, completedSteps: completed },
+        create: {
+          userId,
+          flowId: id,
+          currentStepId,
+          completedSteps: completed,
+          stepStartedAt: now,
+        },
+        update,
       })) as ProgressRow;
 
       return toProgressWire(row);
@@ -260,10 +288,64 @@ export async function businessFlowsRoutes(
           currentStepId: row.currentStepId,
           completedSteps: row.completedSteps,
           progressRatio: Math.min(1, Math.max(0, ratio)),
+          stepStartedAt: row.stepStartedAt.toISOString(),
           updatedAt: row.updatedAt.toISOString(),
         });
       }
       return { team };
+    },
+  );
+
+  // ---------------------------------------------------------------------
+  // 9차 PDCA: 단일 플로우 인사이트 — 단계별 평균 체류일/오버듀/병목 + AI 2문장.
+  // ---------------------------------------------------------------------
+  //
+  // 정책:
+  //  - 인증된 사용자라면 누구나 호출 가능 (협업 가시성).
+  //  - 활성 사용자(deletedAt:null)만 집계 대상.
+  //  - AI 호출 실패 시 결정적 fallback 문장 사용 (위젯 항상 렌더 보장).
+  app.get<{ Params: { id: string } }>(
+    '/business-flows/:id/insights',
+    { preHandler: [app.authenticate] },
+    async (req): Promise<FlowInsight> => {
+      const { id } = req.params;
+      const flow = getFlow(id);
+      if (!flow) throw new NotFoundError('플로우를 찾을 수 없습니다');
+
+      const rows = (await app.prisma.userFlowProgress.findMany({
+        where: { flowId: id },
+        orderBy: { updatedAt: 'desc' },
+      })) as ProgressRowForInsight[];
+
+      const userIds = Array.from(new Set(rows.map((r) => r.userId)));
+      const activeUsers = userIds.length > 0
+        ? ((await app.prisma.user.findMany({
+            where: { id: { in: userIds }, deletedAt: null },
+            select: { id: true },
+          })) as Array<{ id: string }>)
+        : [];
+      const activeIds = new Set(activeUsers.map((u) => u.id));
+
+      const aggregate = aggregateFlowInsight(flow, rows, activeIds);
+
+      let aiExplanation = buildFallbackExplanation(flow, aggregate);
+      try {
+        const adapter = opts.registry.get();
+        const prompt = buildInsightPrompt(flow, aggregate);
+        const result = await adapter.complete(
+          [
+            { role: 'system', content: prompt.system },
+            { role: 'user', content: prompt.user },
+          ],
+          { maxTokens: 200, temperature: 0.3 },
+        );
+        const text = result.text.trim();
+        if (text.length > 0) aiExplanation = text;
+      } catch {
+        // adapter 미등록/실패 → fallback 유지.
+      }
+
+      return { ...aggregate, aiExplanation };
     },
   );
 }

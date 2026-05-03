@@ -13,6 +13,7 @@ interface ProgressStoreRow {
   flowId: string;
   currentStepId: string;
   completedSteps: string[];
+  stepStartedAt: Date;
   updatedAt: Date;
   createdAt: Date;
 }
@@ -57,6 +58,7 @@ function makeProgressStore() {
             flowId: args.create.flowId,
             currentStepId: args.create.currentStepId,
             completedSteps: args.create.completedSteps,
+            stepStartedAt: args.create.stepStartedAt ?? now,
             createdAt: now,
             updatedAt: now,
           };
@@ -310,6 +312,93 @@ describe('modules/business-flows', () => {
     await app.close();
   });
 
+  // -------------------------------------------------------------------
+  // 6차 PDCA: stepStartedAt 동작 검증 (overdue 경고 기준 시각)
+  // -------------------------------------------------------------------
+
+  it('PATCH /business-flows/:id/progress → 응답에 stepStartedAt 포함', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { currentStepId: 'plan' },
+    });
+    expect(r.statusCode).toBe(200);
+    const body = r.json() as { stepStartedAt: string };
+    expect(typeof body.stepStartedAt).toBe('string');
+    expect(Number.isNaN(Date.parse(body.stepStartedAt))).toBe(false);
+    await app.close();
+  });
+
+  it('PATCH 멱등: 같은 currentStepId 로 다시 호출해도 stepStartedAt 보존', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r1 = await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { currentStepId: 'plan' },
+    });
+    const b1 = r1.json() as { stepStartedAt: string };
+
+    // 약간의 시간 차 후 같은 단계로 PATCH (completedSteps 만 추가).
+    await new Promise((r) => setTimeout(r, 10));
+
+    const r2 = await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { currentStepId: 'plan', completedSteps: [] },
+    });
+    const b2 = r2.json() as { stepStartedAt: string };
+    expect(b2.stepStartedAt).toBe(b1.stepStartedAt);
+    await app.close();
+  });
+
+  it('PATCH: currentStepId 가 변경되면 stepStartedAt 도 갱신', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r1 = await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { currentStepId: 'plan' },
+    });
+    const b1 = r1.json() as { stepStartedAt: string };
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    const r2 = await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { currentStepId: 'kickoff', completedSteps: ['plan'] },
+    });
+    const b2 = r2.json() as { stepStartedAt: string };
+    expect(Date.parse(b2.stepStartedAt)).toBeGreaterThan(Date.parse(b1.stepStartedAt));
+    await app.close();
+  });
+
+  it('GET /business-flows/:id → step 에 expectedDays 노출', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'GET',
+      url: '/business-flows/project-lifecycle',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(r.statusCode).toBe(200);
+    const flow = r.json() as { steps: Array<{ id: string; expectedDays?: number }> };
+    // 모든 단계가 expectedDays 를 가져야 함 (6차 PDCA 정책).
+    for (const step of flow.steps) {
+      expect(typeof step.expectedDays).toBe('number');
+      expect(step.expectedDays!).toBeGreaterThan(0);
+    }
+    await app.close();
+  });
+
   it('PATCH /business-flows/:id/progress → 잘못된 stepId 400', async () => {
     const app = await buildTestApp();
     const token = await makeJws('u1');
@@ -542,6 +631,155 @@ describe('modules/business-flows', () => {
     const r = await app.inject({
       method: 'GET',
       url: '/business-flows/team-progress',
+    });
+    expect(r.statusCode).toBe(401);
+    await app.close();
+  });
+
+  // ---------------------------------------------------------------------
+  // 9차 PDCA: GET /business-flows/:id/insights
+  // ---------------------------------------------------------------------
+
+  it('GET /business-flows/:id/insights → 빈 데이터: bottleneckStepId=null + fallback 문장', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'GET',
+      url: '/business-flows/project-lifecycle/insights',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(r.statusCode).toBe(200);
+    const body = r.json() as {
+      flowId: string;
+      totalMembers: number;
+      steps: Array<{ stepId: string; memberCount: number; isBottleneck: boolean }>;
+      bottleneckStepId: string | null;
+      aiExplanation: string;
+    };
+    expect(body.flowId).toBe('project-lifecycle');
+    expect(body.totalMembers).toBe(0);
+    expect(body.bottleneckStepId).toBeNull();
+    expect(body.steps.every((s) => s.isBottleneck === false)).toBe(true);
+    expect(body.aiExplanation.length).toBeGreaterThan(0);
+    await app.close();
+  });
+
+  it('GET /business-flows/:id/insights → 병목 단계 식별 + AI 문장', async () => {
+    const app = await buildTestApp([
+      { id: 'user-a', name: 'Alice', email: 'a@x.io', avatarUrl: null, deletedAt: null },
+      { id: 'user-b', name: 'Bob', email: 'b@x.io', avatarUrl: null, deletedAt: null },
+      { id: 'user-c', name: 'Carol', email: 'c@x.io', avatarUrl: null, deletedAt: null },
+    ]);
+    const tokenA = await makeJws('user-a');
+    const tokenB = await makeJws('user-b');
+    const tokenC = await makeJws('user-c');
+
+    // userA & userB : "kickoff" 단계에 머무름 (멤버 2명)
+    // userC      : "plan" 단계 (멤버 1명)
+    await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { currentStepId: 'kickoff', completedSteps: ['plan'] },
+    });
+    await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${tokenB}` },
+      payload: { currentStepId: 'kickoff', completedSteps: ['plan'] },
+    });
+    await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${tokenC}` },
+      payload: { currentStepId: 'plan' },
+    });
+
+    const r = await app.inject({
+      method: 'GET',
+      url: '/business-flows/project-lifecycle/insights',
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+    expect(r.statusCode).toBe(200);
+    const body = r.json() as {
+      totalMembers: number;
+      steps: Array<{
+        stepId: string;
+        memberCount: number;
+        isBottleneck: boolean;
+        avgDwellDays: number;
+        overdueRatio: number;
+      }>;
+      bottleneckStepId: string | null;
+      aiExplanation: string;
+    };
+    expect(body.totalMembers).toBe(3);
+    // overdueRatio 가 모두 0인 상황 (방금 시작) → avgDwellDays desc 로 결정.
+    // 동일하게 0에 가까우므로 멤버수가 큰 단계(kickoff:2)가 1순위로 정렬되도록 보장.
+    // 실제로는 timing 영향 — 보장할 수 있는 invariant: bottleneck 은 멤버 1명 이상인 단계.
+    const bottleneck = body.steps.find((s) => s.stepId === body.bottleneckStepId);
+    expect(bottleneck).toBeDefined();
+    expect(bottleneck!.memberCount).toBeGreaterThan(0);
+    expect(bottleneck!.isBottleneck).toBe(true);
+    expect(body.aiExplanation.length).toBeGreaterThan(0);
+    await app.close();
+  });
+
+  it('GET /business-flows/:id/insights → soft-deleted 사용자 제외', async () => {
+    const app = await buildTestApp([
+      { id: 'active-a', name: 'Active', email: 'a@x.io', avatarUrl: null, deletedAt: null },
+      {
+        id: 'deleted-b',
+        name: 'Deleted',
+        email: 'b@x.io',
+        avatarUrl: null,
+        deletedAt: new Date(),
+      },
+    ]);
+    const tokenA = await makeJws('active-a');
+    const tokenB = await makeJws('deleted-b');
+
+    await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { currentStepId: 'plan' },
+    });
+    await app.inject({
+      method: 'PATCH',
+      url: '/business-flows/project-lifecycle/progress',
+      headers: { authorization: `Bearer ${tokenB}` },
+      payload: { currentStepId: 'execute' },
+    });
+
+    const r = await app.inject({
+      method: 'GET',
+      url: '/business-flows/project-lifecycle/insights',
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+    expect(r.statusCode).toBe(200);
+    const body = r.json() as { totalMembers: number };
+    expect(body.totalMembers).toBe(1);
+    await app.close();
+  });
+
+  it('GET /business-flows/unknown/insights → 404', async () => {
+    const app = await buildTestApp();
+    const token = await makeJws('u1');
+    const r = await app.inject({
+      method: 'GET',
+      url: '/business-flows/no-such-flow/insights',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(r.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('GET /business-flows/:id/insights 인증 없으면 401', async () => {
+    const app = await buildTestApp();
+    const r = await app.inject({
+      method: 'GET',
+      url: '/business-flows/project-lifecycle/insights',
     });
     expect(r.statusCode).toBe(401);
     await app.close();

@@ -545,6 +545,10 @@ export const extendedApi = {
         ...(flowId ? { searchParams: { flowId } } : {}),
       })
       .json<{ team: TeamFlowProgressEntry[] }>(),
+
+  /* Flow insights (9차 PDCA) ---------------------------------------------- */
+  getBusinessFlowInsights: async (id: string): Promise<FlowInsight> =>
+    http.get(`business-flows/${id}/insights`).json<FlowInsight>(),
 };
 
 /* Semantic search types --------------------------------------------------- */
@@ -649,6 +653,8 @@ export interface BusinessFlowStep {
   screen: string;
   action: string;
   aiHint: string;
+  /** 6차 PDCA: 단계별 표준 일수. 초과 시 FE 에서 amber 경고 표시. */
+  expectedDays?: number;
 }
 
 export interface BusinessFlow {
@@ -672,7 +678,32 @@ export interface BusinessFlowProgress {
   flowId: string;
   currentStepId: string;
   completedSteps: string[];
+  /** 6차 PDCA: 현재 단계 시작 시각 (ISO 8601). overdue 경고의 기준. */
+  stepStartedAt: string;
   updatedAt: string;
+}
+
+/* Flow insights (9차 PDCA) ------------------------------------------------ */
+export interface FlowInsightStep {
+  stepId: string;
+  label: string;
+  /** 이 단계에 머물고 있는 활성 멤버 수. */
+  memberCount: number;
+  /** 평균 체류 일수 (소수 1자리). */
+  avgDwellDays: number;
+  /** 0..1 — 오버듀 비율 (expectedDays 초과 멤버 비율). */
+  overdueRatio: number;
+  /** 이 단계가 병목인지 여부. */
+  isBottleneck: boolean;
+}
+
+export interface FlowInsight {
+  flowId: string;
+  totalMembers: number;
+  steps: FlowInsightStep[];
+  bottleneckStepId: string | null;
+  /** AI 가 생성한 한국어 2문장 (실패 시 결정적 fallback). */
+  aiExplanation: string;
 }
 
 /* Team flow progress (5차 PDCA) ------------------------------------------- */
@@ -688,5 +719,6 @@ export interface TeamFlowProgressEntry {
   completedSteps: string[];
   /** 0..1 — 완료 단계 비율 (서버 계산). */
   progressRatio: number;
+  stepStartedAt: string;
   updatedAt: string;
 }
