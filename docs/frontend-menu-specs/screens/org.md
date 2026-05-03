@@ -14,15 +14,15 @@
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
 | 부서 계층 표시 | 트리 구조로 부서 조직도 시각화 | ✅ | 🔗 GET /org/units | 🧪 use-data.test.tsx |
-| 멤버 아바타 표시 | 각 부서 소속 멤버 아바타 | ✅ | 🔗 GET /users | 🧪 |
+| 멤버 아바타 표시 | 각 부서 소속 멤버 아바타 | ✅ | 🔗 GET /users | 🧪 org.routes.test.ts |
 | 부서 확장/축소 | 하위 부서 펼침/접힘 | ✅ | 🔌 | 🧪 menus/org-users-hr.spec.ts |
 
 ### 2. 부서(OrgUnit) 관리
 
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
-| 부서 목록 조회 | 전체 부서 트리 조회 | ✅ | 🔗 GET /org/units | 🧪 |
-| 부서 추가 | 새 부서 추가 다이얼로그 | ✅ | 🔗 POST /org/units | 🧪 |
+| 부서 목록 조회 | 전체 부서 트리 조회 | ✅ | 🔗 GET /org/units | 🧪 org.routes.test.ts |
+| 부서 추가 | 새 부서 추가 다이얼로그 | ✅ | 🔗 POST /org/units | 🧪 org.routes.test.ts |
 | 부서 편집 | 부서명·상위부서 수정 | ✅ | 🔗 PATCH /org/units/:id | 🧪 menus/org.spec.ts |
 | 부서 삭제 | sonner toast 확인 → DELETE | ✅ | 🔗 DELETE /org/units/:id | 🧪 menus/org.spec.ts |
 
@@ -31,8 +31,8 @@
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
 | 멤버 초대 발송 | 이메일로 초대장 전송 | ✅ | 🔗 POST /org/invitations | 🧪 menus-crud.spec.ts |
-| 초대 목록 조회 | 발송된 초대 상태 목록 | ✅ | 🔗 GET /org/invitations | 🧪 |
-| 초대 재발송 | 만료된 초대 재전송 | ✅ | 🔗 POST /org/invitations (idempotent) | 🧪 |
+| 초대 목록 조회 | 발송된 초대 상태 목록 | ✅ | 🔗 GET /org/invitations | 🧪 org.routes.test.ts |
+| 초대 재발송 | 만료된 초대 재전송 | ✅ | 🔗 POST /org/invitations (idempotent) | 🧪 org.routes.test.ts |
 | 초대 취소 | 대기 중 초대 취소 | ✅ | 🔗 DELETE /org/invitations/:id | 🧪 menus/org-users-hr.spec.ts |
 
 ### 4. 더보기 메뉴
@@ -55,3 +55,7 @@
 | 드래그&드롭 조직 개편 | 부서/멤버 드래그로 구조 변경 | 낮음 |
 | 조직도 이미지 내보내기 | PNG/SVG 다운로드 | 낮음 |
 | 직책·직위 관리 | 직위 계층 별도 관리 | 낮음 |
+
+## 테스트 실행 결과 (2026-05-03)
+- BE vitest: 657/657 PASS
+- FE vitest: 175/175 PASS

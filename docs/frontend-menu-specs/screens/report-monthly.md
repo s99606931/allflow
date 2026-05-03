@@ -22,9 +22,9 @@
 
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
-| 이번 달 보고서 | 현재 월 보고서 표시 | ✅ | 🔗 GET /reports?type=monthly | 🧪 |
-| 보고서 히스토리 사이드바 | 이전 월간 보고서 버튼 목록 | ✅ | 🔗 GET /reports?type=monthly | 🧪 |
-| 이전 보고서 빠른 재로드 | 히스토리 버튼 클릭 → 즉시 로드 | ✅ | 🔗 GET /reports/:id | 🧪 |
+| 이번 달 보고서 | 현재 월 보고서 표시 | ✅ | 🔗 GET /reports?type=monthly | 🧪 reports.routes.test.ts |
+| 보고서 히스토리 사이드바 | 이전 월간 보고서 버튼 목록 | ✅ | 🔗 GET /reports?type=monthly | 🧪 reports.routes.test.ts |
+| 이전 보고서 빠른 재로드 | 히스토리 버튼 클릭 → 즉시 로드 | ✅ | 🔗 GET /reports/:id | 🧪 reports.routes.test.ts |
 
 ### 3. 수신자 관리 (ReportRecipientsEditor)
 
@@ -60,3 +60,7 @@
 | 보고서 PDF 내보내기 | PDF 다운로드 | 중 |
 | 차트 시각화 포함 | 월간 집계를 차트로 | 중 |
 | 비교 뷰 | 전월 대비 비교 섹션 | 낮음 |
+
+## 테스트 실행 결과 (2026-05-03)
+- BE vitest: 657/657 PASS
+- FE vitest: 175/175 PASS

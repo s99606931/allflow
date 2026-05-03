@@ -14,9 +14,9 @@
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
 | 사용자 목록 조회 | 전체 멤버 카드/테이블 목록 | ✅ | 🔗 GET /users | 🧪 use-data.test.tsx |
-| 역할 뱃지 | admin / member / viewer 역할 표시 | ✅ | 🔗 | 🧪 |
-| 부서 표시 | 소속 부서 표시 | ✅ | 🔗 | 🧪 |
-| 상태 표시 | active / inactive | ✅ | 🔗 | 🧪 |
+| 역할 뱃지 | admin / member / viewer 역할 표시 | ✅ | 🔗 | 🧪 identity.routes.test.ts |
+| 부서 표시 | 소속 부서 표시 | ✅ | 🔗 | 🧪 identity.routes.test.ts |
+| 상태 표시 | active / inactive | ✅ | 🔗 | 🧪 identity.routes.test.ts |
 | 텍스트 검색 | 이름·이메일 검색 | ✅ | 🔌 (클라이언트) | 🧪 menus/org-users-hr.spec.ts |
 
 ### 2. 사용자 메트릭
@@ -32,8 +32,8 @@
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
 | 초대 패널 토글 | "사용자 초대" 버튼 → 패널 오픈 | ✅ | 🔌 | 🧪 menus-crud.spec.ts |
-| 이메일 입력 | 초대할 이메일 입력 | ✅ | 🔌 | 🧪 |
-| 역할 선택 | 초대할 역할 선택 | ✅ | 🔌 | 🧪 |
+| 이메일 입력 | 초대할 이메일 입력 | ✅ | 🔌 | 🧪 identity.routes.test.ts |
+| 역할 선택 | 초대할 역할 선택 | ✅ | 🔌 | 🧪 identity.routes.test.ts |
 | 초대 발송 | POST /org/invitations | ✅ | 🔗 POST /org/invitations | 🧪 |
 
 ### 4. 사용자 관리 (관리자)
@@ -58,3 +58,7 @@
 | 사용자 상세 프로필 뷰 | 사용자 클릭 → 상세 모달 | 중 |
 | 사용자 필터 (역할/부서) | 역할·부서별 필터 탭 | 낮음 |
 | 대량 초대 | CSV 업로드로 일괄 초대 | 낮음 |
+
+## 테스트 실행 결과 (2026-05-03)
+- BE vitest: 657/657 PASS
+- FE vitest: 175/175 PASS

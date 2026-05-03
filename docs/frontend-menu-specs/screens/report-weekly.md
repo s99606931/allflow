@@ -22,9 +22,9 @@
 
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
-| 현재 주 보고서 | 이번 주 보고서 표시 | ✅ | 🔗 GET /reports?type=weekly | 🧪 |
-| 보고서 히스토리 | 이전 주간 보고서 목록 사이드바 | ✅ | 🔗 GET /reports?type=weekly | 🧪 |
-| 이전 보고서 재로드 | 히스토리에서 이전 보고서 빠른 열기 | ✅ | 🔗 GET /reports/:id | 🧪 |
+| 현재 주 보고서 | 이번 주 보고서 표시 | ✅ | 🔗 GET /reports?type=weekly | 🧪 reports.routes.test.ts |
+| 보고서 히스토리 | 이전 주간 보고서 목록 사이드바 | ✅ | 🔗 GET /reports?type=weekly | 🧪 reports.routes.test.ts |
+| 이전 보고서 재로드 | 히스토리에서 이전 보고서 빠른 열기 | ✅ | 🔗 GET /reports/:id | 🧪 reports.routes.test.ts |
 
 ### 3. 수신자 관리 (ReportRecipientsEditor)
 
@@ -55,3 +55,7 @@
 | 보고서 PDF 내보내기 | PDF 다운로드 | 중 |
 | 보고서 템플릿 | 커스텀 보고서 템플릿 | 낮음 |
 | 링크 공유 완성 | 공개 보고서 URL | 낮음 |
+
+## 테스트 실행 결과 (2026-05-03)
+- BE vitest: 657/657 PASS
+- FE vitest: 175/175 PASS

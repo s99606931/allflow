@@ -14,16 +14,16 @@
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
 | 문서 목록 조회 | 전체 문서 카드 목록 | ✅ | 🔗 GET /docs | 🧪 use-data.test.tsx |
-| 검색 | 문서 제목 텍스트 검색 | ✅ | 🔌 (클라이언트 필터) | 🧪 |
-| 즐겨찾기 표시 | 별표 아이콘으로 즐겨찾기 문서 필터 | ✅ | 🔗 PATCH /docs/:id (starred) | 🧪 |
-| 작성자·날짜 표시 | 문서 메타 정보 | ✅ | 🔗 | 🧪 |
+| 검색 | 문서 제목 텍스트 검색 | ✅ | 🔌 (클라이언트 필터) | 🧪 docs.routes.test.ts |
+| 즐겨찾기 표시 | 별표 아이콘으로 즐겨찾기 문서 필터 | ✅ | 🔗 PATCH /docs/:id (starred) | 🧪 docs.routes.test.ts |
+| 작성자·날짜 표시 | 문서 메타 정보 | ✅ | 🔗 | 🧪 docs.routes.test.ts |
 
 ### 2. 문서 CRUD
 
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
 | 새 문서 생성 | DocCreateDialog → POST | ✅ | 🔗 POST /docs | 🧪 menus-crud.spec.ts |
-| 문서 편집 | 인라인 contentEditable 편집기 | ✅ | 🔗 PATCH /docs/:id | 🧪 |
+| 문서 편집 | 인라인 contentEditable 편집기 | ✅ | 🔗 PATCH /docs/:id | 🧪 docs.routes.test.ts |
 | 문서 삭제 | sonner toast 확인 → DELETE | ✅ | 🔗 DELETE /docs/:id | 🧪 |
 | 즐겨찾기 토글 | 별표 버튼 클릭 | ✅ | 🔗 PATCH /docs/:id | 🧪 |
 
@@ -51,3 +51,7 @@
 | 문서 공유 링크 | 외부 공유 URL 생성 | 낮음 |
 | 실시간 협업 편집 | 멀티 유저 동시 편집 | 낮음 |
 | 폴더 구조 | 문서를 폴더로 구조화 | 낮음 |
+
+## 테스트 실행 결과 (2026-05-03)
+- BE vitest: 657/657 PASS
+- FE vitest: 175/175 PASS

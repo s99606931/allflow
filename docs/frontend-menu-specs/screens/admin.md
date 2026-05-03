@@ -14,20 +14,20 @@
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
 | LLM 연결 목록 조회 | 등록된 LLM 프로바이더 목록 | ✅ | 🔗 GET /ai/llm-connections | 🧪 use-admin.test.tsx |
-| LLM 연결 추가 | 새 LLM API 키 등록 | ✅ | 🔗 POST /ai/llm-connections | 🧪 |
-| LLM 연결 편집 | API 키·모델명 수정 | ✅ | 🔗 PATCH /ai/llm-connections/:id | 🧪 |
-| LLM 연결 삭제 | sonner toast 확인 → DELETE | ✅ | 🔗 DELETE /ai/llm-connections/:id | 🧪 |
-| 기본 LLM 설정 | 기본 사용 LLM 선택 | ✅ | 🔗 PATCH /ai/llm-connections/:id (default) | 🧪 |
+| LLM 연결 추가 | 새 LLM API 키 등록 | ✅ | 🔗 POST /ai/llm-connections | 🧪 llm-connections.routes.test.ts |
+| LLM 연결 편집 | API 키·모델명 수정 | ✅ | 🔗 PATCH /ai/llm-connections/:id | 🧪 llm-connections.routes.test.ts |
+| LLM 연결 삭제 | sonner toast 확인 → DELETE | ✅ | 🔗 DELETE /ai/llm-connections/:id | 🧪 llm-connections.routes.test.ts |
+| 기본 LLM 설정 | 기본 사용 LLM 선택 | ✅ | 🔗 PATCH /ai/llm-connections/:id (default) | 🧪 llm-connections.routes.test.ts |
 | 연결 테스트 | API 키 유효성 테스트 | ✅ | 🔗 POST /ai/llm-connections/test | 🧪 menus/admin-notifications-settings.spec.ts |
 
 ### 2. MCP 서버 관리
 
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
-| MCP 서버 목록 조회 | 등록된 MCP 서버 목록 | ✅ | 🔗 GET /ai/mcp-connections | 🧪 |
-| MCP 서버 추가 | 서버 URL·인증 등록 | ✅ | 🔗 POST /ai/mcp-connections | 🧪 |
-| MCP 서버 편집 | 서버 설정 수정 | ✅ | 🔗 PATCH /ai/mcp-connections/:id | 🧪 |
-| MCP 서버 삭제 | DELETE | ✅ | 🔗 DELETE /ai/mcp-connections/:id | 🧪 |
+| MCP 서버 목록 조회 | 등록된 MCP 서버 목록 | ✅ | 🔗 GET /ai/mcp-connections | 🧪 mcp-connection.routes.test.ts |
+| MCP 서버 추가 | 서버 URL·인증 등록 | ✅ | 🔗 POST /ai/mcp-connections | 🧪 mcp-connection.routes.test.ts |
+| MCP 서버 편집 | 서버 설정 수정 | ✅ | 🔗 PATCH /ai/mcp-connections/:id | 🧪 mcp-connection.routes.test.ts |
+| MCP 서버 삭제 | DELETE | ✅ | 🔗 DELETE /ai/mcp-connections/:id | 🧪 mcp-connection.routes.test.ts |
 | MCP 서버 활성화/비활성화 | 토글 스위치 | ✅ | 🔗 PATCH /ai/mcp-connections/:id (enabled) | 🧪 menus/admin-notifications-settings.spec.ts |
 
 ### 3. 감사 로그
@@ -58,3 +58,7 @@
 | 감사 로그 내보내기 | CSV/JSON 내보내기 | 중 |
 | 역할 기반 접근 제어 설정 | RBAC 설정 UI | 낮음 |
 | 시스템 상태 모니터링 | 서버 상태·응답 시간 표시 | 낮음 |
+
+## 테스트 실행 결과 (2026-05-03)
+- BE vitest: 657/657 PASS
+- FE vitest: 175/175 PASS

@@ -22,7 +22,7 @@
 
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
-| 메시지 목록 조회 | 채널 메시지 스크롤 목록 | ✅ | 🔗 GET /channels/:id/messages | 🧪 |
+| 메시지 목록 조회 | 채널 메시지 스크롤 목록 | ✅ | 🔗 GET /channels/:id/messages | 🧪 channels.routes.test.ts |
 | 메시지 전송 | Enter 전송, Shift+Enter 줄바꿈 | ✅ | 🔗 POST /channels/:id/messages | 🧪 menus-crud.spec.ts |
 | 메시지 편집 | 내 메시지 편집 버튼 → PATCH | ✅ | 🔗 PATCH /channels/:id/messages/:msgId | 🧪 menus/chat.spec.ts |
 | 메시지 삭제 | 내 메시지 삭제 버튼 → DELETE | ✅ | 🔗 DELETE /channels/:id/messages/:msgId | 🧪 menus/chat.spec.ts |
@@ -65,3 +65,7 @@
 | 메시지 반응(이모지) | 이모지 리액션 기능 | 낮음 |
 | 스레드 답글 | 메시지 스레드 답글 | 낮음 |
 | 멘션 알림 (@mention) | 멘션 시 알림 발송 | 낮음 |
+
+## 테스트 실행 결과 (2026-05-03)
+- BE vitest: 657/657 PASS
+- FE vitest: 175/175 PASS

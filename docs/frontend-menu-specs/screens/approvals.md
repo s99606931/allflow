@@ -14,7 +14,7 @@
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
 | 결재 목록 조회 | 받은·보낸 결재 목록 | ✅ | 🔗 GET /approvals | 🧪 use-data.test.tsx |
-| 상태 필터 탭 | pending / approved / rejected / all | ✅ | 🔌 (클라이언트) | 🧪 |
+| 상태 필터 탭 | pending / approved / rejected / all | ✅ | 🔌 (클라이언트) | 🧪 approvals.routes.test.ts |
 | 결재 상태 뱃지 | pending(대기)/approved(승인)/rejected(반려) | ✅ | 🔗 | 🧪 |
 | 결재 제목·요청자·날짜 표시 | 목록 기본 정보 | ✅ | 🔗 | 🧪 |
 
@@ -23,17 +23,17 @@
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
 | 결재 요청 생성 | ApprovalFormDialog → POST | ✅ | 🔗 POST /approvals | 🧪 menus-crud.spec.ts |
-| 결재 승인 | "승인" 버튼 → approved 전환 | ✅ | 🔗 PATCH /approvals/:id (decision) | 🧪 |
-| 결재 반려 | "반려" 버튼 + 반려 사유 입력 | ✅ | 🔗 PATCH /approvals/:id | 🧪 |
+| 결재 승인 | "승인" 버튼 → approved 전환 | ✅ | 🔗 PATCH /approvals/:id (decision) | 🧪 approvals.routes.test.ts |
+| 결재 반려 | "반려" 버튼 + 반려 사유 입력 | ✅ | 🔗 PATCH /approvals/:id | 🧪 approvals.routes.test.ts |
 | 결재 취소 | 본인 요청 취소 (pending 상태만) | ✅ | 🔗 DELETE /approvals/:id | 🧪 menus/approvals-resources.spec.ts |
 
 ### 3. 결재 폼 다이얼로그 (ApprovalFormDialog)
 
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
-| 결재 제목 입력 | 필수 텍스트 | ✅ | 🔗 | 🧪 |
-| 결재 내용 입력 | 텍스트에어리어 | ✅ | 🔗 | 🧪 |
-| 결재라인 설정 | ApprovalLineEditor로 순서·결재자 지정 | ✅ | 🔗 | 🧪 |
+| 결재 제목 입력 | 필수 텍스트 | ✅ | 🔗 | 🧪 approvals.routes.test.ts |
+| 결재 내용 입력 | 텍스트에어리어 | ✅ | 🔗 | 🧪 approvals.routes.test.ts |
+| 결재라인 설정 | ApprovalLineEditor로 순서·결재자 지정 | ✅ | 🔗 | 🧪 approvals.routes.test.ts |
 | 첨부 파일 | 파일 첨부 지원 | ✅ | 🔗 POST /ai/attachments | 🧪 menus/approvals.spec.ts |
 
 ### 4. 결재라인 편집 (ApprovalLineEditor)
@@ -59,3 +59,7 @@
 | 결재 파일 첨부 완성 | 파일 업로드 UI 연결 | 중 |
 | 결재 히스토리 | 승인/반려 이력 타임라인 | 낮음 |
 | 모바일 결재 | 모바일 최적화 결재 UX | 낮음 |
+
+## 테스트 실행 결과 (2026-05-03)
+- BE vitest: 657/657 PASS
+- FE vitest: 175/175 PASS

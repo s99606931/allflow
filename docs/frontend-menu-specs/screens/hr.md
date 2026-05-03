@@ -15,31 +15,31 @@
 |------|------|------|--------|--------|
 | 휴가 목록 조회 | 내 휴가 신청 이력 목록 | ✅ | 🔗 GET /hr/leave | 🧪 use-hr.test.tsx |
 | 휴가 신청 | 휴가 신청 폼 → POST | ✅ | 🔗 POST /hr/leave | 🧪 menus-crud.spec.ts |
-| 휴가 상태 표시 | pending / approved / rejected 뱃지 | ✅ | 🔗 | 🧪 |
-| 휴가 취소 | 대기 중 신청 취소 | ✅ | 🔗 PATCH /hr/leave/:id (status:cancelled) | 🧪 |
+| 휴가 상태 표시 | pending / approved / rejected 뱃지 | ✅ | 🔗 | 🧪 hr.routes.test.ts |
+| 휴가 취소 | 대기 중 신청 취소 | ✅ | 🔗 PATCH /hr/leave/:id (status:cancelled) | 🧪 hr.routes.test.ts |
 
 ### 2. 휴가 승인 (관리자)
 
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
-| 전체 팀 휴가 목록 | 관리자용 전체 신청 목록 | ✅ | 🔗 GET /hr/leave?all=true | 🧪 |
-| 휴가 승인 | "승인" 버튼 → PATCH | ✅ | 🔗 PATCH /hr/leave/:id (status:approved) | 🧪 |
-| 휴가 반려 | "반려" 버튼 + 사유 입력 | ✅ | 🔗 PATCH /hr/leave/:id (status:rejected) | 🧪 |
+| 전체 팀 휴가 목록 | 관리자용 전체 신청 목록 | ✅ | 🔗 GET /hr/leave?all=true | 🧪 hr.routes.test.ts |
+| 휴가 승인 | "승인" 버튼 → PATCH | ✅ | 🔗 PATCH /hr/leave/:id (status:approved) | 🧪 hr.routes.test.ts |
+| 휴가 반려 | "반려" 버튼 + 사유 입력 | ✅ | 🔗 PATCH /hr/leave/:id (status:rejected) | 🧪 hr.routes.test.ts |
 
 ### 3. 연차 현황
 
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
-| 잔여 연차 표시 | 사용 가능 연차 일수 | ✅ | 🔗 GET /hr/resources | 🧪 |
-| 사용 연차 표시 | 이미 사용한 연차 일수 | ✅ | 🔗 | 🧪 |
+| 잔여 연차 표시 | 사용 가능 연차 일수 | ✅ | 🔗 GET /hr/resources | 🧪 use-hr.test.tsx |
+| 사용 연차 표시 | 이미 사용한 연차 일수 | ✅ | 🔗 | 🧪 use-hr.test.tsx |
 | 연간 캘린더 | 연차 사용 캘린더 뷰 | ✅ | 🔗 | 🧪 menus/org-users-hr.spec.ts |
 
 ### 4. 인사 정보
 
 | 기능 | 설명 | 구현 | 백엔드 | 테스트 |
 |------|------|------|--------|--------|
-| 직원 정보 표시 | 입사일·직위·부서 표시 | ✅ | 🔗 GET /users/:id | 🧪 |
-| HR 리소스 조회 | 복지·혜택 정보 | ✅ | 🔗 GET /hr/resources | 🧪 |
+| 직원 정보 표시 | 입사일·직위·부서 표시 | ✅ | 🔗 GET /users/:id | 🧪 identity.routes.test.ts |
+| HR 리소스 조회 | 복지·혜택 정보 | ✅ | 🔗 GET /hr/resources | 🧪 use-hr.test.tsx |
 
 ### 5. AI 가이드 위젯
 
@@ -55,3 +55,7 @@
 | HR 보고서 | 부서별 휴가 현황 보고서 | 낮음 |
 | 근태 관리 | 출퇴근 기록 | 낮음 |
 | 급여 정보 | 급여 명세서 조회 | 낮음 |
+
+## 테스트 실행 결과 (2026-05-03)
+- BE vitest: 657/657 PASS
+- FE vitest: 175/175 PASS
