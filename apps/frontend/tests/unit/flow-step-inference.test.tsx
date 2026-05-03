@@ -121,3 +121,137 @@ describe('Report flow step inference', () => {
     expect(inferReportStep({ report: { id: 'r1' }, historyIds: ['r0', 'r1'], scopeSize: 2 })).toBe('share');
   });
 });
+
+function inferIssueStep(opts: {
+  issuesLength: number;
+  newCount: number;
+  inProgressCount: number;
+  inReviewCount: number;
+  resolvedCount: number;
+}): string {
+  const { issuesLength, newCount, inProgressCount, inReviewCount, resolvedCount } = opts;
+  return (
+    newCount > 0 ? 'open' :
+    inProgressCount > 0 ? 'in-progress' :
+    inReviewCount > 0 ? 'verify' :
+    resolvedCount === issuesLength && issuesLength > 0 ? 'closed' :
+    'triage'
+  );
+}
+
+function inferTaskStep(opts: { reviewCount: number; doingCount: number; doneCount: number; allCount: number }): string {
+  const { reviewCount, doingCount, doneCount, allCount } = opts;
+  return (
+    reviewCount > 0 ? 'review' :
+    doingCount > 0 ? 'doing' :
+    doneCount === allCount ? 'done' :
+    'create'
+  );
+}
+
+function inferGanttStep(opts: {
+  tasksLength: number;
+  doneCount: number;
+  reviewCount: number;
+  inProgressCount: number;
+}): string {
+  const { tasksLength, doneCount, reviewCount, inProgressCount } = opts;
+  if (tasksLength === 0) return 'plan';
+  if (doneCount === tasksLength) return 'closeout';
+  if (reviewCount > 0) return 'review';
+  if (inProgressCount > 0) return 'execute';
+  return 'kickoff';
+}
+
+function inferApprovalStep(opts: { inboxCount: number; sentCount: number }): string {
+  const { inboxCount, sentCount } = opts;
+  return inboxCount > 0 ? 'review' : sentCount > 0 ? 'submit' : 'draft';
+}
+
+describe('Issue flow step inference', () => {
+  it('shows triage when no issues exist (empty state)', () => {
+    expect(inferIssueStep({ issuesLength: 0, newCount: 0, inProgressCount: 0, inReviewCount: 0, resolvedCount: 0 })).toBe('triage');
+  });
+
+  it('shows open when there are newly registered open issues', () => {
+    expect(inferIssueStep({ issuesLength: 3, newCount: 2, inProgressCount: 1, inReviewCount: 0, resolvedCount: 0 })).toBe('open');
+  });
+
+  it('shows in-progress when issues are being worked on', () => {
+    expect(inferIssueStep({ issuesLength: 3, newCount: 0, inProgressCount: 2, inReviewCount: 0, resolvedCount: 0 })).toBe('in-progress');
+  });
+
+  it('shows verify when issues are awaiting review', () => {
+    expect(inferIssueStep({ issuesLength: 2, newCount: 0, inProgressCount: 0, inReviewCount: 1, resolvedCount: 0 })).toBe('verify');
+  });
+
+  it('shows closed when all issues are resolved', () => {
+    expect(inferIssueStep({ issuesLength: 4, newCount: 0, inProgressCount: 0, inReviewCount: 0, resolvedCount: 4 })).toBe('closed');
+  });
+
+  it('shows triage when issues exist but none started yet', () => {
+    expect(inferIssueStep({ issuesLength: 2, newCount: 0, inProgressCount: 0, inReviewCount: 0, resolvedCount: 0 })).toBe('triage');
+  });
+});
+
+describe('Task flow step inference', () => {
+  it('shows done when all tasks are complete (empty board)', () => {
+    expect(inferTaskStep({ reviewCount: 0, doingCount: 0, doneCount: 0, allCount: 0 })).toBe('done');
+  });
+
+  it('shows create when tasks exist but none started', () => {
+    expect(inferTaskStep({ reviewCount: 0, doingCount: 0, doneCount: 0, allCount: 3 })).toBe('create');
+  });
+
+  it('shows doing when tasks are in progress', () => {
+    expect(inferTaskStep({ reviewCount: 0, doingCount: 2, doneCount: 1, allCount: 4 })).toBe('doing');
+  });
+
+  it('shows review when tasks await review (takes priority over doing)', () => {
+    expect(inferTaskStep({ reviewCount: 1, doingCount: 2, doneCount: 0, allCount: 4 })).toBe('review');
+  });
+
+  it('shows done when all tasks are completed', () => {
+    expect(inferTaskStep({ reviewCount: 0, doingCount: 0, doneCount: 5, allCount: 5 })).toBe('done');
+  });
+});
+
+describe('Gantt flow step inference', () => {
+  it('shows plan when no tasks exist', () => {
+    expect(inferGanttStep({ tasksLength: 0, doneCount: 0, reviewCount: 0, inProgressCount: 0 })).toBe('plan');
+  });
+
+  it('shows kickoff when tasks exist but none started', () => {
+    expect(inferGanttStep({ tasksLength: 3, doneCount: 0, reviewCount: 0, inProgressCount: 0 })).toBe('kickoff');
+  });
+
+  it('shows execute when tasks are in progress', () => {
+    expect(inferGanttStep({ tasksLength: 4, doneCount: 1, reviewCount: 0, inProgressCount: 2 })).toBe('execute');
+  });
+
+  it('shows review when tasks are in review (takes priority over execute)', () => {
+    expect(inferGanttStep({ tasksLength: 4, doneCount: 1, reviewCount: 1, inProgressCount: 2 })).toBe('review');
+  });
+
+  it('shows closeout when all tasks are done', () => {
+    expect(inferGanttStep({ tasksLength: 5, doneCount: 5, reviewCount: 0, inProgressCount: 0 })).toBe('closeout');
+  });
+});
+
+describe('Approval flow step inference', () => {
+  it('shows draft when no approvals exist', () => {
+    expect(inferApprovalStep({ inboxCount: 0, sentCount: 0 })).toBe('draft');
+  });
+
+  it('shows submit when the user has sent approvals', () => {
+    expect(inferApprovalStep({ inboxCount: 0, sentCount: 2 })).toBe('submit');
+  });
+
+  it('shows review when the user has approvals to process', () => {
+    expect(inferApprovalStep({ inboxCount: 3, sentCount: 1 })).toBe('review');
+  });
+
+  it('inbox takes priority over sent', () => {
+    expect(inferApprovalStep({ inboxCount: 1, sentCount: 5 })).toBe('review');
+  });
+});
