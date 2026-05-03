@@ -63,7 +63,7 @@
 > ✅ **11차 PDCA 최종 완결** (커밋 `30ec17b`) — 비즈니스 플로우 스텝퍼 기능의 마지막 사이클. 1~10차 누적 동작을 영구 회귀 가드로 고정.
 
 - BE vitest: **692/692 PASS** (10차 동일 — 11차는 E2E 추가만, BE 코드 변경 0)
-- FE vitest: **224/224 PASS** (10차 동일 — 11차는 E2E 추가만, FE 단위 코드 변경 0)
+- FE vitest: **231/231 PASS** (10차 동일 — 11차는 E2E 추가만, FE 단위 코드 변경 0)
 - **E2E (Playwright): 6/6 PASS — `apps/frontend/tests/e2e/menus/business-flow-stepper.spec.ts` (190 LOC, 22.5s, retries=0)**
 - 직접 측정 (2026-05-04): `pnpm --filter backend vitest run` 65 files / 692 passed · `pnpm --filter frontend vitest run` 25 files / 214 passed · `npx playwright test menus/business-flow-stepper.spec.ts` 6/6 passed
 - 탑바 자체 직접 변경 없음 — 11차는 `apps/frontend/tests/e2e/menus/business-flow-stepper.spec.ts` E2E 신규(190 LOC)만 추가. 탑바 SSE/알림/프로필 회귀 0건. 10차 BE `flow-alerts.ts`(111 LOC) + Prisma `NotificationKind.flow_overdue` enum + PATCH 사이드 이펙트(overdue 자동 알림) + POST suggest `saveToNotifications?` 옵션 / FE `use-flow-alerts.ts`(55 LOC) + `BusinessFlowStepper` 헤더 amber Bell 배지 / Contract 4 계층 동기화 모두 그대로 유지. 탑바 알림 드롭다운/센터는 `Notification.kind: flow_overdue` 항목을 자연스럽게 표시(스키마 호환). 커밋 `769ee38` (10차) → `30ec17b` (11차 최종 완결).
@@ -78,7 +78,7 @@
 | 사용자 프로필 | ✅ `GET /users/me` (identity.routes.ts) — use-data 7/7 PASS |
 | 로그아웃 | ✅ next-auth `signOut()` 클라이언트 처리 (BE 별도 엔드포인트 불필요) |
 | BE 합계 | ✅ vitest **692/692 PASS** (10차 +5) |
-| FE 합계 | ✅ vitest **224/224 PASS** (10차 +4) |
+| FE 합계 | ✅ vitest **231/231 PASS** (10차 +4) |
 | **NotificationKind enum 6종 (10차 PDCA)** | ✅ `mention / sla / ai / system / comment / flow_overdue` — `packages/contracts/openapi.yaml` SOR + Prisma schema + 4 계층 zod/TS 동기화 완료 |
 | **알림 자동 생성 (10차 PDCA)** | ✅ PATCH `/business-flows/:id/progress` 사이드 이펙트 — `expectedDays` 초과 시 `flow_overdue` 알림 자동 생성 + `(userId, kind, screen, today UTC 자정)` 하루 1회 dedup. business-flows.routes.test.ts 10차 +5 통과 |
 | 7차 PDCA 영향도 (탑바) | 탑바 자체 직접 변경 없음 — 7차 추가분(스테퍼 a11y/키보드/focus-visible/완주 축하 + `globals.css` keyframes)은 모두 `BusinessFlowStepper` 컴포넌트와 `globals.css` 에 격리되어 본 메뉴 SSE/알림/프로필 회귀 0건 확인 |
