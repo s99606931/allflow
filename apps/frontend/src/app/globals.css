@@ -90,3 +90,27 @@ body {
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .fade-in { animation: fadeIn .2s ease-out; }
+
+/* 7차 PDCA: 비즈니스 플로우 완주 축하 애니메이션 (외부 라이브러리 없이) */
+@keyframes bfConfettiBurst {
+  0%   { transform: translate(0, 0) scale(0.6) rotate(0deg);   opacity: 1; }
+  60%  { opacity: 1; }
+  100% { transform: translate(var(--bf-x, 0px), var(--bf-y, -80px)) scale(1) rotate(var(--bf-r, 360deg)); opacity: 0; }
+}
+@keyframes bfCelebrateGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+  50%      { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.18); }
+}
+.bf-celebrate { animation: bfCelebrateGlow 1.6s ease-out 2; }
+.bf-confetti-piece {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  pointer-events: none;
+  animation: bfConfettiBurst 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bf-celebrate { animation: none; }
+  .bf-confetti-piece { display: none; }
+}
