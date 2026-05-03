@@ -67,7 +67,12 @@ export function DashboardPage() {
       <BusinessFlowOnboarding anchorTestId="business-flow-stepper" />
       <BusinessFlowStepper
         flow={BUSINESS_FLOWS.project}
-        currentStepId="execute"
+        currentStepId={
+          projects.length === 0 ? 'plan' :
+          doingCount > 0 ? 'execute' :
+          todoCount > 0 ? 'kickoff' :
+          'execute'
+        }
         systemContext={`처리할 태스크 ${todoCount}개, 진행 중 ${doingCount}건, 프로젝트 ${projects.length}개`}
         onStepSelect={(step) => router.push(step.screen)}
         enableServerSync

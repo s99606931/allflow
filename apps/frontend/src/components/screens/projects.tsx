@@ -35,7 +35,14 @@ export function ProjectsPage() {
     <div className="p-6 space-y-5 max-w-[1440px] mx-auto">
       <BusinessFlowStepper
         flow={BUSINESS_FLOWS.project}
-        currentStepId="plan"
+        currentStepId={
+          projects.length === 0 ? 'plan' :
+          doneCount === projects.length ? 'closeout' :
+          overdueCount > 0 ? 'review' :
+          blockedCount > 0 ? 'review' :
+          activeCount > 0 ? 'execute' :
+          'plan'
+        }
         systemContext={`프로젝트 ${activeCount}개 활성, ${blockedCount}개 차단`}
         onStepSelect={(step) => router.push(step.screen)}
         enableServerSync
